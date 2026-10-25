@@ -1,0 +1,14 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "rupaka"
+  site-url: "https://vedicreader.github.io/rupaka"
+  description: "Interactive SVG demos from JSON specs, made of small reusable blocks, that make the learner predict first"
+  repo-branch: main
+  repo-url: "https://github.com/vedicreader/rupaka"
+
+format-links:
+  - html
+  - format: commonmark
+    text: Markdown

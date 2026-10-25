@@ -1,0 +1,9 @@
+website:
+  sidebar:
+    contents:
+      - index.ipynb
+      - 00_spec.ipynb
+      - 01_render.ipynb
+      - 02_check.ipynb
+      - 03_agent.ipynb
+      - 04_gallery.ipynb
