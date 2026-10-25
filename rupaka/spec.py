@@ -396,6 +396,7 @@ def validate(spec) -> L:
     if not isinstance(spec.get('blocks'), list) or not spec['blocks']: err('blocks', 'needs a list of blocks'); return errs
     for k in ('ask', 'title'):
         for s in long_sentences(spec.get(k, '')): err(k, f'this sentence has more than {MAX_WORDS} words: "{s}"')
+        if _TPL.search(str(spec.get(k, ''))): err(k, 'is plain text, so {path} shows as it is; write the value, or put it in a readout')
     known, deps, fms = set(st), {}, fn_manifests()
     for i, d in enumerate(spec.get('derive') or []):
         p = f'derive[{i}]'
@@ -428,6 +429,7 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
         for k, t in ((k, m.props[k]['type']) for k in b if k in m.props):
             if t in _TEXT_TYPES:
                 for s in long_sentences(b[k]): err(f'{p}.{k}', f'this sentence has more than {MAX_WORDS} words: "{s}"')
+            if t == 'str' and _TPL.search(str(b[k])): err(f'{p}.{k}', 'is plain text, so {path} shows as it is; use a text prop such as a caption')
         if b['type'] == 'gate':
             if b['id'] in gates: err(f'{p}.id', f'the gate id "{b["id"]}" is used twice')
             gates[b['id']] = (p, b)
@@ -479,7 +481,7 @@ def _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads) -> L:
             if ks & need: err(f'{p}.context', f'the {b["type"]} at {q} changes the answer, so name the inputs, for example "For {{{sorted(ks & need)[0]}}}:"'); break
     return errs
 
-# %% ../nbs/00_spec.ipynb #c082
+# %% ../nbs/00_spec.ipynb #c084
 UPGRADES = {0: lambda s: s}   #: schema n -> a function that moves a spec from n to n + 1
 
 def upgrade(spec:dict) -> dict:
@@ -491,12 +493,12 @@ def upgrade(spec:dict) -> dict:
     s['rupaka'] = SCHEMA
     return s
 
-# %% ../nbs/00_spec.ipynb #c085
+# %% ../nbs/00_spec.ipynb #c087
 def examples() -> dict:
     "The example spec of each block, by block name."
     return {n: json.loads((PKG/'blocks'/n/'example.json').read_text()) for n in manifests()}
 
-# %% ../nbs/00_spec.ipynb #c088
+# %% ../nbs/00_spec.ipynb #c090
 def gallery() -> dict:
     "The gallery demos, by id."
     return {(s := json.loads(p.read_text()))['id']: s for p in sorted((PKG/'demos').glob('*.json'))}
