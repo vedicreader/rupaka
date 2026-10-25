@@ -56,3 +56,10 @@ def test_shadow_root_mount(br):
       r.querySelector('.opts button:nth-child(2)').click(); r.querySelector('button.go').click(); }""")
     assert pg.evaluate('__ev[0].ok') is True
     pg.close()
+
+def test_default_browser_is_not_the_everyday_chrome(monkeypatch):
+    "The check runs playwright Chromium (or $FASTCDP_CHROME), never the Chrome app the user works in."
+    from rupaka.check import browser_path
+    monkeypatch.delenv("FASTCDP_CHROME", raising=False)
+    assert browser_path() is None
+    with pytest.raises(ValueError): browser_path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")

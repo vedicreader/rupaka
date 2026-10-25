@@ -35,7 +35,7 @@ The blocks are [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate), [`
 pip install rupaka
 ```
 
-The headless check needs playwright: `pip install "rupaka[check]"`. It uses Chrome, or the Chromium that `playwright install chromium` gives.
+The headless check needs playwright: `pip install "rupaka[check]"`. It uses the Chromium that `playwright install chromium` gives, or the browser in `$FASTCDP_CHROME`. It never runs your everyday Chrome.
 
 ## How to use
 

@@ -373,8 +373,8 @@ The JS is plain scripts, not ES modules, so it runs in a `srcdoc` frame, in a sh
 
 ### Tests
 
-- pytest with playwright, which is in abhyasa's venv. Chrome at `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-  (env `RUPAKA_CHROME` overrides). Headless only, so no window takes focus.
+- pytest with playwright, on playwright's own Chromium, or `$FASTCDP_CHROME`. Never the everyday Chrome app (changed during the build:
+  headless runs of it crashed the user's Chrome). Headless only, so no window takes focus. One browser at a time.
 - The suite does not test looks by class names. It tests behaviour (state moves, reveals hide and show, keys work, no errors, no network)
   and contrast numbers. Screenshots go to `tests/screens/` (gitignored) for a person to look at.
 

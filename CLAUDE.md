@@ -21,7 +21,9 @@ A block is a folder in `rupaka/blocks/<name>/`, as in lego: `<name>.js` (`Rupaka
 ## Rules
 
 - The think rule: a block that shows a value which a gate's answer depends on must wait for that gate (`after`). `validate` enforces it.
-- Browser tests run headless Chrome through playwright. No window may open or take focus.
+- Browser tests run headless through playwright, on playwright's own Chromium (`python -m playwright install chromium`) or `$FASTCDP_CHROME`.
+  Never the everyday Chrome in /Applications: headless runs of it crash the Chrome the user works in. One browser at a time, closed in a `finally` block.
+  No window may open or take focus.
 - Prose (notebooks, docs, UI text, commit messages, release notes) is ASD-STE100 Simplified Technical English, US grade 9.
 - Notebooks read as documents: an intro, short sections, a one-line lead before each code cell, small cells, tests in small steps.
 - Commit messages are one plain line, with no AI credit.
