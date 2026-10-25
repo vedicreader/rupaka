@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rupaka"
+dynamic = ["version"]
+description = "Interactive SVG demos from JSON specs, made of small reusable blocks, that make the learner predict first"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Karthik", email = "karthik.rajgopal@hotmail.com"}]
+keywords = ['nbdev', 'svg', 'interactive', 'teaching', 'demos', 'learning']
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = ["fastcore>=1.8"]
+
+[project.optional-dependencies]
+check = ["playwright>=1.40"]
+dev = ["ipykernel>=7.3.0", "nbdev>=3.3.26", "notebook>=7.6.3", "pytest>=8", "playwright>=1.40"]
+
+[project.urls]
+Repository = "https://github.com/vedicreader/rupaka"
+Documentation = "https://vedicreader.github.io/rupaka/"
+
+[project.entry-points.nbdev]
+rupaka = "rupaka._modidx:d"
+
+[tool.nbdev]
+tst_flags = "slow"
+
+[tool.hatch.build.targets.wheel]
+packages = ["rupaka"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/rupaka", "/README.md", "/pyproject.toml"]
+
+[tool.hatch.version]
+path = "rupaka/__init__.py"
+
+[dependency-groups]
+dev = ["rupaka[dev]"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

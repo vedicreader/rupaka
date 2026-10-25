@@ -1,0 +1,12 @@
+{
+  "rupaka": 1, "id": "axis-example", "title": "Axis",
+  "ask": "Place the point where you think −7/3 is. Then lock in.",
+  "state": {"x": 0},
+  "derive": [{"fn": "expr", "expr": "-7/3", "out": "target"}, {"fn": "expr", "expr": "round(target)", "out": "near"}],
+  "blocks": [
+    {"type": "axis", "x": [-4, 4], "xstep": 1, "blocks": [{"type": "point", "bind": "x", "step": 0.25, "label": "you"}]},
+    {"type": "gate", "id": "near", "prompt": "Which whole number is closest to −7/3?", "options": [-3, -2, 2, 3], "answer": "near"},
+    {"type": "axis", "after": "near", "x": [-4, 4], "xstep": 1, "blocks": [{"type": "point", "x": "target", "label": "−7/3"}]},
+    {"type": "caption", "after": "near", "text": "−7/3 is **{target:3}**. Where is −8/3?"}
+  ]
+}

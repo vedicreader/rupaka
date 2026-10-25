@@ -1,0 +1,17 @@
+{
+  "rupaka": 1,
+  "id": "softmax-temperature",
+  "concept": "softmax-temperature",
+  "title": "Softmax and temperature",
+  "ask": "A model scores four next words for “The capital of France is …”. Softmax turns the scores into shares. It divides each score by a temperature T first.",
+  "state": {"logits": [3, 1.5, 1, -1], "t": 1},
+  "derive": [{"fn": "softmax", "in": "logits", "t": "t", "labels": ["Paris", "Lyon", "Nice", "Rome"], "sort": true, "out": "p"}],
+  "blocks": [
+    {"type": "grid", "bind": "logits", "label": "Scores (logits)", "cols": ["Paris", "Lyon", "Nice", "Rome"], "step": 0.5, "lock": "hot", "cell": 80},
+    {"type": "bars", "bind": "p", "label": "Shares", "max": 1, "digits": 3, "gutter": 56},
+    {"type": "gate", "id": "hot", "prompt": "T goes from 1 to 2. What happens to the share of Paris?", "options": ["It rises", "It falls", "It stays the same"],
+     "answer": {"is": "It falls"}, "why": "Say why, in one line, before you lock in."},
+    {"type": "slider", "after": "hot", "bind": "t", "label": "Temperature T", "min": 0.1, "max": 4, "step": 0.1, "digits": 1, "note": "A high T makes the shares more equal."},
+    {"type": "caption", "after": "hot", "text": "The top word, **{p.0.id}**, has a share of {p.0.value:3}. Move T near 0.1. What does softmax become then? Why?"}
+  ]
+}

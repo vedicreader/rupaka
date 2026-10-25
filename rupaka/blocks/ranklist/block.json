@@ -1,0 +1,14 @@
+{
+  "name": "ranklist",
+  "since": "0.0.1",
+  "purpose": "An ordered list of ids, for example the results of one search. The learner drags rows to change the order.",
+  "binds": "list of ids",
+  "keys": "↑/↓ focus a row, ⌥↑/⌥↓ or W/S move it",
+  "lockable": true,
+  "props": {
+    "bind": {"type": "key", "req": true, "doc": "the state key of a list of ids"},
+    "items": {"type": "dict", "doc": "a name to show for each id"},
+    "label": {"type": "str"},
+    "hint": {"type": "str", "doc": "the note under the list while it is live"}
+  }
+}

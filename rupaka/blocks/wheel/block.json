@@ -1,0 +1,19 @@
+{
+  "name": "wheel",
+  "since": "0.0.1",
+  "purpose": "A ring of items. With bind, the learner picks one item. With angle, a hand points at a number of degrees over equal sectors (for example 27 nakṣatras), with an optional outer ring (12 rāśis).",
+  "binds": "string (bind) or number of degrees (angle)",
+  "keys": "←/→ or A/D, Home/End; in angle mode ⇧ moves ten steps",
+  "lockable": true,
+  "props": {
+    "bind": {"type": "key", "doc": "item mode: the state key of the picked item"},
+    "angle": {"type": "key", "doc": "angle mode: the state key of a number of degrees, 0 at the top, clockwise"},
+    "items": {"type": "list", "req": true, "doc": "the items, in order around the ring"},
+    "outer": {"type": "list", "doc": "angle mode: labels for an outer ring of equal sectors"},
+    "step": {"type": "num", "default": 1, "doc": "angle mode: degrees per key press or drag step"},
+    "marks": {"type": "int", "doc": "angle mode: small marks that cut each sector into this many parts"},
+    "marks_on": {"type": "key", "doc": "angle mode: show the marks only when this state key is true"},
+    "label": {"type": "str"}
+  },
+  "one_of": [["bind", "angle"]]
+}

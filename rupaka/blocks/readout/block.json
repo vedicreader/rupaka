@@ -1,0 +1,11 @@
+{
+  "name": "readout",
+  "since": "0.0.1",
+  "purpose": "Show one large line from a template, for example \"{a} + {b} → {join.out}\".",
+  "binds": "none",
+  "keys": "none",
+  "props": {
+    "text": {"type": "text", "req": true, "doc": "the line; {path} or {path:2} takes a state value"},
+    "label": {"type": "str", "doc": "a small label above the line"}
+  }
+}

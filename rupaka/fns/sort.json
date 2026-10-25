@@ -1,0 +1,7 @@
+{
+  "name": "sort", "since": "0.0.1", "file": "helpers.js",
+  "purpose": "A sorted copy of a list, by a field or by value.",
+  "returns": "a list",
+  "props": {"from": {"type": "path", "req": true}, "by": {"type": "str"}, "desc": {"type": "bool", "default": false}},
+  "example": {"fn": "sort", "from": "p", "by": "value", "desc": true, "out": "ranked"}
+}

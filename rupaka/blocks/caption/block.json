@@ -1,0 +1,11 @@
+{
+  "name": "caption",
+  "since": "0.0.1",
+  "purpose": "The explain text after a reveal. End it with one new question that the learner can answer only by using the controls.",
+  "binds": "none",
+  "keys": "none",
+  "props": {
+    "text": {"type": "text", "req": true, "doc": "short text; **bold** and {path} are allowed, nothing else"},
+    "label": {"type": "str", "doc": "a small label above the text"}
+  }
+}

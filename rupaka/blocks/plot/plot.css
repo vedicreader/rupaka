@@ -1,0 +1,2 @@
+.rk-plot .ln { fill: none; stroke: var(--rk-acc); stroke-width: 2; stroke-linejoin: round; }
+.rk-plot .dots circle { fill: var(--rk-acc); }

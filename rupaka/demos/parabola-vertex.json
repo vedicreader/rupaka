@@ -1,0 +1,27 @@
+{
+  "rupaka": 1,
+  "id": "parabola-vertex",
+  "concept": "parabola",
+  "title": "What b does to a parabola",
+  "ask": "The curve is y = a·x² + b·x. Now a = 1 and b = 0, so the lowest point is at the origin.",
+  "state": {"a": 1, "b": 0},
+  "derive": [
+    {"fn": "expr", "expr": "a * x^2 + b * x", "over": {"x": [-5, 5, 101]}, "out": "curve"},
+    {"fn": "expr", "expr": "-b / (2 * a)", "out": "vx"},
+    {"fn": "expr", "expr": "-(b^2) / (4 * a)", "out": "vy"}
+  ],
+  "blocks": [
+    {"type": "axis", "x": [-5, 5], "y": [-6, 10], "xstep": 1, "ystep": 2, "xlabel": "x", "ylabel": "y", "height": 340, "blocks": [
+      {"type": "plot", "series": "curve", "label": "y = a·x² + b·x"},
+      {"type": "point", "after": "move", "x": "vx", "y": "vy", "label": "lowest"}
+    ]},
+    {"type": "gate", "id": "move", "prompt": "b goes from 0 to 2. Where does the lowest point move?",
+     "options": ["Left and down", "Right and down", "Straight up", "It stays"], "answer": {"is": "Left and down"}, "hides": ["vx", "vy"],
+     "why": "Say why, in one line."},
+    {"type": "row", "blocks": [
+      {"type": "slider", "bind": "b", "label": "b", "min": -4, "max": 4, "step": 0.5, "lock": "move"},
+      {"type": "slider", "bind": "a", "label": "a", "min": 0.25, "max": 3, "step": 0.25, "lock": "move"}
+    ]},
+    {"type": "caption", "after": "move", "text": "The lowest point is at x = −b / 2a = **{vx:2}**. Set b to −2. Then make a larger. What does a do to the lowest point?"}
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "rupaka": 1,
+  "id": "reciprocal-rank-fusion",
+  "concept": "reciprocal-rank-fusion",
+  "title": "Reciprocal rank fusion",
+  "ask": "Two searches rank the same documents. Fusion gives each document the sum of 1 / (k + rank) over the lists. Look at the two lists and predict the winner.",
+  "state": {"bm25": ["A", "C", "E", "B"], "vec": ["D", "F", "G", "B"], "k": 60},
+  "derive": [{"fn": "rrf", "in": ["bm25", "vec"], "k": "k", "out": "fused"}],
+  "blocks": [
+    {"type": "row", "blocks": [
+      {"type": "ranklist", "bind": "bm25", "label": "Keyword search (BM25)", "lock": "win"},
+      {"type": "ranklist", "bind": "vec", "label": "Vector search", "lock": "win"}
+    ]},
+    {"type": "gate", "id": "win", "prompt": "With k = {k}, which document comes first after fusion?", "options": ["A", "B", "C", "D"], "answer": "fused.0.id",
+     "context": "With k = {k} and these lists:", "why": "Say why, in one line, before you lock in."},
+    {"type": "slider", "after": "win", "bind": "k", "label": "k", "min": 1, "max": 100, "note": "A small k gives more weight to the top ranks."},
+    {"type": "bars", "after": "win", "bind": "fused", "label": "Fused score", "parts": ["from keyword search", "from vector search"]},
+    {"type": "caption", "after": "win", "text": "First now: **{fused.0.id}**, with {fused.0.value}. Move k down to 1. Which document wins now? When does B lose first place, and why?"}
+  ]
+}

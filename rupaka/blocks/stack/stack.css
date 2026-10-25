@@ -1,0 +1,2 @@
+.rk-stack > .rk-b:first-child { margin-top: 0; }
+.rk-stack > .rk-b:last-child { margin-bottom: 0; }

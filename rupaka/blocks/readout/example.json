@@ -1,0 +1,9 @@
+{
+  "rupaka": 1, "id": "readout-example", "title": "Readout",
+  "state": {"x": 3},
+  "derive": [{"fn": "expr", "expr": "x^2", "out": "sq"}],
+  "blocks": [
+    {"type": "gate", "id": "sq", "prompt": "What is {x} squared?", "options": [6, 9, 12], "answer": "sq"},
+    {"type": "readout", "after": "sq", "label": "Square", "text": "{x}² = {sq}"}
+  ]
+}

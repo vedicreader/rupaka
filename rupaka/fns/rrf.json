@@ -1,0 +1,10 @@
+{
+  "name": "rrf", "since": "0.0.1",
+  "purpose": "Reciprocal rank fusion: each id gets the sum of 1 / (k + rank) over the ranked lists. Sorted, highest first.",
+  "returns": "a list of {id, value, parts}, one part for each list",
+  "props": {
+    "in": {"type": "keys", "req": true, "doc": "the keys of the ranked lists of ids"},
+    "k": {"type": "numkey", "req": true, "doc": "a number, or the key of a number"}
+  },
+  "example": {"fn": "rrf", "in": ["bm25", "vec"], "k": "k", "out": "fused"}
+}

@@ -1,0 +1,7 @@
+{
+  "name": "ids", "since": "0.0.1", "file": "helpers.js",
+  "purpose": "The ids of a list of {id, ...} rows, in order.",
+  "returns": "a list of ids",
+  "props": {"from": {"type": "path", "req": true}},
+  "example": {"fn": "ids", "from": "fused", "out": "order"}
+}

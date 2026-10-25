@@ -1,0 +1,7 @@
+{
+  "name": "pick", "since": "0.0.1", "file": "helpers.js",
+  "purpose": "One field of each row of a list.",
+  "returns": "a list of values",
+  "props": {"from": {"type": "path", "req": true}, "field": {"type": "str", "req": true}},
+  "example": {"fn": "pick", "from": "fused", "field": "value", "out": "scores"}
+}

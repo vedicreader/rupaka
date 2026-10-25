@@ -1,0 +1,11 @@
+{
+  "name": "lookup", "since": "0.0.1",
+  "purpose": "The row of a table for a key: by position for a whole number, else the row whose \"by\" field (default id) matches.",
+  "returns": "one row of the table",
+  "props": {
+    "table": {"type": "table", "req": true},
+    "key": {"type": "path", "req": true, "doc": "the path of the key value"},
+    "by": {"type": "str", "doc": "the field to match; leave it out to pick by position or by id"}
+  },
+  "example": {"fn": "lookup", "table": "stars", "key": "idx", "out": "star"}
+}

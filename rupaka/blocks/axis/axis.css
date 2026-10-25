@@ -1,0 +1,4 @@
+.rk-axis .grid .hair { stroke: color-mix(in srgb, var(--rk-line) 70%, transparent); stroke-width: 1; }
+.rk-axis .grid .zero, .rk-axis .grid .main { stroke: var(--rk-mute); stroke-width: 1; }
+.rk-axis .grid text.num { fill: var(--rk-mute); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rk-axis .grid text.axl { fill: var(--rk-mute); font-size: 13px; font-style: italic; }

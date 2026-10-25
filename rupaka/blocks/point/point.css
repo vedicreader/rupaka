@@ -1,0 +1,7 @@
+.rk-point .dot { fill: var(--rk-acc); stroke: var(--rk-bg); stroke-width: 2; }
+.rk-point .halo { fill: transparent; }
+.rk-point.drag { cursor: grab; } .rk-point.held { cursor: grabbing; }
+.rk-point.drag:hover .halo, .rk-point.held .halo { fill: color-mix(in srgb, var(--rk-acc) 14%, transparent); }
+.rk-point:focus { outline: none; }
+.rk-point:focus-visible .halo { fill: none; stroke: var(--rk-acc); stroke-width: 2; }
+.rk-point text.pl { font-size: 14px; fill: var(--rk-fg); paint-order: stroke; stroke: var(--rk-bg); stroke-width: 4px; }

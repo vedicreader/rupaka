@@ -1,0 +1,7 @@
+{
+  "name": "fmt", "since": "0.0.1", "file": "helpers.js",
+  "purpose": "A string from a template, for example \"{star.name}, pāda {pada}\", so a gate can compare it with an option.",
+  "returns": "a string",
+  "props": {"text": {"type": "text", "req": true}},
+  "example": {"fn": "fmt", "text": "{star.name}, pāda {pada}", "out": "where"}
+}

@@ -1,0 +1,10 @@
+{
+  "rupaka": 1, "id": "toggle-example", "title": "Toggle",
+  "state": {"neg": false, "x": 4},
+  "derive": [{"fn": "expr", "expr": "x * (1 - 2 * neg)", "out": "y"}],
+  "blocks": [
+    {"type": "gate", "id": "y", "prompt": "With the sign off, what is y?", "options": [-4, 4], "answer": "y", "context": "With flip = {neg}:"},
+    {"type": "toggle", "bind": "neg", "label": "Flip the sign", "lock": "y"},
+    {"type": "readout", "after": "y", "text": "y = {y}"}
+  ]
+}

@@ -1,0 +1,11 @@
+/* The standalone page theme: abhyasa's palette, after vedicreader. Light and dark follow the OS. A host page that sets these vars wins. */
+:root { --bg: hsl(44 43% 93%); --fg: hsl(28 22% 17%); --ink2: hsl(30 18% 28%); --mute: hsl(32 20% 34%); --line: hsl(40 30% 80%);
+        --acc: hsl(22 42% 33%); --ok: hsl(88 32% 25%); --no: hsl(14 58% 34%);
+        --serif: 'Literata', ui-serif, Georgia, serif; --head: 'Libre Baskerville', ui-serif, Georgia, serif;
+        --mono: ui-monospace, 'SF Mono', Menlo, monospace; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: hsl(25 15% 15%); --fg: hsl(39 34% 88%); --ink2: hsl(38 24% 80%); --mute: hsl(38 20% 70%); --line: hsl(25 14% 27%);
+          --acc: hsl(32 52% 72%); --ok: hsl(88 30% 70%); --no: hsl(18 62% 74%); }
+}
+body { background: var(--bg); color: var(--fg); font: 18px/1.65 var(--serif); margin: 0; -webkit-font-smoothing: antialiased; }
+main.rk-page { max-width: 680px; margin: 0 auto; padding: 24px 20px 48px; }

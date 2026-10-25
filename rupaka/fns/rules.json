@@ -1,0 +1,11 @@
+{
+  "name": "rules", "since": "0.0.1",
+  "purpose": "A rule system as data: the first row of a table whose \"when\" lists hold the inputs wins. Gives the row, its \"out\", and \"alts\" (what other rows give) as wrong options for a gate.",
+  "returns": "the row fields (for example name, sutra, why), out, and alts",
+  "props": {
+    "table": {"type": "table", "req": true, "doc": "the name of a list in tables; each row is {when: {key: [values]}, out: \"template {key}\", ...more fields}"},
+    "in": {"type": "keys", "req": true, "doc": "the input keys"},
+    "alts": {"type": "int", "default": 4, "doc": "how many options, the right one included"}
+  },
+  "example": {"fn": "rules", "table": "sandhi", "in": ["a", "b"], "out": "join", "alts": 4}
+}

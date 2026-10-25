@@ -1,0 +1,3 @@
+.rk-slider input { width: 100%; max-width: 340px; accent-color: var(--rk-acc); display: block; margin: 6px 0 0; }
+.rk-slider output { font: 500 15px/1 var(--rk-serif); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; margin-left: 10px; color: var(--rk-fg); }
+.rk-slider input:focus-visible { outline: 2px solid var(--rk-acc); outline-offset: 4px; border-radius: 2px; }

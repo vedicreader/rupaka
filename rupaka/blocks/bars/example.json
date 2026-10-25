@@ -1,0 +1,9 @@
+{
+  "rupaka": 1, "id": "bars-example", "title": "Bars",
+  "state": {"logits": [2, 1, 0], "t": 1},
+  "derive": [{"fn": "softmax", "in": "logits", "t": "t", "labels": ["cat", "dog", "fish"], "sort": true, "out": "p"}],
+  "blocks": [
+    {"type": "gate", "id": "top", "prompt": "Which label gets the largest share?", "options": ["cat", "dog", "fish"], "answer": "p.0.id"},
+    {"type": "bars", "after": "top", "bind": "p", "label": "Share", "max": 1, "digits": 3}
+  ]
+}

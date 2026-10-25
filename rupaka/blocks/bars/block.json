@@ -1,0 +1,16 @@
+{
+  "name": "bars",
+  "since": "0.0.1",
+  "purpose": "Horizontal bars for a derived list of {id, value, parts} (from rrf or softmax) or of numbers. Rows slide to their new place.",
+  "binds": "derived list",
+  "keys": "none",
+  "props": {
+    "bind": {"type": "key", "req": true, "doc": "the state key of the list"},
+    "label": {"type": "str"},
+    "items": {"type": "dict", "doc": "a name to show for each id"},
+    "parts": {"type": "list", "doc": "names of the two stacked parts, for a key under the bars"},
+    "max": {"type": "num", "doc": "a fixed top of the scale, for example 1 for shares"},
+    "digits": {"type": "int", "default": 4},
+    "gutter": {"type": "num", "default": 48, "doc": "the width for the row names"}
+  }
+}

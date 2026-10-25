@@ -1,0 +1,14 @@
+.rk-gate { padding: 14px 0; border-top: 1px solid var(--rk-line); border-bottom: 1px solid var(--rk-line); }
+.rk-gate .q { margin: 0 0 10px; }
+.rk-gate .opts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.rk-gate .opts button[aria-checked=true] { border-color: var(--rk-acc); box-shadow: inset 0 -2px 0 var(--rk-acc); }
+.rk-gate .opts button:disabled { opacity: 1; color: var(--rk-ink2); }
+.rk-gate .opts button:disabled[aria-checked=true] { color: var(--rk-fg); }
+.rk-gate textarea { box-sizing: border-box; width: 100%; font: 16px/1.5 var(--rk-serif); color: var(--rk-fg); background: transparent; border: 0;
+                    border-bottom: 1px solid color-mix(in srgb, var(--rk-fg) 22%, transparent); padding: 4px 2px; resize: vertical; margin-bottom: 12px; }
+.rk-gate textarea:focus { outline: none; border-bottom-color: var(--rk-fg); }
+.rk-gate textarea::placeholder { color: var(--rk-mute); font-style: italic; opacity: 1; }
+.rk-gate .verdict { margin: 0 0 10px; font-size: 18px; }
+.rk-gate .verdict .ok { color: var(--rk-ok); } .rk-gate .verdict .no { color: var(--rk-no); }
+.rk-gate .verdict .stale { color: var(--rk-mute); font-size: 15px; font-style: italic; }
+.rk-gate .acts { display: flex; gap: 10px; align-items: center; }

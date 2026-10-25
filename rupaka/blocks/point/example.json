@@ -1,0 +1,11 @@
+{
+  "rupaka": 1, "id": "point-example", "title": "Point",
+  "ask": "Predict the square of x. Then drag the point and watch the square.",
+  "state": {"x": 1.5},
+  "derive": [{"fn": "expr", "expr": "x^2", "out": "y"}],
+  "blocks": [
+    {"type": "axis", "x": [-3, 3], "xstep": 1, "blocks": [{"type": "point", "bind": "x", "step": 0.5, "label": "x", "lock": "sq"}]},
+    {"type": "gate", "id": "sq", "prompt": "What is x²?", "options": [2.25, 3, 1.5], "answer": "y", "context": "For x = {x}:"},
+    {"type": "readout", "after": "sq", "text": "{x}² = {y}"}
+  ]
+}

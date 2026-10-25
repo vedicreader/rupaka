@@ -1,0 +1,39 @@
+{
+  "rupaka": 1,
+  "id": "vowel-sandhi",
+  "concept": "vowel-sandhi",
+  "title": "Vowel sandhi",
+  "ask": "A word ends in one vowel. The next word starts with another vowel. The two vowels join. Pick two vowels and predict the join.",
+  "state": {"a": "a", "b": "i"},
+  "derive": [{"fn": "rules", "table": "sandhi", "in": ["a", "b"], "out": "join", "alts": 4}],
+  "blocks": [
+    {"type": "row", "blocks": [
+      {"type": "wheel", "bind": "a", "label": "End of word 1", "items": ["a", "ā", "i", "ī", "u", "ū", "ṛ", "e", "ai", "o", "au"]},
+      {"type": "wheel", "bind": "b", "label": "Start of word 2", "items": ["a", "ā", "i", "ī", "u", "ū", "ṛ", "e", "ai", "o", "au"]}
+    ]},
+    {"type": "gate", "id": "join", "prompt": "What do the two vowels become?", "options": {"from": "join.alts"}, "answer": "join.out",
+     "context": "For {a} + {b}:", "why": "Say why, in one line, before you lock in.", "again": true},
+    {"type": "readout", "after": "join", "label": "The join", "text": "{a} + {b} → {join.out}"},
+    {"type": "caption", "after": "join", "text": "**{join.name}** (Aṣṭādhyāyī {join.sutra}). {join.why} Now turn a wheel. Find a pair where this rule stops and another rule starts."}
+  ],
+  "tables": {"sandhi": [
+    {"when": {"a": ["a", "ā"], "b": ["a", "ā"]}, "out": "ā", "name": "savarṇa dīrgha", "sutra": "6.1.101", "why": "Two vowels of the same kind become one long vowel."},
+    {"when": {"a": ["i", "ī"], "b": ["i", "ī"]}, "out": "ī", "name": "savarṇa dīrgha", "sutra": "6.1.101", "why": "Two vowels of the same kind become one long vowel."},
+    {"when": {"a": ["u", "ū"], "b": ["u", "ū"]}, "out": "ū", "name": "savarṇa dīrgha", "sutra": "6.1.101", "why": "Two vowels of the same kind become one long vowel."},
+    {"when": {"a": ["ṛ"], "b": ["ṛ"]}, "out": "ṝ", "name": "savarṇa dīrgha", "sutra": "6.1.101", "why": "Two vowels of the same kind become one long vowel."},
+    {"when": {"a": ["a", "ā"], "b": ["i", "ī"]}, "out": "e", "name": "guṇa", "sutra": "6.1.87", "why": "a or ā before i or ī gives the guṇa vowel e."},
+    {"when": {"a": ["a", "ā"], "b": ["u", "ū"]}, "out": "o", "name": "guṇa", "sutra": "6.1.87", "why": "a or ā before u or ū gives the guṇa vowel o."},
+    {"when": {"a": ["a", "ā"], "b": ["ṛ"]}, "out": "ar", "name": "guṇa", "sutra": "6.1.87", "why": "a or ā before ṛ gives ar."},
+    {"when": {"a": ["a", "ā"], "b": ["e", "ai"]}, "out": "ai", "name": "vṛddhi", "sutra": "6.1.88", "why": "a or ā before e or ai gives the vṛddhi vowel ai."},
+    {"when": {"a": ["a", "ā"], "b": ["o", "au"]}, "out": "au", "name": "vṛddhi", "sutra": "6.1.88", "why": "a or ā before o or au gives the vṛddhi vowel au."},
+    {"when": {"a": ["i", "ī"], "b": ["a", "ā", "u", "ū", "ṛ", "e", "ai", "o", "au"]}, "out": "y{b}", "name": "yaṇ", "sutra": "6.1.77", "why": "i or ī before an unlike vowel becomes y."},
+    {"when": {"a": ["u", "ū"], "b": ["a", "ā", "i", "ī", "ṛ", "e", "ai", "o", "au"]}, "out": "v{b}", "name": "yaṇ", "sutra": "6.1.77", "why": "u or ū before an unlike vowel becomes v."},
+    {"when": {"a": ["ṛ"], "b": ["a", "ā", "i", "ī", "u", "ū", "e", "ai", "o", "au"]}, "out": "r{b}", "name": "yaṇ", "sutra": "6.1.77", "why": "ṛ before an unlike vowel becomes r."},
+    {"when": {"a": ["e"], "b": ["a"]}, "out": "e’", "name": "pūrvarūpa", "sutra": "6.1.109", "why": "A short a after a final e merges into it. The mark ’ (avagraha) shows the lost a."},
+    {"when": {"a": ["o"], "b": ["a"]}, "out": "o’", "name": "pūrvarūpa", "sutra": "6.1.109", "why": "A short a after a final o merges into it. The mark ’ (avagraha) shows the lost a."},
+    {"when": {"a": ["e"], "b": ["ā", "i", "ī", "u", "ū", "ṛ", "e", "ai", "o", "au"]}, "out": "ay{b}", "name": "ayādi", "sutra": "6.1.78", "why": "e before a vowel becomes ay. At a word end the y often drops (8.3.19)."},
+    {"when": {"a": ["ai"], "b": ["a", "ā", "i", "ī", "u", "ū", "ṛ", "e", "ai", "o", "au"]}, "out": "āy{b}", "name": "ayādi", "sutra": "6.1.78", "why": "ai before a vowel becomes āy. At a word end the y often drops (8.3.19)."},
+    {"when": {"a": ["o"], "b": ["ā", "i", "ī", "u", "ū", "ṛ", "e", "ai", "o", "au"]}, "out": "av{b}", "name": "ayādi", "sutra": "6.1.78", "why": "o before a vowel becomes av. At a word end the v often drops (8.3.19)."},
+    {"when": {"a": ["au"], "b": ["a", "ā", "i", "ī", "u", "ū", "ṛ", "e", "ai", "o", "au"]}, "out": "āv{b}", "name": "ayādi", "sutra": "6.1.78", "why": "au before a vowel becomes āv."}
+  ]}
+}

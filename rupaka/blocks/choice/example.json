@@ -1,0 +1,11 @@
+{
+  "rupaka": 1, "id": "choice-example", "title": "Choice",
+  "state": {"shape": "square"},
+  "derive": [{"fn": "lookup", "table": "sides", "key": "shape", "out": "n"}],
+  "blocks": [
+    {"type": "choice", "bind": "shape", "label": "Shape", "options": ["triangle", "square", "hexagon"]},
+    {"type": "gate", "id": "n", "prompt": "How many sides has a {shape}?", "options": [3, 4, 6], "answer": "n.sides", "context": "For a {shape}:", "again": true},
+    {"type": "readout", "after": "n", "text": "A {shape} has {n.sides} sides."}
+  ],
+  "tables": {"sides": [{"id": "triangle", "sides": 3}, {"id": "square", "sides": 4}, {"id": "hexagon", "sides": 6}]}
+}

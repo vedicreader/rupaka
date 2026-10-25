@@ -1,0 +1,13 @@
+{
+  "name": "softmax", "since": "0.0.1",
+  "purpose": "Shares from scores: exp(x / t) over the sum, with a temperature t.",
+  "returns": "a list of {id, value}; the ids are the labels",
+  "props": {
+    "in": {"type": "path", "req": true, "doc": "the path of a list of numbers, or of a grid (then row picks the row)"},
+    "t": {"type": "numkey", "default": 1, "doc": "the temperature: a number, or the key of a number"},
+    "labels": {"type": "list", "doc": "a label for each score"},
+    "row": {"type": "int", "default": 0},
+    "sort": {"type": "bool", "default": false, "doc": "sort the shares, largest first"}
+  },
+  "example": {"fn": "softmax", "in": "logits", "t": "t", "labels": ["cat", "dog"], "sort": true, "out": "p"}
+}

@@ -1,0 +1,10 @@
+{
+  "rupaka": 1, "id": "gate-example", "title": "Gate",
+  "ask": "Two plus three. Predict the sum before you see it.",
+  "state": {"a": 2, "b": 3},
+  "derive": [{"fn": "expr", "expr": "a + b", "out": "sum"}],
+  "blocks": [
+    {"type": "gate", "id": "sum", "prompt": "What is {a} + {b}?", "options": [4, 5, 6, 23], "answer": "sum", "why": "Say why, in one line."},
+    {"type": "readout", "after": "sum", "label": "The sum", "text": "{a} + {b} = {sum}"}
+  ]
+}

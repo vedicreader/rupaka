@@ -1,0 +1,8 @@
+.rk-grid svg { max-width: 100%; }
+.rk-grid .cell rect { stroke: var(--rk-bg); stroke-width: 1; cursor: pointer; }
+.rk-grid .cell text { font-size: 15px; font-variant-numeric: tabular-nums; fill: var(--rk-fg); pointer-events: none; }
+.rk-grid text.hd { font-size: 13px; fill: var(--rk-mute); }
+.rk-grid .cur { fill: none; stroke: transparent; stroke-width: 2; pointer-events: none; }
+.rk-grid svg:focus-visible .cur, .rk-grid svg:focus .cur { stroke: var(--rk-fg); }
+.rk-grid svg:focus-visible { outline: none; }
+.rk-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

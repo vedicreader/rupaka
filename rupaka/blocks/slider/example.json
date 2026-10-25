@@ -1,0 +1,10 @@
+{
+  "rupaka": 1, "id": "slider-example", "title": "Slider",
+  "state": {"n": 3},
+  "derive": [{"fn": "expr", "expr": "n * n", "out": "sq"}],
+  "blocks": [
+    {"type": "gate", "id": "sq", "prompt": "What is {n} times {n}?", "options": [6, 9, 33], "answer": "sq", "context": "For n = {n}:"},
+    {"type": "slider", "bind": "n", "label": "n", "min": 0, "max": 10, "lock": "sq"},
+    {"type": "readout", "after": "sq", "text": "{n} × {n} = {sq}"}
+  ]
+}

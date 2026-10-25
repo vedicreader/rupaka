@@ -1,0 +1,11 @@
+{
+  "rupaka": 1, "id": "plot-example", "title": "Plot",
+  "ask": "The line is y = m·x. Predict what a larger m does.",
+  "state": {"m": 1},
+  "derive": [{"fn": "expr", "expr": "m * x", "over": {"x": [-4, 4, 9]}, "out": "line"}],
+  "blocks": [
+    {"type": "gate", "id": "m", "prompt": "If m grows, what does the line do?", "options": ["It gets steeper", "It gets flatter", "It moves up"], "answer": {"is": "It gets steeper"}},
+    {"type": "slider", "bind": "m", "label": "m", "min": -3, "max": 3, "step": 0.5, "lock": "m"},
+    {"type": "axis", "x": [-4, 4], "y": [-8, 8], "height": 260, "blocks": [{"type": "plot", "series": "line", "label": "y = m·x"}]}
+  ]
+}

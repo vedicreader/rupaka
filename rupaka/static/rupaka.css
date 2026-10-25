@@ -1,0 +1,35 @@
+/* rupaka core style. Blocks use only the --rk-* vars. Each var maps to the host's vars in this order:
+   abhyasa (--fg, --acc, ...), vedicreader (--mh-*), leela (--lee-*), then system colours. So a demo takes the look of its page. */
+.rk {
+  --rk-bg: var(--bg, var(--mh-paper, var(--lee-bg, Canvas)));
+  --rk-fg: var(--fg, var(--mh-ink, var(--lee-fg, CanvasText)));
+  --rk-ink2: var(--ink2, var(--mh-ink, var(--lee-fg2, var(--rk-fg))));
+  --rk-mute: var(--mute, var(--mh-ink-2, var(--lee-fg2, GrayText)));
+  --rk-line: var(--line, var(--mh-rule, var(--lee-border, color-mix(in srgb, CanvasText 20%, Canvas))));
+  --rk-acc: var(--acc, var(--mh-accent, var(--lee-accent, LinkText)));
+  --rk-ok: var(--ok, var(--lee-green, color-mix(in srgb, green 70%, CanvasText)));
+  --rk-no: var(--no, var(--lee-red, color-mix(in srgb, firebrick 80%, CanvasText)));
+  --rk-serif: var(--serif, var(--mh-serif, ui-serif, Georgia, serif));
+  --rk-head: var(--head, var(--mh-serif, var(--rk-serif)));
+  --rk-mono: var(--mono, var(--lee-mono, ui-monospace, monospace));
+  color: var(--rk-fg); font-family: var(--rk-serif); font-size: 17px; line-height: 1.55; max-width: 640px;
+}
+.rk-title { font: 400 22px/1.3 var(--rk-head); margin: 0 0 2px; color: var(--rk-fg); }
+.rk-ask { color: var(--rk-ink2); margin: 0 0 16px; }
+.rk-b { margin: 14px 0; }
+.rk-lbl { display: block; font: 500 12px/1.4 var(--rk-serif); letter-spacing: .14em; text-transform: uppercase; color: var(--rk-mute); margin: 0 0 4px; }
+.rk-note { color: var(--rk-mute); font-size: 15px; font-style: italic; margin-top: 4px; }
+.rk-err { color: var(--rk-no); font-style: italic; }
+.rk svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; }
+.rk svg:focus { outline: none; }
+.rk svg:focus-visible, .rk [tabindex]:focus-visible { outline: 2px solid var(--rk-acc); outline-offset: 3px; }
+.rk text { fill: var(--rk-fg); font-family: var(--rk-serif); }
+.rk kbd { font: 12px/1 var(--rk-mono); color: var(--rk-mute); margin-left: 6px; letter-spacing: .04em; }
+.rk button { font: 15px/1 var(--rk-serif); padding: 9px 14px; border-radius: 4px; border: 1px solid color-mix(in srgb, var(--rk-fg) 22%, transparent);
+             background: transparent; color: var(--rk-fg); cursor: pointer; }
+.rk button:hover { background: color-mix(in srgb, var(--rk-fg) 6%, transparent); }
+.rk button.go { background: var(--rk-acc); color: var(--rk-bg); border-color: var(--rk-acc); }
+.rk button.go kbd { color: var(--rk-bg); }
+.rk button:disabled { opacity: .5; cursor: default; }
+.rk button:focus-visible { outline: 2px solid var(--rk-acc); outline-offset: 2px; }
+.rk [hidden] { display: none !important; }

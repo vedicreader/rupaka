@@ -1,0 +1,11 @@
+{
+  "rupaka": 1, "id": "stack-example", "title": "Stack",
+  "state": {"n": 7},
+  "derive": [{"fn": "expr", "expr": "n - 2 * floor(n / 2)", "out": "odd"}],
+  "blocks": [
+    {"type": "gate", "id": "odd", "prompt": "Is {n} odd? Pick 1 for yes, 0 for no.", "options": [0, 1], "answer": "odd"},
+    {"type": "stack", "after": "odd", "blocks": [
+      {"type": "readout", "label": "Remainder after division by 2", "text": "{odd}"},
+      {"type": "caption", "text": "An odd number leaves **1**. What does 8 leave?"}]}
+  ]
+}

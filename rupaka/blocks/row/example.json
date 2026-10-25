@@ -1,0 +1,12 @@
+{
+  "rupaka": 1, "id": "row-example", "title": "Row",
+  "state": {"a": 2, "b": 5},
+  "derive": [{"fn": "expr", "expr": "max(a, b)", "out": "big"}],
+  "blocks": [
+    {"type": "row", "blocks": [
+      {"type": "readout", "label": "a", "text": "{a}"},
+      {"type": "readout", "label": "b", "text": "{b}"}]},
+    {"type": "gate", "id": "big", "prompt": "Which is larger?", "options": [2, 5], "answer": "big"},
+    {"type": "caption", "after": "big", "text": "The larger one is **{big}**."}
+  ]
+}

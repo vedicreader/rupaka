@@ -1,0 +1,10 @@
+{
+  "name": "stack",
+  "since": "0.0.1",
+  "purpose": "Put child blocks one above the other as one group, so one \"after\" hides them all.",
+  "binds": "none",
+  "keys": "none",
+  "props": {
+    "blocks": {"type": "blocks", "req": true, "doc": "the child blocks"}
+  }
+}

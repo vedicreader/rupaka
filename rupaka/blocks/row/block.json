@@ -1,0 +1,10 @@
+{
+  "name": "row",
+  "since": "0.0.1",
+  "purpose": "Put child blocks side by side, for example two wheels or two lists.",
+  "binds": "none",
+  "keys": "none",
+  "props": {
+    "blocks": {"type": "blocks", "req": true, "doc": "the child blocks, two or three"}
+  }
+}

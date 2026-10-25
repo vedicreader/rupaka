@@ -1,0 +1,23 @@
+{
+  "name": "grid",
+  "since": "0.0.1",
+  "purpose": "A heatmap of a list of numbers or a list of rows (logits, weights). The learner can raise or lower a cell.",
+  "binds": "list of numbers or list of rows",
+  "keys": "arrows or WASD move, + or E raise, − or Q lower, ⇧ for ten steps",
+  "lockable": true,
+  "props": {
+    "bind": {"type": "key", "req": true, "doc": "the state key of the numbers"},
+    "rows": {"type": "list", "doc": "row names"},
+    "cols": {"type": "list", "doc": "column names"},
+    "step": {"type": "num", "default": 1},
+    "min": {"type": "num"},
+    "max": {"type": "num"},
+    "lo": {"type": "num", "doc": "the value at the pale end of the ramp; the smallest value if left out"},
+    "hi": {"type": "num", "doc": "the value at the dark end of the ramp; the largest value if left out"},
+    "digits": {"type": "int", "default": 2},
+    "cell": {"type": "num", "default": 64, "doc": "the cell width"},
+    "gutter": {"type": "num", "default": 70, "doc": "the width for the row names"},
+    "note": {"type": "str"},
+    "label": {"type": "str"}
+  }
+}

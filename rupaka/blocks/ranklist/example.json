@@ -1,0 +1,9 @@
+{
+  "rupaka": 1, "id": "ranklist-example", "title": "Rank list",
+  "state": {"order": ["A", "C", "E", "B"]},
+  "blocks": [
+    {"type": "ranklist", "bind": "order", "label": "Results", "lock": "second"},
+    {"type": "gate", "id": "second", "prompt": "You move B to the top. Which result is second then?", "options": ["A", "C", "E"], "answer": {"is": "A"}},
+    {"type": "caption", "after": "second", "text": "Now drag B to the top. Second now: **{order.1}**."}
+  ]
+}

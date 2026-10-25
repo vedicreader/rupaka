@@ -1,0 +1,9 @@
+{
+  "rupaka": 1, "id": "caption-example", "title": "Caption",
+  "state": {"n": 4},
+  "derive": [{"fn": "expr", "expr": "n * 2", "out": "twice"}],
+  "blocks": [
+    {"type": "gate", "id": "twice", "prompt": "What is twice {n}?", "options": [6, 8, 16], "answer": "twice"},
+    {"type": "caption", "after": "twice", "text": "Twice {n} is **{twice}**. What is twice that?"}
+  ]
+}

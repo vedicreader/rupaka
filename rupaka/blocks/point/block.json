@@ -1,0 +1,19 @@
+{
+  "name": "point",
+  "since": "0.0.1",
+  "purpose": "A dot on its axis. On a state input the learner drags it; on a derived value it only shows where the value is.",
+  "binds": "number (number line) or two numbers x and y",
+  "keys": "arrows or WASD one step, ⇧ for ten steps",
+  "lockable": true,
+  "parent": "axis",
+  "props": {
+    "bind": {"type": "key", "doc": "number line: the state key of x"},
+    "x": {"type": "key", "doc": "the key of x"},
+    "y": {"type": "key", "doc": "the key of y, on x/y axes"},
+    "step": {"type": "num", "default": 1},
+    "drag": {"type": "bool", "doc": "false makes an input point still; a point on a derived value never drags"},
+    "show": {"type": "bool", "default": true, "doc": "show the value beside the label"},
+    "label": {"type": "str"}
+  },
+  "one_of": [["bind", "x"]]
+}

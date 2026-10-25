@@ -1,0 +1,14 @@
+{
+  "name": "toggle",
+  "since": "0.0.1",
+  "purpose": "Turn one thing on or off, for example extra marks on a figure.",
+  "binds": "bool",
+  "keys": "Space or ↩",
+  "lockable": true,
+  "props": {
+    "bind": {"type": "key", "req": true, "doc": "the state key of a true or false value"},
+    "label": {"type": "str"},
+    "on": {"type": "str", "default": "On", "doc": "the text when on"},
+    "off": {"type": "str", "default": "Off", "doc": "the text when off"}
+  }
+}

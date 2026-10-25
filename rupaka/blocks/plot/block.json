@@ -1,0 +1,13 @@
+{
+  "name": "plot",
+  "since": "0.0.1",
+  "purpose": "A line or dots through a derived series of {x, y} (from expr with over), drawn on its axis.",
+  "binds": "derived series",
+  "keys": "none",
+  "parent": "axis",
+  "props": {
+    "series": {"type": "key", "req": true, "doc": "the state key of a list of {x, y}"},
+    "dots": {"type": "bool", "default": false, "doc": "dots in place of a line"},
+    "label": {"type": "str", "doc": "what the curve is, for a screen reader"}
+  }
+}

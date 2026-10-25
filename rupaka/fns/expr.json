@@ -1,0 +1,10 @@
+{
+  "name": "expr", "since": "0.0.1",
+  "purpose": "A formula over number state keys: + - * / ^, parentheses, sin cos tan exp log sqrt abs min max floor ceil round, pi, e. With over, a series of {x, y} for a plot.",
+  "returns": "a number, or a list of {x, y} with over",
+  "props": {
+    "expr": {"type": "expr", "req": true, "doc": "the formula, for example \"a*x^2 + b*x\""},
+    "over": {"type": "over", "doc": "{\"x\": [min, max, n]}: the name to vary, its range and the number of points"}
+  },
+  "example": {"fn": "expr", "expr": "a*x^2 + b*x", "over": {"x": [-5, 5, 101]}, "out": "curve"}
+}

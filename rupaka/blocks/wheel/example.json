@@ -1,0 +1,15 @@
+{
+  "rupaka": 1, "id": "wheel-example", "title": "Wheel",
+  "ask": "Turn the wheel to a weekday. Predict the day that comes two days later.",
+  "state": {"day": "Mon"},
+  "derive": [{"fn": "rules", "table": "next", "in": ["day"], "out": "later", "alts": 3}],
+  "blocks": [
+    {"type": "wheel", "bind": "day", "label": "Today", "items": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]},
+    {"type": "gate", "id": "later", "prompt": "Which day comes two days after {day}?", "options": {"from": "later.alts"}, "answer": "later.out", "context": "For {day}:", "again": true},
+    {"type": "readout", "after": "later", "text": "{day} + 2 → {later.out}"}
+  ],
+  "tables": {"next": [
+    {"when": {"day": ["Mon"]}, "out": "Wed"}, {"when": {"day": ["Tue"]}, "out": "Thu"}, {"when": {"day": ["Wed"]}, "out": "Fri"},
+    {"when": {"day": ["Thu"]}, "out": "Sat"}, {"when": {"day": ["Fri"]}, "out": "Sun"}, {"when": {"day": ["Sat"]}, "out": "Mon"},
+    {"when": {"day": ["Sun"]}, "out": "Tue"}]}
+}

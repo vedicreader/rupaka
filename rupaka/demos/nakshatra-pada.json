@@ -1,0 +1,41 @@
+{
+  "rupaka": 1,
+  "id": "nakshatra-pada",
+  "concept": "nakshatra",
+  "title": "Nakṣatra and pāda",
+  "ask": "The ecliptic has 27 nakṣatras of 13°20′ each, from 0° Aśvinī. Each nakṣatra has four pādas of 3°20′. A point stands at a longitude.",
+  "state": {"lon": 47, "show_pada": false},
+  "derive": [
+    {"fn": "expr", "expr": "floor(lon * 3 / 40)", "out": "idx"},
+    {"fn": "expr", "expr": "floor(lon * 3 / 10) - idx * 4 + 1", "out": "pada"},
+    {"fn": "lookup", "table": "stars", "key": "idx", "out": "star"},
+    {"fn": "expr", "expr": "floor(lon / 30)", "out": "ri"},
+    {"fn": "lookup", "table": "rasis", "key": "ri", "out": "rasi"},
+    {"fn": "fmt", "text": "{star.name}, pāda {pada}", "out": "where"}
+  ],
+  "blocks": [
+    {"type": "wheel", "angle": "lon", "label": "The ecliptic, 0° at the top", "lock": "where", "step": 1, "marks": 4, "marks_on": "show_pada",
+     "items": ["Aśvinī", "Bharaṇī", "Kṛttikā", "Rohiṇī", "Mṛgaśīrṣa", "Ārdrā", "Punarvasu", "Puṣya", "Āśleṣā", "Maghā", "Pūrvaphalgunī", "Uttaraphalgunī", "Hasta", "Citrā", "Svāti", "Viśākhā", "Anurādhā", "Jyeṣṭhā", "Mūla", "Pūrvāṣāḍhā", "Uttarāṣāḍhā", "Śravaṇa", "Dhaniṣṭhā", "Śatabhiṣā", "Pūrvabhādrapadā", "Uttarabhādrapadā", "Revatī"],
+     "outer": ["Meṣa", "Vṛṣabha", "Mithuna", "Karka", "Siṁha", "Kanyā", "Tulā", "Vṛścika", "Dhanus", "Makara", "Kumbha", "Mīna"]},
+    {"type": "toggle", "bind": "show_pada", "label": "Pāda marks", "on": "Shown", "off": "Hidden"},
+    {"type": "gate", "id": "where", "prompt": "The point is at {lon}°. Which nakṣatra and which pāda hold it?",
+     "options": ["Kṛttikā, pāda 4", "Rohiṇī, pāda 2", "Rohiṇī, pāda 3", "Mṛgaśīrṣa, pāda 1"], "answer": "where", "context": "At {lon}°:",
+     "why": "Say how you counted, in one line."},
+    {"type": "readout", "after": "where", "label": "The point", "text": "{lon}° → {where}, in {rasi.name}"},
+    {"type": "caption", "after": "where", "text": "Each rāśi of 30° holds nine pādas. The lord of **{star.name}** is {star.lord}. Turn the wheel to 30°. Which pāda starts Vṛṣabha?"}
+  ],
+  "tables": {
+    "stars": [
+      {"name": "Aśvinī", "lord": "Ketu"}, {"name": "Bharaṇī", "lord": "Venus"}, {"name": "Kṛttikā", "lord": "Sun"}, {"name": "Rohiṇī", "lord": "Moon"},
+      {"name": "Mṛgaśīrṣa", "lord": "Mars"}, {"name": "Ārdrā", "lord": "Rahu"}, {"name": "Punarvasu", "lord": "Jupiter"}, {"name": "Puṣya", "lord": "Saturn"},
+      {"name": "Āśleṣā", "lord": "Mercury"}, {"name": "Maghā", "lord": "Ketu"}, {"name": "Pūrvaphalgunī", "lord": "Venus"}, {"name": "Uttaraphalgunī", "lord": "Sun"},
+      {"name": "Hasta", "lord": "Moon"}, {"name": "Citrā", "lord": "Mars"}, {"name": "Svāti", "lord": "Rahu"}, {"name": "Viśākhā", "lord": "Jupiter"},
+      {"name": "Anurādhā", "lord": "Saturn"}, {"name": "Jyeṣṭhā", "lord": "Mercury"}, {"name": "Mūla", "lord": "Ketu"}, {"name": "Pūrvāṣāḍhā", "lord": "Venus"},
+      {"name": "Uttarāṣāḍhā", "lord": "Sun"}, {"name": "Śravaṇa", "lord": "Moon"}, {"name": "Dhaniṣṭhā", "lord": "Mars"}, {"name": "Śatabhiṣā", "lord": "Rahu"},
+      {"name": "Pūrvabhādrapadā", "lord": "Jupiter"}, {"name": "Uttarabhādrapadā", "lord": "Saturn"}, {"name": "Revatī", "lord": "Mercury"}],
+    "rasis": [
+      {"name": "Meṣa", "en": "Aries"}, {"name": "Vṛṣabha", "en": "Taurus"}, {"name": "Mithuna", "en": "Gemini"}, {"name": "Karka", "en": "Cancer"},
+      {"name": "Siṁha", "en": "Leo"}, {"name": "Kanyā", "en": "Virgo"}, {"name": "Tulā", "en": "Libra"}, {"name": "Vṛścika", "en": "Scorpio"},
+      {"name": "Dhanus", "en": "Sagittarius"}, {"name": "Makara", "en": "Capricorn"}, {"name": "Kumbha", "en": "Aquarius"}, {"name": "Mīna", "en": "Pisces"}]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "choice",
+  "since": "0.0.1",
+  "purpose": "Pick one of a few cases, for example which input to try.",
+  "binds": "string",
+  "keys": "←/→ or A/D move, 1-9 pick",
+  "lockable": true,
+  "props": {
+    "bind": {"type": "key", "req": true, "doc": "the state key of the picked option"},
+    "options": {"type": "list", "req": true, "doc": "the options, two to nine"},
+    "label": {"type": "str"}
+  }
+}

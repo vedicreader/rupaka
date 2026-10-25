@@ -1,0 +1,18 @@
+{
+  "name": "axis",
+  "since": "0.0.1",
+  "purpose": "A number line (give only x) or x/y axes with ticks. Put point and plot blocks inside it; they share its scale.",
+  "binds": "none",
+  "keys": "none",
+  "props": {
+    "x": {"type": "range", "req": true, "doc": "[min, max] of x"},
+    "y": {"type": "range", "doc": "[min, max] of y; leave it out for a number line"},
+    "xstep": {"type": "num", "doc": "the tick step on x"},
+    "ystep": {"type": "num", "doc": "the tick step on y"},
+    "xlabel": {"type": "str"},
+    "ylabel": {"type": "str"},
+    "height": {"type": "num", "default": 360},
+    "label": {"type": "str"},
+    "blocks": {"type": "blocks", "req": true, "doc": "point and plot blocks only", "only": ["point", "plot"]}
+  }
+}
