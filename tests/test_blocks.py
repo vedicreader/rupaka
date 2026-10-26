@@ -124,6 +124,7 @@ def test_ranklist_refuses_while_locked_then_drags(draw):
     log = d.pg.evaluate('() => rkLog.slice(0, 6).concat(rkLog.slice(-3))')
     box = d.pg.evaluate("() => JSON.stringify(document.querySelector('.rk-ranklist svg').getBoundingClientRect())")
     assert d.st('order') == list('BACE'), f'events {log}; svg box {box}'
+    assert not any(e[0] == 'pointercancel' for e in log), log   # the browser must not take the pointer away
     d.pg.locator('g.row[data-id="B"]').focus(); d.pg.keyboard.press('s')
     assert d.st('order') == list('ABCE')
 

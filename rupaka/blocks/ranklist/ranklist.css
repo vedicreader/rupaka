@@ -8,3 +8,6 @@
 .rk-ranklist .row:focus { outline: none; }
 .rk-ranklist .row { transition: transform .18s ease; } .rk-ranklist .row.drag { transition: none; }
 .rk-ranklist:not(.live) .grip { display: none; }
+
+/* a drag must own the pointer: no text selection, no pan */
+.rk-ranklist svg { touch-action: none; user-select: none; -webkit-user-select: none; }

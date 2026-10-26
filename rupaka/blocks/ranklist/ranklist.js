@@ -16,6 +16,7 @@ Rupaka.block('ranklist', (b, ctx) => {
   };
   let drag = null;
   svg.addEventListener('pointerdown', e => { const g = e.target.closest('.row'); if (!g || !live()) return;
+    e.preventDefault();   // no text selection or native drag of the row's text: either one cancels the pointer
     drag = {g, id: g.dataset.id}; svg.setPointerCapture(e.pointerId); g.classList.add('drag'); });
   svg.addEventListener('pointermove', e => { if (!drag) return; const p = svg.getBoundingClientRect(); move(drag.id, Math.floor((e.clientY - p.top) / p.width * W / H)); });
   svg.addEventListener('pointerup', () => { if (drag) drag.g.classList.remove('drag'); drag = null; });
