@@ -114,6 +114,7 @@ def test_ranklist_refuses_while_locked_then_drags(draw):
     drag_row(d, 0, 'B', -3)
     assert d.st('order') == list('ACEB')
     d.lock(1)
+    d.pg.locator('.rk-ranklist.live').first.wait_for()   # the list opens after the lock in; a slow machine needs the wait
     drag_row(d, 0, 'B', -3)
     assert d.st('order') == list('BACE')
     d.pg.locator('g.row[data-id="B"]').focus(); d.pg.keyboard.press('s')

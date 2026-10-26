@@ -43,6 +43,9 @@ Build a spec with the builders, or write the JSON.
 
 ``` python
 from rupaka.spec import *
+```
+
+``` python
 d = demo('sum', 'A sum', ask='Predict the sum before you see it.', state=dict(a=2, b=3), derive=[expr('a + b', 'sum')],
          blocks=[gate('s', 'What is {a} + {b}?', [4, 5, 6], 'sum', why='Say why, in one line.'),
                  readout('{a} + {b} = {sum}', after='s')])
