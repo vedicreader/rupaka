@@ -1,0 +1,42 @@
+[
+ {
+  "i": 1,
+  "name": "Dial",
+  "idea": "A single hand turns a quiet wheel, making prediction and adjustment the defining gesture."
+ },
+ {
+  "i": 2,
+  "name": "Taking Form",
+  "idea": "Three equal-weight lines close into a figure, expressing an idea becoming a concrete model."
+ },
+ {
+  "i": 3,
+  "name": "Reveal",
+  "idea": "One solid half-disc suggests the visible half of an idea whose hidden structure is waiting to be revealed."
+ },
+ {
+  "i": 4,
+  "name": "Reflection",
+  "idea": "Two mirrored arcs frame the same empty space, suggesting one form understood through another."
+ },
+ {
+  "i": 5,
+  "name": "Lens",
+  "idea": "Two opposing arcs become one solid lens, a minimal metaphor for seeing an idea through a model."
+ },
+ {
+  "i": 6,
+  "name": "Hinge",
+  "idea": "Two joined lines describe a movable angle, reducing interactive learning to one clear change in geometry."
+ },
+ {
+  "i": 7,
+  "name": "Becoming",
+  "idea": "An unfinished circular sweep captures a line on its way to becoming a complete form."
+ },
+ {
+  "i": 8,
+  "name": "Control",
+  "idea": "A single circular control interrupts a straight track, making hands-on exploration the entire symbol."
+ }
+]
