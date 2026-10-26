@@ -105,7 +105,9 @@ def test_wheel_angle_mode_hides_the_sector_while_locked(draw):
 # ranklist
 
 def drag_row(d, list_i, id, rows):
-    row = d.pg.locator('.rk-ranklist').nth(list_i).locator(f'g.row[data-id="{id}"]'); bx = row.bounding_box()
+    row = d.pg.locator('.rk-ranklist').nth(list_i).locator(f'g.row[data-id="{id}"]')
+    row.scroll_into_view_if_needed(); d.pg.wait_for_timeout(50)   # the reveal can move the list; measure it where it is now
+    bx = row.bounding_box()
     d.pg.mouse.move(bx['x'] + 20, bx['y'] + bx['height'] / 2); d.pg.mouse.down()
     d.pg.mouse.move(bx['x'] + 20, bx['y'] + bx['height'] / 2 + rows * bx['height'], steps=8); d.pg.mouse.up()
 
