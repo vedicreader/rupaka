@@ -117,8 +117,13 @@ def test_ranklist_refuses_while_locked_then_drags(draw):
     assert d.st('order') == list('ACEB')
     d.lock(1)
     d.pg.locator('.rk-ranklist.live').first.wait_for()   # the list opens after the lock in; a slow machine needs the wait
+    d.pg.evaluate('''() => { window.rkLog = []; const svg = document.querySelector('.rk-ranklist svg');
+      for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'lostpointercapture'])
+        svg.addEventListener(t, e => rkLog.push([t, e.target.getAttribute('class') || e.target.tagName, Math.round(e.clientY), e.pointerType])); }''')
     drag_row(d, 0, 'B', -3)
-    assert d.st('order') == list('BACE')
+    log = d.pg.evaluate('() => rkLog.slice(0, 6).concat(rkLog.slice(-3))')
+    box = d.pg.evaluate("() => JSON.stringify(document.querySelector('.rk-ranklist svg').getBoundingClientRect())")
+    assert d.st('order') == list('BACE'), f'events {log}; svg box {box}'
     d.pg.locator('g.row[data-id="B"]').focus(); d.pg.keyboard.press('s')
     assert d.st('order') == list('ABCE')
 
