@@ -10,6 +10,7 @@
 - `Rupaka.mount(el, spec, {save})` calls `save(state)` after each change of an input key, with the value that `Rupaka.state(el)` gives. A mount with no options does the same as in 0.0.3.
 - `rupaka.poll` has `of_gate(spec, gate)` and `public(p)`: a choice question for a room from a demo gate, and the part of it that the room sees. They have the contract of `abhyasa.talk.ask_from_gate` and `public_ask`.
 - `of_gate` writes the values in the prompt and the options as the demo shows them in the browser, so 2.0 shows as 2 and the options are text.
+- The Python copies of the runtime, `js_str` and `show_value`, give the same text as the browser. Before, they differed for tiny and large floats, for ties such as 1.03125, and for a null in a list. `validate`, the `rules` seed and the `lookup` and `softmax` ids use them, so their result can change for those values only.
 
 ## 0.0.3
 
