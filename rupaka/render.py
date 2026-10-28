@@ -13,6 +13,7 @@ import base64, html, json, shutil
 from pathlib import Path
 from fastcore.utils import *
 from fastcore.xml import Div, Script, Link, Safe, to_xml
+from . import __version__
 from .spec import PKG, manifests
 
 # %% ../nbs/01_render.ipynb #c006
@@ -25,8 +26,8 @@ def assets() -> AttrDict:
                     css=[STATIC/'rupaka.css', *[d/f'{d.name}.css' for d in blocks]], page=STATIC/'page.css', fonts=STATIC/'fonts')
 
 def bundle(kind:str='js') -> str:
-    "The runtime as one script (`js`) or one style sheet (`css`)."
-    return '\n'.join(f'/* {p.relative_to(PKG)} */\n{p.read_text()}' for p in assets()[kind])
+    "The runtime as one script (`js`) or one style sheet (`css`), with this package's version in the script."
+    return '\n'.join(f'/* {p.relative_to(PKG)} */\n{p.read_text()}' for p in assets()[kind]).replace("version: '{{version}}'", f"version: '{__version__}'")
 
 # %% ../nbs/01_render.ipynb #c012
 def spec_json(spec) -> str:
