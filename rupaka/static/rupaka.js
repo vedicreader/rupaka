@@ -82,8 +82,8 @@
     return s;
   };
 
-  // The gate tells the page about each prediction; the event crosses a shadow root.
-  R.predict = (ctx, detail) => ctx.root.dispatchEvent(new CustomEvent('rk-predict', {bubbles: true, composed: true, detail: {demo: ctx.spec.id, ...detail}}));
+  // The gate tells the page about each prediction; the event crosses a shadow root. It gives false when a listener called preventDefault.
+  R.predict = (ctx, detail) => ctx.root.dispatchEvent(new CustomEvent('rk-predict', {bubbles: true, composed: true, cancelable: true, detail: {demo: ctx.spec.id, ...detail}}));
 
   R.boot = (scope = document) => scope.querySelectorAll('[data-rupaka]:not([data-rk-ready])').forEach(n => {
     const src = n.querySelector('script[type="application/json"]');

@@ -38,6 +38,51 @@ def test_gate_again_names_its_inputs(draw):
     d.pg.get_by_role('button', name='Try another').click()
     assert not d.pg.locator('.rk-readout').is_visible() and not d.pg.locator('.verdict').is_visible()
 
+# gate: a host that saves the prediction cancels rk-predict and calls detail.settle
+
+HOLD = "window.__ev = []; document.addEventListener('rk-predict', e => { __ev.push(e.detail); if (window.__hold) e.preventDefault(); })"
+
+def test_gate_no_listener_is_done_at_once(draw):
+    d = draw(EX['gate'])
+    d.pg.evaluate("window.__c = []; document.addEventListener('rk-predict', e => __c.push([e.cancelable, typeof e.detail.settle]))")
+    d.lock(2)
+    assert d.st('gate')['sum'] == 'done' and d.pg.locator('.verdict').is_visible() and d.pg.locator('.rk-readout').is_visible()
+    assert d.pg.evaluate('__c') == [[True, 'function']] and not d.pg.locator('.rk-gate .note').is_visible() and d.errors == []
+
+def test_gate_waits_then_settles_true(draw):
+    d = draw(EX['gate'])
+    d.pg.evaluate('window.__hold = true; ' + HOLD)
+    d.lock(2)
+    assert d.st('gate')['sum'] == 'pending' and d.pg.locator('button.go').is_disabled()
+    assert not d.pg.locator('.verdict').is_visible() and not d.pg.locator('.rk-readout').is_visible()
+    assert d.pg.locator('.rk-gate .note').inner_text() == 'Saving your prediction.'
+    d.pg.evaluate('__ev[0].settle(true)')
+    assert d.st('gate')['sum'] == 'done' and d.pg.locator('.verdict').inner_text().startswith('You said 5.')
+    assert d.pg.locator('.rk-readout').is_visible() and not d.pg.locator('.rk-gate .note').is_visible() and d.errors == []
+
+def test_gate_settle_false_lets_the_learner_lock_in_again(draw):
+    d = draw(EX['gate'])
+    d.pg.evaluate('window.__hold = true; ' + HOLD)
+    d.pg.locator('.rk-gate textarea').fill('Two and three make five.')
+    d.lock(2)
+    d.pg.evaluate("__ev[0].settle(false, '<b>The store is locked.</b>')")
+    note = d.pg.locator('.rk-gate .note')
+    assert note.inner_text() == '<b>The store is locked.</b>' and note.locator('b').count() == 0
+    assert d.st('gate')['sum'] == 'open' and d.pg.locator('button.go').is_enabled() and not d.pg.locator('.rk-readout').is_visible()
+    assert d.pg.locator('.opts button').nth(1).get_attribute('aria-checked') == 'true'
+    assert d.pg.locator('.rk-gate textarea').input_value() == 'Two and three make five.'
+    d.pg.evaluate('window.__hold = false'); d.pg.locator('button.go').click()
+    assert d.pg.evaluate('__ev.length') == 2 and d.pg.evaluate('__ev[1].why') == 'Two and three make five.'
+    assert d.st('gate')['sum'] == 'done' and d.pg.locator('.rk-readout').is_visible() and d.errors == []
+
+def test_gate_settle_twice_does_nothing(draw):
+    d = draw(EX['gate'])
+    d.pg.evaluate('window.__hold = true; ' + HOLD)
+    d.lock(2)
+    d.pg.evaluate("__ev[0].settle(true); __ev[0].settle(false, 'Too late.')")
+    assert d.st('gate')['sum'] == 'done' and d.pg.locator('button.go').is_hidden() and not d.pg.locator('.rk-gate .note').is_visible()
+    assert len(d.st('log')) == 1 and d.errors == []
+
 # readout, caption
 
 def test_caption_escapes_html(draw):
