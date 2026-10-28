@@ -27,8 +27,12 @@
   Object.assign(R, {el, sv, get, fmt, show, hide, block: (name, f) => { R.blocks[name] = f; }, fn: (name, f) => { R.fns[name] = f; }});
   R.label = (b, ...more) => b.label ? el('span', {class: 'rk-lbl', text: b.label}, ...more) : null;
 
-  function store(spec) {
-    const st = structuredClone(spec.state || {}), subs = [];
+  // The input keys are the keys of spec.state. `save(state)` runs after a change of one of them, with the value that Rupaka.state gives.
+  const inputs = spec => Object.keys(spec.state || {});
+  const snap = s => Object.fromEntries(inputs(s.spec).map(k => [k, structuredClone(s.st[k])]));
+
+  function store(spec, save) {
+    const st = structuredClone(spec.state || {}), subs = [], ins = new Set(inputs(spec));
     st.gate = {};
     const derive = () => (spec.derive || []).forEach(d => {
       const f = R.fns[d.fn];
@@ -38,7 +42,13 @@
     derive();
     const s = {st, spec, derive, get: p => get(st, p), on: f => { subs.push(f); },
                emit: k => subs.forEach(f => f(k)),
-               set(k, v) { st[k] = v; derive(); s.emit(k); }};
+               set(k, v) {
+                 const was = save && ins.has(k) ? JSON.stringify(st[k]) : null;
+                 st[k] = v; derive(); s.emit(k);
+                 if (was !== null && JSON.stringify(st[k]) !== was) {
+                   try { save(snap(s)); } catch (e) { console.error('rupaka: save', e); }
+                 }
+               }};
     return s;
   }
 
@@ -61,11 +71,13 @@
   }
 
   R.build = build;
-  R.mount = (host, spec) => {
+  const CTX = new WeakMap();   // store -> ctx, for Rupaka.settle
+  R.mount = (host, spec, opts) => {
+    const save = opts?.save;
     if (!spec || typeof spec !== 'object' || Array.isArray(spec)) throw new Error('the spec is not an object');
     const v = spec.rupaka ?? R.schema;
     if (!(v === R.schema || v === R.schema - 1)) throw new Error(`schema ${v} is not supported; this runtime draws ${R.schema - 1} and ${R.schema}`);
-    const s = store(spec), root = el('div', {class: 'rk', 'data-rk': spec.id || ''});
+    const s = store(spec, typeof save === 'function' ? save : null), root = el('div', {class: 'rk', 'data-rk': spec.id || ''});
     const ctx = {s, spec, root, live: g => !g || s.get(`gate.${g}`) === 'done'};
     ctx.build = b => build(b, ctx);
     ctx.put = (b, k, val) => { if (!ctx.live(b.lock)) return false; s.set(k, val); return true; };   // a locked control refuses
@@ -79,7 +91,29 @@
     s.emit('*');
     root.dataset.rkReady = host.dataset.rkReady = '1';
     host.rupaka = s;
+    CTX.set(s, ctx);
     return s;
+  };
+
+  // The host API. A host mirrors a demo into a second copy with state and set, and closes a gate there with settle.
+  // None of them fires a gate, sends rk-predict, adds to st.log or calls save.
+  const mounted = host => {
+    const s = host?.rupaka;
+    if (!s || !CTX.has(s)) throw new Error('no rupaka demo is mounted in this element');
+    return s;
+  };
+  R.state = host => snap(mounted(host));
+  R.set = (host, state) => {
+    const s = mounted(host), ks = inputs(s.spec).filter(k => state && Object.hasOwn(state, k));
+    if (!ks.length) return;
+    for (const k of ks) s.st[k] = structuredClone(state[k]);
+    s.derive(); s.emit('*');
+  };
+  R.settle = (host, gate, pick) => {
+    const s = mounted(host), g = (CTX.get(s).gates || []).find(g => g.id === gate);
+    if (!g) return false;
+    g.settle(pick); s.emit('*');
+    return true;
   };
 
   // The gate tells the page about each prediction; the event crosses a shadow root. It gives false when a listener called preventDefault.

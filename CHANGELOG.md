@@ -2,6 +2,14 @@
 
 <!-- do not remove -->
 
+## 0.0.4
+
+- `Rupaka.state(el)` gives a copy of the input keys (the keys of `spec.state`) of the demo in `el`, with their values.
+- `Rupaka.set(el, state)` sets the input keys that `state` has, runs `derive` one time and draws one time. It ignores other keys. It sends no `rk-predict` and adds nothing to `st.log`.
+- `Rupaka.settle(el, gate, pick)` closes a gate as if the learner picked `pick`, and draws the verdict and the blocks that wait for the gate. A null `pick` closes the gate with no verdict. An unknown gate does nothing. It sends no `rk-predict` and adds nothing to `st.log`. The `settle(saved, message)` of the `rk-predict` detail does not change.
+- `Rupaka.mount(el, spec, {save})` calls `save(state)` after each change of an input key, with the value that `Rupaka.state(el)` gives. A mount with no options does the same as in 0.0.3.
+- `rupaka.poll` has `of_gate(spec, gate)` and `public(p)`: a choice question for a room from a demo gate, and the part of it that the room sees. They have the contract of `abhyasa.talk.ask_from_gate` and `public_ask`.
+
 ## 0.0.3
 
 - `Rupaka.version` in the bundle is the package version. In 0.0.2 it said `0.0.1`. `bundle()` now writes the version in, so a version bump cannot leave it behind.

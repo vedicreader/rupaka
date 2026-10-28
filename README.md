@@ -75,6 +75,23 @@ Then put the demo where the learner is:
 
 `check(spec)` draws the demo in headless Chrome and plays it. `author(concept, ask)` asks a model for a demo, and checks and repairs it.
 
+## The host API
+
+A host page can read and change a demo that it mounted. In these calls, `el` is the element that holds the demo: the `[data-rupaka]` element, or the element that you gave to `Rupaka.mount`.
+
+| call | what it does |
+|----|----|
+| `Rupaka.state(el)` | gives a copy of the input keys (the keys of `spec.state`) and their values |
+| `Rupaka.set(el, state)` | sets the input keys that `state` has, then runs `derive` one time and draws one time. It ignores other keys. |
+| `Rupaka.settle(el, gate, pick)` | closes the gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate) as if the learner picked `pick`. It draws the verdict and shows the blocks that wait for the gate. With `pick` null, the gate closes with no verdict. An unknown gate does nothing. |
+| `Rupaka.mount(el, spec, {save})` | calls `save(state)` after each change of an input key. `state` is the value that `Rupaka.state(el)` gives. |
+
+`Rupaka.set` and `Rupaka.settle` never send `rk-predict`, never add to `st.log` and never call [`save`](https://vedicreader.github.io/rupaka/render.html#save). A `lock` does not stop `Rupaka.set`. Each call throws an error when no demo is mounted in `el`.
+
+To show one demo in two windows, mount the spec in each window. Send `Rupaka.state` of the first copy to the second window, and call `Rupaka.set` there.
+
+`rupaka.poll` makes a question for a room from a gate. `of_gate(spec, gate)` gives the question and the index of the answer. `public(p)` gives the part that the room sees.
+
 ## The gallery
 
 `rupaka/demos/` holds hand-made demos: vowel sandhi, reciprocal rank fusion, softmax and temperature, nakṣatra and pāda, and a parabola.
