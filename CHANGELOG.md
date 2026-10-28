@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.2
+
+- A host can confirm a gate's prediction. The `rk-predict` event is cancelable, and its detail has `settle(saved, message)`. A host that calls `preventDefault()` keeps the gate pending until it calls `settle`. `settle(true)` shows the result. `settle(false, message)` opens the gate again, keeps the pick and the reason, and shows the message. A host that does not cancel the event sees the same gate as before.
+- The package has an icon, and the docs have one too.
+
 ## 0.0.1
 
 - A ranklist drag keeps the pointer: the browser no longer cancels it when you grab a row by its text.
