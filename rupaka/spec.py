@@ -14,6 +14,7 @@ __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'MAX_WOR
 # %% ../nbs/00_spec.ipynb #c004
 import json, math, re
 from copy import deepcopy
+from decimal import Decimal, Context, ROUND_HALF_UP
 from pathlib import Path
 from fastcore.utils import *
 import rupaka
@@ -170,25 +171,35 @@ def get(o, path):
         else: return None
     return o
 
+def _js_num(x:float) -> str:
+    "`Number.prototype.toString()` of `x`: Python's shortest digits, placed by the JavaScript rules."
+    if math.isnan(x): return 'NaN'
+    if math.isinf(x): return 'Infinity' if x > 0 else '-Infinity'
+    if x == 0: return '0'
+    _, ds, e = Decimal(repr(abs(x))).normalize().as_tuple()
+    ds, n = ''.join(map(str, ds)), len(ds) + e
+    k = len(ds)
+    s = (ds + '0' * (n - k) if k <= n <= 21 else ds[:n] + '.' + ds[n:] if 0 < n <= 21 else '0.' + '0' * -n + ds if -6 < n <= 0
+         else ds[0] + ('.' + ds[1:] if k > 1 else '') + f'e{n - 1:+d}')
+    return '-' + s if x < 0 else s
+
 def js_str(v) -> str:
     "`String(v)` in JavaScript, for the values a spec holds."
     if isinstance(v, bool): return 'true' if v else 'false'
     if v is None: return 'null'
-    if isinstance(v, float):
-        if math.isnan(v): return 'NaN'
-        if math.isinf(v): return 'Infinity' if v > 0 else '-Infinity'
-        if v.is_integer() and abs(v) < 1e21: return str(int(v))
-        return repr(v)
-    if isinstance(v, (list, tuple)): return ','.join(js_str(x) for x in v)
+    if isinstance(v, (int, float)): return _js_num(float(v))
+    if isinstance(v, (list, tuple)): return ','.join('' if x is None else js_str(x) for x in v)
+    if isinstance(v, dict): return '[object Object]'
     return str(v)
 
 def show_value(v, d=None) -> str:
-    "A value as the runtime shows it: numbers with at most `d` (default 4) digits and a true minus sign."
+    "A value as the runtime shows it: numbers rounded as `toFixed(d)` (default 4) does, with a true minus sign."
     if v is None: return ''
     if isinstance(v, (int, float)) and not isinstance(v, bool):
-        s = js_str(float(round(v, 4 if d is None else d)))
-        return s.replace('-', '−', 1)
-    if isinstance(v, (list, tuple)): return ', '.join(js_str(x) for x in v)
+        x = float(v)
+        if math.isfinite(x) and abs(x) < 1e21: x = float(Decimal(x).quantize(Decimal(10) ** -(4 if d is None else d), ROUND_HALF_UP, Context(prec=60)))
+        return js_str(x).replace('-', '−', 1)
+    if isinstance(v, (list, tuple)): return ', '.join('' if x is None else js_str(x) for x in v)
     return js_str(v)
 
 def fmt_text(s, st) -> str:

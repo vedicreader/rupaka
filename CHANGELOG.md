@@ -9,6 +9,7 @@
 - `Rupaka.settle(el, gate, pick)` closes a gate as if the learner picked `pick`, and draws the verdict and the blocks that wait for the gate. A null `pick` closes the gate with no verdict. An unknown gate does nothing. It sends no `rk-predict` and adds nothing to `st.log`. The `settle(saved, message)` of the `rk-predict` detail does not change.
 - `Rupaka.mount(el, spec, {save})` calls `save(state)` after each change of an input key, with the value that `Rupaka.state(el)` gives. A mount with no options does the same as in 0.0.3.
 - `rupaka.poll` has `of_gate(spec, gate)` and `public(p)`: a choice question for a room from a demo gate, and the part of it that the room sees. They have the contract of `abhyasa.talk.ask_from_gate` and `public_ask`.
+- `of_gate` writes the values in the prompt and the options as the demo shows them in the browser, so 2.0 shows as 2 and the options are text.
 
 ## 0.0.3
 
