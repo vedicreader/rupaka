@@ -83,7 +83,7 @@ A host page can read and change a demo that it mounted. In these calls, `el` is 
 |----|----|
 | `Rupaka.state(el)` | gives a copy of the input keys (the keys of `spec.state`) and their values |
 | `Rupaka.set(el, state)` | sets the input keys that `state` has, then runs `derive` one time and draws one time. It ignores other keys. |
-| `Rupaka.options(el, gate)` | gives the option values of the gate `gate`, in the order that the gate shows them. Each value is the value itself, not the text that the gate shows. The gate reads options from the state after `derive`, and this call does the same. An unknown gate gives `null`. |
+| `Rupaka.options(el, gate)` | gives the option values of the gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate), in the order that the gate shows them. Each value is the value itself, not the text that the gate shows. The gate reads options from the state after `derive`, and this call does the same. An unknown gate gives `null`. |
 | `Rupaka.settle(el, gate, pick, {answer})` | closes the gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate) as if the learner picked `pick`. It draws the verdict and shows the blocks that wait for the gate. With `pick` null, the gate closes with no verdict. An unknown gate does nothing and gives `false`. The options object is optional. |
 | `Rupaka.mount(el, spec, {save})` | calls `save(state)` after each change of an input key. `state` is the value that `Rupaka.state(el)` gives. |
 
