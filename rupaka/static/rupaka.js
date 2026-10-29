@@ -71,7 +71,7 @@
   }
 
   R.build = build;
-  const CTX = new WeakMap();   // store -> ctx, for Rupaka.settle and Rupaka.options
+  const CTX = new WeakMap();   // store -> ctx, for Rupaka.settle, Rupaka.open and Rupaka.options
   R.mount = (host, spec, opts) => {
     const save = opts?.save;
     if (!spec || typeof spec !== 'object' || Array.isArray(spec)) throw new Error('the spec is not an object');
@@ -95,7 +95,7 @@
     return s;
   };
 
-  // The host API. A host mirrors a demo into a second copy with state and set, and closes a gate there with settle.
+  // The host API. A host mirrors a demo into a second copy with state and set, closes a gate there with settle and opens it again with open.
   // options maps a pick between an index and a value. None of them fires a gate, sends rk-predict, adds to st.log or calls save.
   const mounted = host => {
     const s = host?.rupaka;
@@ -119,6 +119,14 @@
     const s = mounted(host), g = gateOf(s, gate);
     if (!g) return false;
     g.settle(pick, opts?.answer); s.emit('*');
+    return true;
+  };
+  // Opens a closed gate again, as its Try another button does, with one draw. It does not move the focus. An open gate does not change.
+  // A gate that waits for the host to save its prediction ('pending') is not opened, and the call gives false.
+  R.open = (host, gate) => {
+    const s = mounted(host), g = gateOf(s, gate);
+    if (!g || s.get(`gate.${gate}`) === 'pending') return false;
+    g.open();
     return true;
   };
 

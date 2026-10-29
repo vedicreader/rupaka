@@ -1,4 +1,4 @@
-"The host API: Rupaka.state, Rupaka.set, Rupaka.options, Rupaka.settle and the save option of Rupaka.mount. A host mirrors one demo into a second copy with them."
+"The host API: Rupaka.state, Rupaka.set, Rupaka.options, Rupaka.settle, Rupaka.open and the save option of Rupaka.mount. A host mirrors one demo into a second copy with them."
 import re
 from rupaka.render import page
 
@@ -175,6 +175,91 @@ def test_settle_unknown_gate_with_answer_is_false(draw):
     assert js(d, "Rupaka.settle(h[1], 'nope', 4, {answer: {is: 5}})") is False
     assert st(d, 1, 'gate') == dict(s='open') and d.errors == []
 
+# Rupaka.open(el, gate): open a closed gate again, as Try another does
+
+AGAIN = {**SPEC, 'id': 'again', 'blocks': [{**b, 'again': True, 'why': 'Why?'} if b['type'] == 'gate' else b for b in SPEC['blocks']]}
+
+def pair(draw, spec=AGAIN, n=1):
+    "A page with `n` copies of `spec`, an rk-predict recorder and a draw counter `__n[i]` for each copy."
+    d = draw(None, html=page([spec] * n, fonts='none'))
+    d.pg.wait_for_function(f"document.querySelectorAll('[data-rupaka][data-rk-ready=\"1\"]').length === {n}")
+    d.pg.evaluate(EVENTS)
+    js(d, 'window.__n = h.map(() => 0), h.forEach((x, i) => x.rupaka.on(() => __n[i]++))')
+    return d
+
+ACTIVE = "document.activeElement === document.querySelector('.rk-slider input')"
+
+def test_open_opens_a_settled_gate(draw):
+    d = pair(draw)
+    h = host(d, 0)
+    h.locator('.rk-gate textarea').fill('a guess')
+    js(d, "Rupaka.settle(h[0], 's', 4)")
+    assert st(d, 0, 'gate') == dict(s='done') and h.locator('.verdict').is_visible() and h.locator('.rk-readout').is_visible()
+    h.locator('.rk-slider input').focus()
+    js(d, '__n[0] = 0')
+    assert js(d, "Rupaka.open(h[0], 's')") is True
+    assert st(d, 0, 'gate') == dict(s='open') and d.pg.evaluate('__n[0]') == 1            # one draw
+    assert not h.locator('.verdict').is_visible() and h.locator('.verdict').inner_text() == ''
+    assert not h.locator('.rk-readout').is_visible() and h.locator('.rk-gate textarea').input_value() == ''
+    bs = h.locator('.rk-gate .opts button')
+    assert bs.evaluate_all('bs => bs.map(b => [b.disabled, b.getAttribute("aria-checked")])') == [[False, 'false']] * 3
+    assert h.locator('button.go').is_visible() and h.locator('button.go').is_disabled()
+    assert d.pg.evaluate(ACTIVE)                                                         # focus did not move
+    bs.nth(1).click()                                                                    # the options can be picked again
+    assert bs.nth(1).get_attribute('aria-checked') == 'true' and h.locator('button.go').is_enabled()
+    assert d.pg.evaluate('__ev') == [] and st(d, 0, 'log') is None and d.errors == []
+
+def test_open_on_an_open_gate_changes_nothing(draw):
+    d = pair(draw)
+    h = host(d, 0)
+    h.locator('.rk-gate .opts button').nth(2).click()
+    h.locator('.rk-slider input').focus()
+    before, n = drawn(d, 0), d.pg.evaluate('__n[0]')
+    assert js(d, "Rupaka.open(h[0], 's')") is True
+    assert st(d, 0, 'gate') == dict(s='open') and drawn(d, 0) == before and d.pg.evaluate('__n[0]') == n
+    assert h.locator('.rk-gate .opts button').nth(2).get_attribute('aria-checked') == 'true' and d.pg.evaluate(ACTIVE)
+    assert d.pg.evaluate('__ev') == [] and d.errors == []
+
+def test_open_unknown_gate_is_false(draw):
+    d = pair(draw)
+    js(d, "Rupaka.settle(h[0], 's', 5)")
+    before, n = drawn(d, 0), d.pg.evaluate('__n[0]')
+    assert js(d, "Rupaka.open(h[0], 'nope')") is False
+    assert st(d, 0, 'gate') == dict(s='done') and drawn(d, 0) == before and d.pg.evaluate('__n[0]') == n and d.errors == []
+
+def test_open_on_a_gate_that_waits_for_the_host_is_false(draw):
+    d = pair(draw)
+    h = host(d, 0)
+    d.pg.evaluate("document.addEventListener('rk-predict', e => e.preventDefault())")   # the host saves first, so the gate waits
+    h.locator('.rk-gate .opts button').nth(1).click(); h.locator('button.go').click()
+    assert st(d, 0, 'gate') == dict(s='pending')
+    assert js(d, "Rupaka.open(h[0], 's')") is False                                    # it did not open, so the host must not think it did
+    assert st(d, 0, 'gate') == dict(s='pending') and d.errors == []
+
+def test_open_with_no_demo_throws_as_state_does(draw):
+    d = pair(draw)
+    f = "(f => { try { f(document.createElement('div')); return null; } catch (e) { return e.message; } })"
+    want = d.pg.evaluate(f + '(n => Rupaka.state(n))')
+    assert want and d.pg.evaluate(f + "(n => Rupaka.open(n, 's'))") == want
+
+def test_open_round_trip_on_two_copies(draw):
+    d = pair(draw, n=2)
+    p, a = host(d, 0), host(d, 1)
+    d.lock(3)                                                                            # the presenter commits 6
+    i = js(d, "Rupaka.options(h[0], 's').indexOf(h[0].rupaka.st.log[0].picked)")     # the host sends the index of the pick
+    js(d, f"Rupaka.settle(h[1], 's', Rupaka.options(h[1], 's')[{i}])")
+    assert drawn(d, 0) == drawn(d, 1) and a.locator('.verdict').is_visible()
+    p.get_by_role('button', name='Try another').click()
+    assert d.pg.evaluate("document.activeElement === document.querySelector('.rk-gate .opts button')")   # the button moves focus
+    js(d, "Rupaka.open(h[1], 's')")
+    assert st(d, 0, 'gate') == st(d, 1, 'gate') == dict(s='open')
+    assert js(d, 'Rupaka.state(h[0])') == js(d, 'Rupaka.state(h[1])') and drawn(d, 0) == drawn(d, 1)
+    for h in (p, a):
+        assert not h.locator('.verdict').is_visible() and not h.locator('.rk-readout').is_visible() and h.locator('button.go').is_visible()
+        assert h.locator('.rk-gate .opts button').evaluate_all('bs => bs.map(b => [b.disabled, b.getAttribute("aria-checked")])') == [[False, 'false']] * 3
+    assert d.pg.evaluate('__ev') == [dict(copy=0, gate='s')] and st(d, 1, 'log') is None and len(st(d, 0, 'log')) == 1
+    assert d.errors == []
+
 # Rupaka.mount(el, spec, {save})
 
 MOUNT = """() => { window.__saves = []; const n = document.createElement('div'); n.id = 'own'; document.body.append(n);
@@ -190,5 +275,5 @@ def test_save_on_each_input_change(draw):
     s.focus(); d.pg.keyboard.press('d')
     assert d.pg.evaluate('__saves') == [dict(a=7, b=3), dict(a=8, b=3)]
     assert d.pg.evaluate("__saves.at(-1)") == d.pg.evaluate("Rupaka.state(document.getElementById('own'))")
-    d.pg.evaluate("Rupaka.settle(document.getElementById('own'), 's', 5); Rupaka.set(document.getElementById('own'), {a: 1})")
+    d.pg.evaluate("Rupaka.settle(document.getElementById('own'), 's', 5); Rupaka.open(document.getElementById('own'), 's'); Rupaka.set(document.getElementById('own'), {a: 1})")
     assert len(d.pg.evaluate('__saves')) == 2 and d.errors == []      # a host call is not a change by the learner

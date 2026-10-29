@@ -4,7 +4,8 @@
    detail.settle(saved, message): true reveals, false opens the gate again and shows the message as text. Only the first call counts.
    Rupaka.settle(host, id, pick, {answer}) closes the gate from the host: no rk-predict, no log. A null pick reveals with no verdict.
    `answer` draws the verdict when the spec has none (a copy for a room has its answers taken out); it is never stored.
-   With no answer at all, the gate reveals with no verdict. Rupaka.options(host, id) reads the options as opts() gives them. */
+   With no answer at all, the gate reveals with no verdict. Rupaka.options(host, id) reads the options as opts() gives them.
+   Rupaka.open(host, id) opens a closed gate again with reopen(), as Try another does, but it does not move the focus. */
 Rupaka.block('gate', (b, ctx) => {
   const {el, fmt, show} = Rupaka, s = ctx.s, id = b.id;
   s.st.gate[id] = 'open';
@@ -57,7 +58,13 @@ Rupaka.block('gate', (b, ctx) => {
     return true;
   }
   go.onclick = commit;
-  again.onclick = () => { picked = null; said = ''; if (why) why.value = ''; s.st.gate[id] = 'open'; s.set('_', (s.st._ || 0) + 1); box.querySelector('button')?.focus(); };
+  // Open a closed gate again: no pick, no reason, no verdict. One draw hides the blocks that wait for the gate. An open gate does not change.
+  const reopen = () => {
+    if (!done()) return;
+    picked = null; said = ''; if (why) why.value = ''; verdict.replaceChildren();
+    s.st.gate[id] = 'open'; s.set('_', (s.st._ || 0) + 1);
+  };
+  again.onclick = () => { reopen(); box.querySelector('button')?.focus(); };   // only the learner's button moves the focus
   // The host closes the gate. The caller (Rupaka.settle) draws once after it. The answer of the spec comes first.
   const settle = (p, answer) => {
     const w = b.answer ?? answer;
@@ -66,7 +73,7 @@ Rupaka.block('gate', (b, ctx) => {
     else { const a = ans(w); tell(b.context ? fmt(b.context, s.st) : '', String(p) === String(a), a); }
     s.st.gate[id] = 'done';
   };
-  (ctx.gates ||= []).push({id, commit, done, settle, options: opts});
+  (ctx.gates ||= []).push({id, commit, done, settle, open: reopen, options: opts});
   ctx.commit ||= () => { const g = ctx.gates.find(g => !g.done()); return g ? g.commit() : false; };
   const root = el('div', {}, q, box, why, verdict, note, el('div', {class: 'acts'}, go, again));
   root.addEventListener('keydown', e => {

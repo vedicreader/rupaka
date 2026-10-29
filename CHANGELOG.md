@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.6
+
+- `Rupaka.open(el, gate)` opens a closed gate again, as the Try another button of the gate does. It removes the pick, the reason and the verdict, sets `gate.<id>` to `'open'` and hides the blocks that wait for the gate. It draws one time. It does not move the focus. It sends no `rk-predict`, adds nothing to `st.log` and does not call `save`. A gate that is open does not change, and the call gives `true`. A gate that waits for the host to save a prediction does not open, and the call gives `false`. An unknown gate gives `false`. It throws the same error as `Rupaka.state` when no demo is mounted in `el`.
+- The Try another button and `Rupaka.open` use the same code. The button also removes the old verdict text now. Before, the button only hid it.
+
 ## 0.0.5
 
 - `Rupaka.options(el, gate)` gives the option values of a gate, in the order that the gate shows them. Each value is the value itself, not the text that the gate shows. Options that come from the state are read after `derive`. An unknown gate gives `null`. It throws the same error as `Rupaka.state` when no demo is mounted in `el`.
