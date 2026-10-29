@@ -1,4 +1,4 @@
-"The host API: Rupaka.state, Rupaka.set, Rupaka.settle and the save option of Rupaka.mount. A host mirrors one demo into a second copy with them."
+"The host API: Rupaka.state, Rupaka.set, Rupaka.options, Rupaka.settle and the save option of Rupaka.mount. A host mirrors one demo into a second copy with them."
 import re
 from rupaka.render import page
 
@@ -97,6 +97,83 @@ def test_settle_null_after_try_another_shows_no_old_verdict(draw):
     d.pg.get_by_role('button', name='Try another').click()
     js(d, "Rupaka.settle(h[0], 's', null)")
     assert d.st('gate')['s'] == 'done' and not d.pg.locator('.verdict').is_visible() and d.pg.locator('.rk-readout').is_visible()
+
+# Rupaka.options
+
+OPTS = dict(id='opt', state=dict(raw=[3, 1, 2]), derive=[dict(fn='sort', **{'from': 'raw'}, out='ranked')],
+            blocks=[dict(type='gate', id='lit', prompt='?', options=[-1.5, 2, 'x', True], answer={'is': 2}),
+                    dict(type='gate', id='st', prompt='?', options={'from': 'raw'}, answer={'is': 1}),
+                    dict(type='gate', id='dv', prompt='?', options={'from': 'ranked'}, answer='ranked.0')])
+
+def test_options_gives_raw_values_in_the_order_shown(draw):
+    d = draw(OPTS)
+    assert js(d, "Rupaka.options(h[0], 'lit')") == [-1.5, 2, 'x', True]           # raw values, not the text −1.5 or true
+    assert js(d, "Rupaka.options(h[0], 'st')") == [3, 1, 2]                       # from the state
+    assert js(d, "Rupaka.options(h[0], 'dv')") == [1, 2, 3]                       # from a derived value
+    shown = lambda g: d.pg.locator('.rk-gate').nth(g).locator('.opts button').evaluate_all('bs => bs.map(b => b.firstChild.textContent)')
+    assert shown(1) == ['3', '1', '2'] and shown(2) == ['1', '2', '3']
+    js(d, 'Rupaka.set(h[0], {raw: [9, 7]})')                                        # after derive
+    assert js(d, "Rupaka.options(h[0], 'st')") == [9, 7] and js(d, "Rupaka.options(h[0], 'dv')") == [7, 9]
+    js(d, "Rupaka.options(h[0], 'st').push(1)")                                     # a copy
+    assert js(d, "Rupaka.options(h[0], 'st')") == [9, 7] and d.errors == []
+
+def test_options_unknown_gate_is_null(draw):
+    d = draw(OPTS)
+    assert js(d, "Rupaka.options(h[0], 'nope')") is None and d.errors == []
+
+def test_options_with_no_demo_throws_as_state_does(draw):
+    d = draw(OPTS)
+    f = "(f => { try { f(document.createElement('div')); return null; } catch (e) { return e.message; } })"
+    want = d.pg.evaluate(f + '(n => Rupaka.state(n))')
+    assert want and d.pg.evaluate(f + "(n => Rupaka.options(n, 'lit'))") == want
+
+# Rupaka.settle(el, gate, pick, {answer}): an audience copy with no answers in its spec
+
+def stripped(spec):
+    "`spec` with no gate answers, as a host mounts it for a room."
+    return {**spec, 'id': spec['id'] + '-room', 'blocks': [{k: v for k, v in b.items() if k != 'answer'} for b in spec['blocks']]}
+
+def room(draw):
+    "Copy 0 is the presenter's (with answers). Copies 1 to 3 are the room's (with no answers)."
+    d = draw(None, html=page([SPEC] + [stripped(SPEC)] * 3, fonts='none'))
+    d.pg.wait_for_function("document.querySelectorAll('[data-rupaka][data-rk-ready=\"1\"]').length === 4")
+    d.pg.evaluate(EVENTS)
+    return d
+
+def test_settle_with_answer_on_a_stripped_copy(draw):
+    d = room(draw)
+    assert 'answer' not in js(d, 'h[1].rupaka.spec.blocks[2]')
+    js(d, "Rupaka.settle(h[0], 's', 4)")
+    js(d, "Rupaka.settle(h[1], 's', 4, {answer: 'sum'})")                         # a state path
+    js(d, "Rupaka.settle(h[2], 's', 4, {answer: {is: 5}})")                       # a literal
+    want = host(d, 0).locator('.verdict').inner_text()
+    assert want.startswith('You said 4. It is 5.')
+    assert host(d, 1).locator('.verdict').inner_text() == want == host(d, 2).locator('.verdict').inner_text()
+    assert drawn(d, 1) == drawn(d, 0) and drawn(d, 2) == drawn(d, 0)
+    js(d, "Rupaka.settle(h[3], 's', 5, {answer: {is: 5}})")
+    assert host(d, 3).locator('.verdict').inner_text().startswith('You said 5. That is right.')
+    for i in (1, 2, 3):                                                            # the answer is only drawn
+        assert 'answer' not in js(d, f'h[{i}].rupaka.spec.blocks[2]')
+        assert set(st(d, i)) == {'a', 'b', 'sum', 'gate'} and st(d, i, 'gate') == dict(s='done')
+    assert d.pg.evaluate('__ev') == [] and d.errors == []
+
+def test_settle_on_a_stripped_copy_with_no_answer_shows_no_verdict(draw):
+    d = room(draw)
+    assert js(d, "Rupaka.settle(h[1], 's', 4)") is True
+    assert st(d, 1, 'gate') == dict(s='done') and not host(d, 1).locator('.verdict').is_visible()
+    assert host(d, 1).locator('.verdict').inner_text() == '' and host(d, 1).locator('.rk-readout').is_visible()
+    assert d.pg.evaluate('__ev') == [] and st(d, 1, 'log') is None and d.errors == []
+
+def test_settle_answer_does_not_override_the_spec(draw):
+    d = copies(draw, 1)
+    js(d, "Rupaka.settle(h[0], 's', 4, {answer: {is: 4}})")
+    assert host(d, 0).locator('.verdict').inner_text().startswith('You said 4. It is 5.')
+    assert js(d, 'h[0].rupaka.spec.blocks[2].answer') == 'sum' and d.errors == []
+
+def test_settle_unknown_gate_with_answer_is_false(draw):
+    d = room(draw)
+    assert js(d, "Rupaka.settle(h[1], 'nope', 4, {answer: {is: 5}})") is False
+    assert st(d, 1, 'gate') == dict(s='open') and d.errors == []
 
 # Rupaka.mount(el, spec, {save})
 

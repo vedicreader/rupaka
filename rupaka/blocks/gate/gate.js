@@ -2,13 +2,15 @@
    The verdict names the inputs it was for (`context`), because the inputs can change after the reveal.
    A host that saves the prediction calls preventDefault on rk-predict. The gate then waits ('pending') until the host calls
    detail.settle(saved, message): true reveals, false opens the gate again and shows the message as text. Only the first call counts.
-   Rupaka.settle(host, id, pick) closes the gate from the host: no rk-predict, no log. A null pick reveals with no verdict. */
+   Rupaka.settle(host, id, pick, {answer}) closes the gate from the host: no rk-predict, no log. A null pick reveals with no verdict.
+   `answer` draws the verdict when the spec has none (a copy for a room has its answers taken out); it is never stored.
+   With no answer at all, the gate reveals with no verdict. Rupaka.options(host, id) reads the options as opts() gives them. */
 Rupaka.block('gate', (b, ctx) => {
   const {el, fmt, show} = Rupaka, s = ctx.s, id = b.id;
   s.st.gate[id] = 'open';
   let picked = null, said = '', seen = '';
   const opts = () => Array.isArray(b.options) ? b.options : (s.get(b.options.from) || []);
-  const ans = () => b.answer && typeof b.answer === 'object' ? b.answer.is : s.get(b.answer);
+  const ans = (a = b.answer) => a && typeof a === 'object' ? a.is : s.get(a);   // {is: value} or a path in the state
   const done = () => s.get(`gate.${id}`) === 'done', open = () => s.get(`gate.${id}`) === 'open';
   const q = el('p', {class: 'q', id: `rk-${ctx.spec.id || 'd'}-${id}-q`});
   const box = el('div', {class: 'opts', role: 'radiogroup', 'aria-labelledby': q.id});
@@ -56,13 +58,15 @@ Rupaka.block('gate', (b, ctx) => {
   }
   go.onclick = commit;
   again.onclick = () => { picked = null; said = ''; if (why) why.value = ''; s.st.gate[id] = 'open'; s.set('_', (s.st._ || 0) + 1); box.querySelector('button')?.focus(); };
-  // The host closes the gate. The caller (Rupaka.settle) draws once after it.
-  const settle = p => {
-    if (p == null) { said = ''; say(''); verdict.replaceChildren(); }
-    else { picked = p; const a = ans(); tell(b.context ? fmt(b.context, s.st) : '', String(p) === String(a), a); }
+  // The host closes the gate. The caller (Rupaka.settle) draws once after it. The answer of the spec comes first.
+  const settle = (p, answer) => {
+    const w = b.answer ?? answer;
+    if (p != null) picked = p;
+    if (p == null || w == null) { said = ''; say(''); verdict.replaceChildren(); }
+    else { const a = ans(w); tell(b.context ? fmt(b.context, s.st) : '', String(p) === String(a), a); }
     s.st.gate[id] = 'done';
   };
-  (ctx.gates ||= []).push({id, commit, done, settle});
+  (ctx.gates ||= []).push({id, commit, done, settle, options: opts});
   ctx.commit ||= () => { const g = ctx.gates.find(g => !g.done()); return g ? g.commit() : false; };
   const root = el('div', {}, q, box, why, verdict, note, el('div', {class: 'acts'}, go, again));
   root.addEventListener('keydown', e => {

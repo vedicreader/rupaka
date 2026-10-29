@@ -71,7 +71,7 @@
   }
 
   R.build = build;
-  const CTX = new WeakMap();   // store -> ctx, for Rupaka.settle
+  const CTX = new WeakMap();   // store -> ctx, for Rupaka.settle and Rupaka.options
   R.mount = (host, spec, opts) => {
     const save = opts?.save;
     if (!spec || typeof spec !== 'object' || Array.isArray(spec)) throw new Error('the spec is not an object');
@@ -96,7 +96,7 @@
   };
 
   // The host API. A host mirrors a demo into a second copy with state and set, and closes a gate there with settle.
-  // None of them fires a gate, sends rk-predict, adds to st.log or calls save.
+  // options maps a pick between an index and a value. None of them fires a gate, sends rk-predict, adds to st.log or calls save.
   const mounted = host => {
     const s = host?.rupaka;
     if (!s || !CTX.has(s)) throw new Error('no rupaka demo is mounted in this element');
@@ -109,10 +109,16 @@
     for (const k of ks) s.st[k] = structuredClone(state[k]);
     s.derive(); s.emit('*');
   };
-  R.settle = (host, gate, pick) => {
-    const s = mounted(host), g = (CTX.get(s).gates || []).find(g => g.id === gate);
+  const gateOf = (s, gate) => (CTX.get(s).gates || []).find(g => g.id === gate);
+  R.options = (host, gate) => {
+    const s = mounted(host), g = gateOf(s, gate);
+    return g ? structuredClone(g.options()) : null;
+  };
+  // `opts.answer` draws the verdict when the spec of this copy has no answer. It is not written into the spec or the state.
+  R.settle = (host, gate, pick, opts) => {
+    const s = mounted(host), g = gateOf(s, gate);
     if (!g) return false;
-    g.settle(pick); s.emit('*');
+    g.settle(pick, opts?.answer); s.emit('*');
     return true;
   };
 

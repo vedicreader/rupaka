@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.0.5
+
+- `Rupaka.options(el, gate)` gives the option values of a gate, in the order that the gate shows them. Each value is the value itself, not the text that the gate shows. Options that come from the state are read after `derive`. An unknown gate gives `null`. It throws the same error as `Rupaka.state` when no demo is mounted in `el`.
+- `Rupaka.settle(el, gate, pick, {answer})` draws the verdict with `answer` when the spec of the copy has no answer for the gate. `answer` is `{is: value}` or a path in the state, as in a gate. When the spec has an answer, the gate uses the answer in the spec. Rupaka does not write `answer` into the spec or the state. The rest of the 0.0.4 contract does not change.
+- `Rupaka.settle` on a gate with no answer in the spec, and with no `answer`, now closes the gate with no verdict. In 0.0.4 it showed a broken verdict ("It is .").
+
 ## 0.0.4
 
 - `Rupaka.state(el)` gives a copy of the input keys (the keys of `spec.state`) of the demo in `el`, with their values.

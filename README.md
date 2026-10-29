@@ -83,12 +83,15 @@ A host page can read and change a demo that it mounted. In these calls, `el` is 
 |----|----|
 | `Rupaka.state(el)` | gives a copy of the input keys (the keys of `spec.state`) and their values |
 | `Rupaka.set(el, state)` | sets the input keys that `state` has, then runs `derive` one time and draws one time. It ignores other keys. |
-| `Rupaka.settle(el, gate, pick)` | closes the gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate) as if the learner picked `pick`. It draws the verdict and shows the blocks that wait for the gate. With `pick` null, the gate closes with no verdict. An unknown gate does nothing. |
+| `Rupaka.options(el, gate)` | gives the option values of the gate `gate`, in the order that the gate shows them. Each value is the value itself, not the text that the gate shows. The gate reads options from the state after `derive`, and this call does the same. An unknown gate gives `null`. |
+| `Rupaka.settle(el, gate, pick, {answer})` | closes the gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate) as if the learner picked `pick`. It draws the verdict and shows the blocks that wait for the gate. With `pick` null, the gate closes with no verdict. An unknown gate does nothing and gives `false`. The options object is optional. |
 | `Rupaka.mount(el, spec, {save})` | calls `save(state)` after each change of an input key. `state` is the value that `Rupaka.state(el)` gives. |
 
-`Rupaka.set` and `Rupaka.settle` never send `rk-predict`, never add to `st.log` and never call [`save`](https://vedicreader.github.io/rupaka/render.html#save). A `lock` does not stop `Rupaka.set`. Each call throws an error when no demo is mounted in `el`.
+`Rupaka.set` and `Rupaka.settle` never send `rk-predict`, never add to `st.log` and never call [`save`](https://vedicreader.github.io/rupaka/render.html#save). `Rupaka.options` only reads. A `lock` does not stop `Rupaka.set`. Each call throws an error when no demo is mounted in `el`.
 
-To show one demo in two windows, mount the spec in each window. Send `Rupaka.state` of the first copy to the second window, and call `Rupaka.set` there.
+To show one demo in two windows, mount the spec in each window. Send `Rupaka.state` of the first copy to the second window, and call `Rupaka.set` there. To send a pick, send its index in `Rupaka.options` of the first copy. In the second window, find the value at that index in `Rupaka.options`, and call `Rupaka.settle` with it.
+
+A host can remove the gate answers from the spec of a copy that a room sees, so that the room cannot read them early. Then give the answer to `Rupaka.settle` in `answer`. The gate uses it to draw the verdict. `answer` is `{is: value}` or a path in the state, as in a gate. When the spec has an answer, the gate uses the answer in the spec. Rupaka does not write `answer` into the spec or the state. When the spec has no answer and you give no `answer`, the gate closes with no verdict.
 
 `rupaka.poll` makes a question for a room from a gate. `of_gate(spec, gate)` gives the question and the index of the answer. `public(p)` gives the part that the room sees.
 
