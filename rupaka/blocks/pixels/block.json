@@ -1,0 +1,14 @@
+{
+  "name": "pixels",
+  "since": "0.0.7",
+  "purpose": "A grey image of a list of rows of numbers, one square per cell, for example the rows of a field. It only shows. The ramp goes from the page colour at the smallest value to the text colour at the largest.",
+  "binds": "list of rows of numbers",
+  "keys": "none",
+  "props": {
+    "bind": {"type": "key", "req": true, "doc": "the state key of the rows"},
+    "label": {"type": "text", "doc": "what the image shows, above it and for screen readers; {path} takes a state value"},
+    "lo": {"type": "num", "doc": "the value at the page colour; the smallest value if left out"},
+    "hi": {"type": "num", "doc": "the value at the text colour; the largest value if left out"},
+    "size": {"type": "num", "default": 256, "doc": "the width of the image in pixels"}
+  }
+}

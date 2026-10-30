@@ -7,9 +7,9 @@ Docs: https://vedicreader.github.io/rupaka/spec.html.md"""
 # %% auto #0
 __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'MAX_WORDS', 'TOP', 'UPGRADES', 'manifests',
            'fn_manifests', 'from_', 'is_', 'demo', 'gate', 'readout', 'caption', 'row', 'stack', 'slider', 'toggle',
-           'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot', 'grid', 'rules', 'rrf', 'softmax', 'lookup',
-           'expr', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'run', 'long_sentences', 'validate',
-           'upgrade', 'examples', 'gallery']
+           'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot', 'grid', 'pixels', 'rules', 'rrf', 'softmax',
+           'lookup', 'expr', 'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'noise', 'run',
+           'long_sentences', 'validate', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
 import json, math, re
@@ -71,6 +71,7 @@ def axis(x, *blocks, y=None, **kw): return _b('axis', x=list(x), y=list(y) if y 
 def point(bind=None, **kw): return _b('point', bind=bind, **kw)
 def plot(series, **kw): return _b('plot', series=series, **kw)
 def grid(bind, label=None, **kw): return _b('grid', bind=bind, label=label, **kw)
+def pixels(bind, label=None, **kw): return _b('pixels', bind=bind, label=label, **kw)
 
 # %% ../nbs/00_spec.ipynb #c016
 def rules(table, ins, out, alts=4): return dict(fn='rules', table=table, **{'in': list(ins)}, out=out, alts=alts)
@@ -78,6 +79,7 @@ def rrf(ins, k, out): return dict(fn='rrf', **{'in': list(ins)}, k=k, out=out)
 def softmax(src, out, t=None, labels=None, sort=None): return _drop(dict(fn='softmax', **{'in': src}, t=t, labels=labels, sort=sort, out=out))
 def lookup(table, key, out, by=None): return _drop(dict(fn='lookup', table=table, key=key, by=by, out=out))
 def expr(f, out, over=None): return _drop(dict(fn='expr', expr=f, over=over, out=out))
+def field(f, out, n=16, seed=0): return dict(fn='field', expr=f, n=n, seed=seed, out=out)
 def fmt(text, out): return dict(fn='fmt', text=text, out=out)
 def _drop(d): return {k: v for k, v in d.items() if v is not None}
 
@@ -111,9 +113,12 @@ _BIN = {'+': _safe(lambda a, b: a + b), '-': _safe(lambda a, b: a - b), '*': _sa
         '/': _safe(lambda a, b: a / b), '^': _safe(lambda a, b: math.nan if isinstance(r := a ** b, complex) else r)}
 
 # %% ../nbs/00_spec.ipynb #c024
-def parse_expr(src:str):
+def parse_expr(
+    src:str, # the formula
+    fns:dict=None # more functions by name, on top of `EXPR_FNS`
+):
     "Parse a formula. Return `(f, names)`: `f(env)` gives a number, and `names` are the values it reads."
-    ts, p, names = _lex(str(src)), [0], set()
+    ts, p, names, fs = _lex(str(src)), [0], set(), {**EXPR_FNS, **(fns or {})}
     peek = lambda: ts[p[0]] if p[0] < len(ts) else (None, None)
     def eat(v=None):
         t = peek()
@@ -126,10 +131,10 @@ def parse_expr(src:str):
         if k == 'id':
             if v.startswith('_') or v in ('constructor', 'prototype'): raise ValueError(f'expr: the name "{v}" is not allowed')
             if peek()[1] == '(':
-                if v not in EXPR_FNS: raise ValueError(f'expr: no function "{v}"')
+                if v not in fs: raise ValueError(f'expr: no function "{v}"')
                 eat('('); args = [add()]
                 while peek()[1] == ',': eat(','); args.append(add())
-                eat(')'); f = _safe(EXPR_FNS[v])
+                eat(')'); f = _safe(fs[v])
                 return lambda e: f(*[a(e) for a in args])
             if v in EXPR_CONSTS: return lambda e: EXPR_CONSTS[v]
             names.add(v)
@@ -267,11 +272,31 @@ def _expr(d, st, spec):
     lo, hi, n = (list(rng) + [101])[:3]
     return [dict(x=(x := lo + (hi - lo) * i / (n - 1)), y=f({**st, name: x})) for i in range(int(n))]
 
+_M32 = 0xFFFFFFFF
+def _u32(x): return int(x) & _M32 if math.isfinite(x) else 0
+def _mix(h):
+    h ^= h >> 16; h = h * 0x85ebca6b & _M32; h ^= h >> 13; h = h * 0xc2b2ae35 & _M32
+    return h ^ h >> 16
+def _step(h, x): return _mix(((h ^ x) + 0x9e3779b9) & _M32)
+
+def noise(seed:int, i, j) -> float:
+    "The `noise(i, j)` of a field with `seed`: mean 0, variance 1, and the same bits as the runtime."
+    h = _step(_step(_u32(seed), _u32(i)), _u32(j))
+    return (sum(_step(h, k) for k in range(4)) / 4294967296 - 2) * math.sqrt(3)
+
+def _cell_fns(seed=0): return {'noise': lambda i=0, j=0, *_: noise(seed, i, j)}   # a missing argument is 0 and an extra one is ignored, as in the runtime
+
+def _field(d, st, spec):
+    n = d.get('n', 16)
+    if not (isinstance(n, int) and not isinstance(n, bool) and 1 <= n <= 64): raise ValueError('field: n must be an int from 1 to 64')
+    f = parse_expr(d['expr'], _cell_fns(d.get('seed', 0)))[0]
+    return [[f({**st, 'i': i, 'j': j}) for j in range(n)] for i in range(n)]
+
 def _sortby(d, st, spec):
     v = lambda x: (x or {}).get(d['by']) if d.get('by') else x
     return sorted(get(st, d['from']) or [], key=v, reverse=bool(d.get('desc')))
 
-FNS = dict(rules=_rules, rrf=_rrf, softmax=_softmax, lookup=_lookup, expr=_expr, sort=_sortby,
+FNS = dict(rules=_rules, rrf=_rrf, softmax=_softmax, lookup=_lookup, expr=_expr, field=_field, sort=_sortby,
            ids=lambda d, st, spec: [x.get('id') if isinstance(x, dict) else x for x in get(st, d['from']) or []],
            pick=lambda d, st, spec: [None if x is None else x.get(d['field']) for x in get(st, d['from']) or []],
            fmt=lambda d, st, spec: fmt_text(d['text'], st))
@@ -301,6 +326,7 @@ def _type_err(t, v, tables):
           'int': lambda: isinstance(v, int) and not isinstance(v, bool), 'bool': lambda: isinstance(v, bool),
           'list': lambda: isinstance(v, list), 'dict': lambda: isinstance(v, dict), 'any': lambda: True,
           'key': lambda: isinstance(v, str), 'path': lambda: isinstance(v, str), 'expr': lambda: isinstance(v, str),
+          'cellexpr': lambda: isinstance(v, str),
           'keys': lambda: isinstance(v, list) and all(isinstance(x, str) for x in v),
           'numkey': lambda: num(v) or isinstance(v, str),
           'options': lambda: (isinstance(v, list) and len(v) >= 2) or (isinstance(v, dict) and set(v) == {'from'}),
@@ -326,6 +352,9 @@ def _reads(t, v) -> set:
     if t == 'expr':
         try: return parse_expr(v)[1]
         except ValueError: return set()
+    if t == 'cellexpr':
+        try: return parse_expr(v, _cell_fns())[1] - {'i', 'j'}
+        except ValueError: return set()
     return set()
 
 # %% ../nbs/00_spec.ipynb #c047
@@ -338,12 +367,14 @@ def _props(m, x, path, known, tables, err, skip=()):
         if k not in props: err(f'{path}.{k}', f'is not a prop of {m.name}; use one of: {", ".join(props)}'); continue
         t = props[k]['type']
         if (e := _type_err(t, v, tables)): err(f'{path}.{k}', e); continue
+        lo, hi = props[k].get('min', -math.inf), props[k].get('max', math.inf)
+        if ('min' in props[k] or 'max' in props[k]) and not lo <= v <= hi: err(f'{path}.{k}', f'must be from {lo} to {hi}'); continue
         rs = _reads(t, v)
         for r in sorted(rs - known - _SPECIAL - (set(x['over']) if t == 'expr' and x.get('over') else set())):
             err(f'{path}.{k}', f'"{r}" is not in state or derive')
         if t == 'expr' and x.get('over'): rs -= set(x['over'])
-        if t == 'expr':
-            try: parse_expr(v)
+        if t in ('expr', 'cellexpr'):
+            try: parse_expr(v, _cell_fns() if t == 'cellexpr' else None)
             except ValueError as e: err(f'{path}.{k}', str(e))
         reads |= rs
     for grp in m.get('one_of', []):

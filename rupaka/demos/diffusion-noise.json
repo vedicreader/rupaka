@@ -1,0 +1,16 @@
+{
+  "rupaka": 1,
+  "id": "diffusion-noise",
+  "concept": "diffusion-forward-noise",
+  "title": "Diffusion: adding noise",
+  "ask": "A diffusion model learns to remove noise. Each cell starts as a smooth ramp, (i + j)/30. At step t, the ramp is multiplied by sqrt(1 - t/1000). Then noise times sqrt(t/1000) is added. This schedule is linear in t, for teaching. It is not the DDPM schedule.",
+  "state": {"t": 500},
+  "derive": [{"fn": "field", "expr": "sqrt(1 - t/1000) * (i + j)/30 + sqrt(t/1000) * noise(i, j)", "n": 16, "seed": 7, "out": "img"}],
+  "blocks": [
+    {"type": "gate", "id": "left", "prompt": "At t = 500, the ramp is multiplied by what number?", "options": ["0.5", "about 0.71", "0"],
+     "answer": {"is": "about 0.71"}, "why": "Say why, in one line, before you lock in.", "hides": ["img"]},
+    {"type": "pixels", "after": "left", "bind": "img", "label": "Grid at t = {t}"},
+    {"type": "slider", "after": "left", "bind": "t", "label": "Step t", "min": 0, "max": 1000, "step": 10},
+    {"type": "caption", "after": "left", "text": "At t = 500 the ramp is multiplied by sqrt(0.5), about 0.71. The noise is multiplied by 0.71 too. Move t to 1000. Then only noise is left."}
+  ]
+}

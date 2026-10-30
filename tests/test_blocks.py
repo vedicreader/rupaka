@@ -228,3 +228,29 @@ def test_grid_locked_refuses(draw):
     d = draw(EX['grid'])
     d.pg.locator('.rk-grid svg').focus(); d.pg.keyboard.press('+')
     assert d.st('m') == [[1, 2], [3, 4]]
+
+# pixels
+
+DIFFUSION = dict(id='diffusion', state=dict(t=500),
+                 derive=[dict(fn='field', expr='sqrt(1 - t/1000) * (i + j)/30 + sqrt(t/1000) * noise(i, j)', n=16, seed=7, out='img')],
+                 blocks=[dict(type='slider', bind='t', min=0, max=1000), dict(type='pixels', bind='img', label='Grid at t = {t}')])
+
+PIXELS = "c => [...c.getContext('2d').getImageData(0, 0, c.width, c.height).data]"
+
+def test_pixels_draws_each_cell(draw):
+    d = draw(DIFFUSION)
+    px = d.pg.locator('.rk-pixels canvas').evaluate(PIXELS)
+    grey = [sum(px[k:k + 3]) for k in range(0, len(px), 4)]
+    vs = sum(d.st('img'), [])
+    assert len(grey) == len(vs) == 256 and all(a == 255 for a in px[3::4])
+    assert len(set(grey)) > 50 and grey[vs.index(max(vs))] < grey[vs.index(min(vs))]   # light mode: the largest value is darkest
+    assert d.errors == []
+
+def test_pixels_label_follows_the_state(draw):
+    d = draw(DIFFUSION)
+    cv = d.pg.locator('.rk-pixels canvas')
+    assert cv.get_attribute('role') == 'img' and cv.get_attribute('aria-label') == 'Grid at t = 500'
+    before = cv.evaluate(PIXELS)
+    d.pg.locator('.rk-slider input').focus(); d.pg.keyboard.press('ArrowRight')
+    assert d.st('t') == 501 and cv.get_attribute('aria-label') == 'Grid at t = 501'
+    assert cv.evaluate(PIXELS) != before and d.errors == []

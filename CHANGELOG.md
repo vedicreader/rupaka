@@ -2,6 +2,17 @@
 
 <!-- do not remove -->
 
+## 0.0.7
+
+- The fn `field` computes an `expr` formula for each cell of an n x n grid. It gives a list of n rows. Row `i` and column `j` go from 0 to n - 1. The formula can read `i`, `j` and number state keys. `n` is from 1 to 64, and the default is 16.
+- A `field` formula can call `noise(i, j)`. It gives a value with mean 0 and variance 1. The same `seed`, `i` and `j` always give the same value. The default `seed` is 0. The runtime and `rupaka.spec.noise` give the same bits. A plain `expr` formula cannot call `noise`. It fails with `expr: no function "noise"`.
+- The block `pixels` draws a list of rows of numbers as a grey image, one square per cell. The smallest value has the page colour and the largest value has the text colour. `lo` and `hi` set the ends of the scale. The image changes when the state changes. It is read-only.
+- The `label` of `pixels` can hold `{path}`. The label shows above the image. It is also the `aria-label` of the image, which has the role `img`.
+- `validate` refuses a `field` with an `n` that is not an int from 1 to 64, or a `seed` that is not an int. A bad formula gives its `expr:` error. In the browser, a bad formula stops the demo with the same error, as a bad `expr` does.
+- A manifest prop can have `min` and `max`. `validate` refuses a value outside them with `must be from <min> to <max>`.
+- `parse_expr(src, fns)` and `Rupaka.expr(src, fns)` take more functions by name in `fns`.
+- The gallery has a new demo, `diffusion-noise`. It shows the forward noise of a diffusion model with a linear schedule.
+
 ## 0.0.6
 
 - `Rupaka.open(el, gate)` opens a closed gate again, as the Try another button of the gate does. It removes the pick, the reason and the verdict, sets `gate.<id>` to `'open'` and hides the blocks that wait for the gate. It draws one time. It does not move the focus. It sends no `rk-predict`, adds nothing to `st.log` and does not call `save`. A gate that is open does not change, and the call gives `true`. A gate that waits for the host to save a prediction does not open, and the call gives `false`. An unknown gate gives `false`. It throws the same error as `Rupaka.state` when no demo is mounted in `el`.

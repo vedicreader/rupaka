@@ -1,0 +1,12 @@
+{
+  "rupaka": 1, "id": "pixels-example", "title": "Pixels",
+  "state": {"t": 0},
+  "derive": [{"fn": "field", "expr": "sqrt(1 - t/1000) * (i + j)/30 + sqrt(t/1000) * noise(i, j)", "n": 16, "seed": 7, "out": "img"}],
+  "blocks": [
+    {"type": "gate", "id": "end", "prompt": "At t = 0 each cell is (i + j)/30. The largest value has the text colour. Which corner is that?",
+     "options": ["top left", "bottom right"], "answer": {"is": "bottom right"}, "hides": ["img"]},
+    {"type": "pixels", "after": "end", "bind": "img", "label": "Grid at t = {t}"},
+    {"type": "slider", "after": "end", "bind": "t", "label": "t", "min": 0, "max": 1000, "step": 10},
+    {"type": "caption", "after": "end", "text": "Move t to 1000. The ramp fades into noise."}
+  ]
+}

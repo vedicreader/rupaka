@@ -1,0 +1,11 @@
+{
+  "name": "field", "since": "0.0.7",
+  "purpose": "An expr formula on each cell of an n x n grid, for a pixels block. Row i and column j go from 0 to n - 1. The formula can also call noise(i, j): a value with mean 0 and variance 1, the same for the same seed, i and j.",
+  "returns": "a list of n rows of n numbers",
+  "props": {
+    "expr": {"type": "cellexpr", "req": true, "doc": "the formula of one cell over i, j and number state keys, for example \"(i + j)/30 + noise(i, j)\""},
+    "n": {"type": "int", "default": 16, "min": 1, "max": 64, "doc": "the number of rows and columns, from 1 to 64"},
+    "seed": {"type": "int", "default": 0, "doc": "the seed of noise; another seed gives other noise"}
+  },
+  "example": {"fn": "field", "expr": "sqrt(1 - t/1000) * (i + j)/30 + sqrt(t/1000) * noise(i, j)", "n": 16, "seed": 7, "out": "img"}
+}
