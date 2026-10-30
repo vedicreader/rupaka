@@ -14,6 +14,7 @@ A demo never shows the answer first. Each demo follows one loop:
 4.  Explain. The caption ends with a new question that the learner answers with the controls.
 
 The validator enforces step 1: a block that shows a value which the answer depends on must wait for the gate.
+An explainer is the one exception. It has `"mode": "learn"` and no gate, so it shows a thing at once (see Explainers below).
 
 ## What a demo is
 
@@ -25,7 +26,7 @@ A model can write a spec safely, because a spec cannot run code.
 | block | a reusable UI part in `rupaka/blocks/<name>/`: its JS, its CSS, a `block.json` manifest and an example |
 | fn | a pure function that computes a derived value: [`rules`](https://vedicreader.github.io/rupaka/spec.html#rules), [`rrf`](https://vedicreader.github.io/rupaka/spec.html#rrf), [`softmax`](https://vedicreader.github.io/rupaka/spec.html#softmax), [`lookup`](https://vedicreader.github.io/rupaka/spec.html#lookup), [`expr`](https://vedicreader.github.io/rupaka/spec.html#expr), [`field`](https://vedicreader.github.io/rupaka/spec.html#field), `ids`, `pick`, `sort`, [`fmt`](https://vedicreader.github.io/rupaka/spec.html#fmt) |
 | gate | the block that asks for the prediction and hides the result until the lock in |
-| spec | the JSON object: `state`, `derive`, `blocks` and `tables` |
+| spec | the JSON object: `state`, `derive`, `blocks` and `tables`, and a `mode` that is `predict` (the default) or `learn` |
 
 The blocks are [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate), [`readout`](https://vedicreader.github.io/rupaka/spec.html#readout), [`caption`](https://vedicreader.github.io/rupaka/spec.html#caption), [`row`](https://vedicreader.github.io/rupaka/spec.html#row), [`stack`](https://vedicreader.github.io/rupaka/spec.html#stack), [`slider`](https://vedicreader.github.io/rupaka/spec.html#slider), [`toggle`](https://vedicreader.github.io/rupaka/spec.html#toggle), [`choice`](https://vedicreader.github.io/rupaka/spec.html#choice), [`wheel`](https://vedicreader.github.io/rupaka/spec.html#wheel), [`ranklist`](https://vedicreader.github.io/rupaka/spec.html#ranklist), [`bars`](https://vedicreader.github.io/rupaka/spec.html#bars), [`axis`](https://vedicreader.github.io/rupaka/spec.html#axis), [`point`](https://vedicreader.github.io/rupaka/spec.html#point), [`plot`](https://vedicreader.github.io/rupaka/spec.html#plot), [`grid`](https://vedicreader.github.io/rupaka/spec.html#grid) and [`pixels`](https://vedicreader.github.io/rupaka/spec.html#pixels).
 For 3D, a [`scene`](https://vedicreader.github.io/rupaka/spec.html#scene) holds [`body`](https://vedicreader.github.io/rupaka/spec.html#body), [`force`](https://vedicreader.github.io/rupaka/spec.html#force), [`label3d`](https://vedicreader.github.io/rupaka/spec.html#label3d) and [`shot`](https://vedicreader.github.io/rupaka/spec.html#shot) blocks (see the section on 3D scenes below).
@@ -135,6 +136,19 @@ The board of the screen guide speaks one line for each step. It drives a scene w
 | `{"op": "cam", "shot": "side"}` | `Rupaka.cam(el, 'side')`. It sets the key that a [`shot`](https://vedicreader.github.io/rupaka/spec.html#shot) block binds. It gives `false` for a bad name, or when the scene has no bound shot |
 
 `shots(spec)` gives the shot names that a spec knows, so a host can check a `cam` operation before it draws. Each scene element also tells its state: `data-rk-shot` is the shot now, and `data-rk-still` is `1` when nothing moves.
+
+### Explainers
+
+Sometimes the learner must see a thing before there is a good question, for example how a jet hovers. An explainer shows a scene at once, with no prediction step.
+Set `"mode": "learn"` on the spec. Then [`validate`](https://vedicreader.github.io/rupaka/spec.html#validate) lets the spec have no gate. All the other checks still run.
+
+- An explainer cannot have a gate, and no block can wait for a gate or lock to a gate. [`validate`](https://vedicreader.github.io/rupaka/spec.html#validate) refuses each one and says what to remove.
+- With no `mode`, or with `"mode": "predict"`, a spec with no gate is refused as before. A `mode` that is not `predict` or `learn` is refused.
+- The runtime shows a small “Explainer” label above the title, so the learner knows that there is no prediction step. The `.rk` element has `data-rk-mode="learn"`.
+
+``` python
+ex = demo('box', 'A box', mode='learn', state=dict(step=1), blocks=[scene(body('b', 'box', [1, 1, 1]), bind='step', steps=['A box.'])])
+```
 
 ## The gallery
 

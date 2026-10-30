@@ -16,6 +16,7 @@
 - rupaka keeps three.js 0.185.0 (MIT) in `rupaka/static/vendor/three/`. It loads only for a spec with a scene. `page` puts it in the page, and a server serves `bundle('three')` as `three.js` beside `rupaka.js`. The tests check the hash of each vendored file.
 - `Rupaka.rgb(node, colour)` gives the RGB of a colour or a `--rk-*` var. `pixels` uses it now.
 - The headless check starts Chromium with `--enable-unsafe-swiftshader`, so WebGL draws on a machine with no GPU.
+- A spec with `"mode": "learn"` is an explainer. It has no gate, so it shows a thing at once, with no prediction step. The runtime shows a small "Explainer" label above the title. `validate` refuses a gate in an explainer, a block that waits for a gate, and a `mode` that is not `predict` or `learn`. A spec with no `mode` still needs a gate. `demo` takes `mode`.
 
 ## 0.0.7
 
