@@ -1,0 +1,17 @@
+{
+  "rupaka": 1, "id": "shot-example", "title": "Shot",
+  "ask": "Predict the shape that a can shows from the top. Then pick a shot.",
+  "state": {"cam": "side"},
+  "blocks": [
+    {"type": "gate", "id": "top", "prompt": "From the side, a can shows a rectangle. What shape does it show from the top?",
+     "options": ["circle", "rectangle", "triangle"], "answer": {"is": "circle"}},
+    {"type": "scene", "label": "A can", "height": 300, "blocks": [
+      {"type": "body", "id": "can", "kind": "cylinder", "size": [0.7, 1.8], "color": "ok"},
+      {"type": "body", "id": "lid", "kind": "cylinder", "size": [0.72, 0.08], "at": [0, 0.94, 0], "color": "light"},
+      {"type": "body", "id": "tab", "kind": "box", "size": [0.3, 0.04, 0.16], "in": "lid", "at": [0.25, 0.06, 0], "color": "dark", "round": 0.3},
+      {"type": "shot", "name": "side"},
+      {"type": "shot", "bind": "cam", "after": "top"}]},
+    {"type": "choice", "after": "top", "bind": "cam", "label": "Shot", "options": ["side", "top", "wide", "close:lid"]},
+    {"type": "caption", "after": "top", "text": "Pick top, and the can shows a circle. Pick side again, and it shows a rectangle."}
+  ]
+}

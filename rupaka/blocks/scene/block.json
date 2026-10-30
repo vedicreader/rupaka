@@ -1,0 +1,18 @@
+{
+  "name": "scene",
+  "since": "0.0.8",
+  "purpose": "A 3D view in a toon style, drawn with three.js. Put body, force, label3d and shot blocks inside it. With bind, it builds one step at a time.",
+  "binds": "number: the step, an int from 1 (optional)",
+  "keys": "A/D or ←/→ back and next step, 1-9 go to a step, Q/E turn the view, W/S tilt it; drag to turn",
+  "lockable": true,
+  "props": {
+    "bind": {"type": "key", "doc": "the state key of the step, an int from 1; a part with step n shows from step n"},
+    "steps": {"type": "texts", "doc": "one line for each step, under the view; {path} takes a state value; at most 8 lines of at most 200 characters"},
+    "label": {"type": "str", "doc": "what the scene shows, above it and for screen readers"},
+    "height": {"type": "num", "default": 380, "min": 200, "max": 900, "doc": "the height of the view in pixels"},
+    "scale": {"type": "num", "min": 0, "doc": "the arrow length for a mag of 1; if left out, the largest force is 0.3 of the scene size"},
+    "floor": {"type": "num", "doc": "the height (y) of the floor; the lowest point of the bodies if left out"},
+    "ground": {"type": "bool", "default": true, "doc": "false hides the floor and the shadow"},
+    "blocks": {"type": "blocks", "req": true, "doc": "body, force, label3d and shot blocks only", "only": ["body", "force", "label3d", "shot"]}
+  }
+}

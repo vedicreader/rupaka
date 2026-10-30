@@ -1,0 +1,19 @@
+{
+  "rupaka": 1, "id": "force-example", "title": "Force",
+  "ask": "Two people push a crate from the two sides. Predict the net push.",
+  "state": {"a": 11, "b": 3},
+  "derive": [{"fn": "expr", "expr": "a - b", "out": "net"}],
+  "blocks": [
+    {"type": "gate", "id": "net", "context": "For pushes of {a} N and {b} N:",
+     "prompt": "The left push is {a} N and the right push is {b} N. What is the net push to the right, in N?",
+     "options": [8, 14, 3], "answer": "net"},
+    {"type": "scene", "label": "A crate with two pushes", "height": 300, "blocks": [
+      {"type": "body", "id": "crate", "kind": "box", "size": [1.4, 1.4, 1.4], "color": "acc"},
+      {"type": "force", "on": "crate", "at": [-0.7, 0, 0], "dir": [1, 0, 0], "mag": "a", "tip": true, "label": "left push, {a} N"},
+      {"type": "force", "on": "crate", "at": [0.7, 0, 0], "dir": [-1, 0, 0], "mag": "b", "tip": true, "label": "right push, {b} N"},
+      {"type": "force", "on": "crate", "at": [0, 1.1, 0], "dir": [1, 0, 0], "mag": "net", "tone": "ok", "label": "net, {net} N", "after": "net"},
+      {"type": "shot", "name": "side"}]},
+    {"type": "slider", "after": "net", "bind": "b", "label": "Right push in N", "min": 0, "max": 15},
+    {"type": "caption", "after": "net", "text": "Make the right push bigger than the left push. Which way does the net arrow point now?"}
+  ]
+}

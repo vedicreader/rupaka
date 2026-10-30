@@ -1,0 +1,15 @@
+{
+  "rupaka": 1, "id": "body-example", "title": "Body",
+  "ask": "Predict how a cube looks after a quarter turn. Then turn it with the slider.",
+  "state": {"turn": 0},
+  "blocks": [
+    {"type": "gate", "id": "same", "prompt": "A cube turns 90 degrees about its up axis. If you do not look at the dot, does it look the same?",
+     "options": ["yes", "no"], "answer": {"is": "yes"}},
+    {"type": "scene", "label": "A cube on a plate", "height": 300, "blocks": [
+      {"type": "body", "id": "plate", "kind": "cylinder", "size": [1.6, 0.2], "color": "dark"},
+      {"type": "body", "id": "cube", "kind": "box", "size": [1.2, 1.2, 1.2], "at": [0, 0.75, 0], "rot": [0, "turn", 0], "color": "acc"},
+      {"type": "body", "id": "dot", "kind": "sphere", "size": [0.16], "in": "cube", "at": [0, 0, 0.62], "color": "no"}]},
+    {"type": "slider", "after": "same", "bind": "turn", "label": "Turn in degrees", "min": 0, "max": 180, "step": 15},
+    {"type": "caption", "after": "same", "text": "The dot is in the cube, so it turns with the cube. At 90 degrees the shape looks the same."}
+  ]
+}

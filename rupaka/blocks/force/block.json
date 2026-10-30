@@ -1,0 +1,19 @@
+{
+  "name": "force",
+  "since": "0.0.8",
+  "purpose": "An arrow in a scene. Its length is mag times the scene scale, so arrows compare. A slider that changes mag changes the arrow.",
+  "binds": "mag and the items of dir: numbers or state keys",
+  "keys": "none",
+  "parent": "scene",
+  "props": {
+    "dir": {"type": "vec3key", "req": true, "doc": "the direction [x, y, z] in the world; [0, 1, 0] is up"},
+    "mag": {"type": "numkey", "req": true, "doc": "the size of the force; a negative mag turns the arrow round"},
+    "on": {"type": "str", "doc": "the id of the body that the force acts on; the arrow moves with it"},
+    "at": {"type": "vec3", "doc": "the point in the frame of the body on (or of the world)"},
+    "tip": {"type": "bool", "default": false, "doc": "true: the arrow ends at the point, as a push; false: it starts there"},
+    "tone": {"type": "str", "of": ["up", "down", "side", "acc", "ok", "no", "ink"], "doc": "the colour; if left out, up, down or side from dir"},
+    "label": {"type": "text", "doc": "a chip on the arrow, at most 60 characters; {path} takes a state value"},
+    "show": {"type": "key", "doc": "a state key; the arrow shows when its value is true"},
+    "step": {"type": "int", "min": 1, "doc": "the arrow shows from this step of the scene"}
+  }
+}

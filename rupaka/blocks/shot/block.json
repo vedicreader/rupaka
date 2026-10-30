@@ -1,0 +1,14 @@
+{
+  "name": "shot",
+  "since": "0.0.8",
+  "purpose": "The camera of a scene: a named shot. The scene finds the framing, and it moves to the newest shot that shows, with easing.",
+  "binds": "a state key with the shot name (optional)",
+  "keys": "none",
+  "parent": "scene",
+  "props": {
+    "name": {"type": "str", "doc": "wide, side, front, top or close:<body id>"},
+    "bind": {"type": "key", "doc": "a state key that holds the shot name; the board's cam operation sets it"},
+    "step": {"type": "int", "min": 1, "doc": "the shot starts at this step of the scene"}
+  },
+  "one_of": [["name", "bind"]]
+}

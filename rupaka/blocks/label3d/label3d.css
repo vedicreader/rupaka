@@ -1,0 +1,14 @@
+/* A chip of a scene (label3d, and a force with a label): a solid pastel fill, a bar of its tone at the left, and a soft shadow. */
+.rk-scene .rk-chip { --tone: var(--rk-fg); position: absolute; left: 0; top: 0; margin: 0; padding: 3px 9px 4px 8px; border-radius: 6px;
+  font: 500 13px/1.3 var(--sans, ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', sans-serif); white-space: nowrap; color: var(--rk-fg);
+  background: color-mix(in srgb, var(--tone) 10%, var(--rk-bg)); border: 1px solid color-mix(in srgb, var(--tone) 38%, var(--rk-bg));
+  border-left: 4px solid var(--tone);
+  box-shadow: 0 1px 1.5px color-mix(in srgb, var(--rk-fg) 8%, transparent), 0 8px 16px -9px color-mix(in srgb, var(--rk-fg) 40%, transparent);
+  transform-origin: 0 50%; }
+.rk-scene .rk-chip.off { visibility: hidden; }
+.rk-scene .rk-chip:not(.off) { animation: rk-chip-in .26s cubic-bezier(.3, 1.5, .5, 1); }   /* it grows in and settles; the text stays solid */
+@keyframes rk-chip-in { from { scale: .86; } to { scale: 1; } }
+.rk-scene .rk-chip[data-tone="acc"], .rk-scene .rk-chip[data-tone="side"] { --tone: var(--rk-acc); }
+.rk-scene .rk-chip[data-tone="ok"], .rk-scene .rk-chip[data-tone="up"] { --tone: var(--rk-ok); }
+.rk-scene .rk-chip[data-tone="no"], .rk-scene .rk-chip[data-tone="down"] { --tone: var(--rk-no); }
+@media (prefers-reduced-motion: reduce) { .rk-scene .rk-chip:not(.off) { animation: none; } }

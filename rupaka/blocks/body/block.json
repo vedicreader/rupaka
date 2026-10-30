@@ -1,0 +1,22 @@
+{
+  "name": "body",
+  "since": "0.0.8",
+  "purpose": "One part of a scene: a primitive shape, or a group that holds other bodies. A state key in rot turns it.",
+  "binds": "optional state keys in rot and show",
+  "keys": "none",
+  "parent": "scene",
+  "props": {
+    "id": {"type": "str", "req": true, "doc": "the body id; force, label3d, in and close:<id> name it"},
+    "kind": {"type": "str", "req": true, "of": ["box", "cylinder", "cone", "sphere", "capsule", "torus", "group"], "doc": "the shape; a group has no shape and holds other bodies"},
+    "size": {"type": "nums", "doc": "box [x, y, z]; cylinder [radius, height] or [top radius, bottom radius, height]; cone and capsule [radius, height]; sphere [radius]; torus [radius, tube]"},
+    "at": {"type": "vec3", "doc": "the place [x, y, z] in the frame of the parent body (y is up)"},
+    "rot": {"type": "vec3key", "doc": "the turn in degrees about x, y and z; an item can be a state key"},
+    "pivot": {"type": "vec3", "doc": "the point that rot turns about, in the same frame as at; at if left out"},
+    "in": {"type": "str", "doc": "the id of a body above this one; this body moves and turns with it"},
+    "color": {"type": "str", "of": ["body", "light", "dark", "glass", "acc", "ok", "no"], "default": "body", "doc": "a palette name; the scene takes the colours from the page theme"},
+    "round": {"type": "num", "min": 0, "max": 0.5, "default": 0.14, "doc": "box only: the edge radius as a share of the smallest side"},
+    "turn": {"type": "num", "min": 0, "max": 10000, "default": 700, "doc": "the time in ms that a change of rot takes"},
+    "show": {"type": "key", "doc": "a state key; the body shows when its value is true"},
+    "step": {"type": "int", "min": 1, "doc": "the body shows from this step of the scene"}
+  }
+}

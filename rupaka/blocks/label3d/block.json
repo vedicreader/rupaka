@@ -1,0 +1,16 @@
+{
+  "name": "label3d",
+  "since": "0.0.8",
+  "purpose": "A chip pinned to a point of a scene, with a leader line to the point. The scene places the chips so that they never overlap.",
+  "binds": "a text template, as a readout has",
+  "keys": "none",
+  "parent": "scene",
+  "props": {
+    "text": {"type": "text", "req": true, "doc": "the chip text, at most 60 characters; {path} takes a state value"},
+    "on": {"type": "str", "doc": "the id of the body that the chip points at"},
+    "at": {"type": "vec3", "doc": "the point in the frame of the body on (or of the world)"},
+    "tone": {"type": "str", "of": ["ink", "acc", "ok", "no"], "default": "ink", "doc": "the colour of the bar at the left of the chip"},
+    "show": {"type": "key", "doc": "a state key; the chip shows when its value is true"},
+    "step": {"type": "int", "min": 1, "doc": "the chip shows from this step of the scene"}
+  }
+}

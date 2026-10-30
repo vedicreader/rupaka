@@ -1,0 +1,19 @@
+{
+  "rupaka": 1, "id": "label3d-example", "title": "Label3d",
+  "ask": "Predict the angle in a water molecule. Then turn the model with Q and E.",
+  "state": {"angle": 104.5},
+  "blocks": [
+    {"type": "gate", "id": "hoh", "prompt": "Water is H₂O. What is the angle between the two bonds, in degrees?",
+     "options": [90, 104.5, 180], "answer": {"is": 104.5}, "hides": ["angle"]},
+    {"type": "scene", "label": "A water molecule", "height": 320, "ground": false, "blocks": [
+      {"type": "body", "id": "O", "kind": "sphere", "size": [0.66], "color": "no"},
+      {"type": "body", "id": "H1", "kind": "sphere", "size": [0.4], "at": [0.79, -0.61, 0], "color": "light"},
+      {"type": "body", "id": "H2", "kind": "sphere", "size": [0.4], "at": [-0.79, -0.61, 0], "color": "light"},
+      {"type": "label3d", "on": "O", "at": [0, 0.5, 0], "text": "oxygen", "tone": "no"},
+      {"type": "label3d", "on": "H1", "text": "hydrogen"},
+      {"type": "label3d", "on": "H2", "text": "hydrogen"},
+      {"type": "label3d", "at": [0, -0.35, 0.6], "text": "{angle} degrees", "tone": "acc", "after": "hoh"},
+      {"type": "shot", "name": "side"}]},
+    {"type": "caption", "after": "hoh", "text": "The angle is less than 109.5 degrees. Two lone pairs on the oxygen push the bonds closer."}
+  ]
+}
