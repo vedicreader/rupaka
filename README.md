@@ -28,6 +28,7 @@ A model can write a spec safely, because a spec cannot run code.
 | spec | the JSON object: `state`, `derive`, `blocks` and `tables` |
 
 The blocks are [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate), [`readout`](https://vedicreader.github.io/rupaka/spec.html#readout), [`caption`](https://vedicreader.github.io/rupaka/spec.html#caption), [`row`](https://vedicreader.github.io/rupaka/spec.html#row), [`stack`](https://vedicreader.github.io/rupaka/spec.html#stack), [`slider`](https://vedicreader.github.io/rupaka/spec.html#slider), [`toggle`](https://vedicreader.github.io/rupaka/spec.html#toggle), [`choice`](https://vedicreader.github.io/rupaka/spec.html#choice), [`wheel`](https://vedicreader.github.io/rupaka/spec.html#wheel), [`ranklist`](https://vedicreader.github.io/rupaka/spec.html#ranklist), [`bars`](https://vedicreader.github.io/rupaka/spec.html#bars), [`axis`](https://vedicreader.github.io/rupaka/spec.html#axis), [`point`](https://vedicreader.github.io/rupaka/spec.html#point), [`plot`](https://vedicreader.github.io/rupaka/spec.html#plot), [`grid`](https://vedicreader.github.io/rupaka/spec.html#grid) and [`pixels`](https://vedicreader.github.io/rupaka/spec.html#pixels).
+For 3D, a [`scene`](https://vedicreader.github.io/rupaka/spec.html#scene) holds [`body`](https://vedicreader.github.io/rupaka/spec.html#body), [`force`](https://vedicreader.github.io/rupaka/spec.html#force), [`label3d`](https://vedicreader.github.io/rupaka/spec.html#label3d) and [`shot`](https://vedicreader.github.io/rupaka/spec.html#shot) blocks (see the section on 3D scenes below).
 
 ## Install
 
@@ -95,6 +96,45 @@ To show one demo in two windows, mount the spec in each window. Send `Rupaka.sta
 A host can remove the gate answers from the spec of a copy that a room sees, so that the room cannot read them early. Then give the answer to `Rupaka.settle` in `answer`. The gate uses it to draw the verdict. `answer` is `{is: value}` or a path in the state, as in a gate. When the spec has an answer, the gate uses the answer in the spec. Rupaka does not write `answer` into the spec or the state. When the spec has no answer and you give no `answer`, the gate closes with no verdict.
 
 `rupaka.poll` makes a question for a room from a gate. `of_gate(spec, gate)` gives the question and the index of the answer. `public(p)` gives the part that the room sees.
+
+## 3D scenes
+
+A [`scene`](https://vedicreader.github.io/rupaka/spec.html#scene) block draws a physical thing in 3D: a jet that hovers, a gearbox, a molecule. It holds four kinds of part:
+
+| block | what it is |
+|----|----|
+| [`body`](https://vedicreader.github.io/rupaka/spec.html#body) | a primitive (`box`, `cylinder`, `cone`, `sphere`, `capsule`, `torus`) or a `group`. `in` puts a body in another body, so a compound part moves as one. A state key in `rot` turns it |
+| [`force`](https://vedicreader.github.io/rupaka/spec.html#force) | an arrow on a body. Its length is `mag` times the scene scale, so arrows compare. `mag` can be a state key or a derived key |
+| [`label3d`](https://vedicreader.github.io/rupaka/spec.html#label3d) | a chip on a point, with a leader line. Chips never overlap: each chip goes to a free place around its point |
+| [`shot`](https://vedicreader.github.io/rupaka/spec.html#shot) | a named camera: `wide`, `side`, `front`, `top` or `close:<body id>`. The scene finds the framing from the bounds of what shows |
+
+The scene has a toon look: flat colours in three soft bands, ink outlines, a soft floor and a contact shadow. The colours come from the page theme, in light and dark.
+With `bind`, a scene builds one step at a time: a part with `step: n` shows from step n, and the camera moves to the newest shot. With `prefers-reduced-motion`, the camera cuts and parts show at once.
+The think rule holds: a force or a label that shows the answer of a gate must wait for the gate.
+
+``` python
+s = demo('lift', state=dict(step=1, cam='wide', w=4), derive=[expr('w * 2', 'up')],
+         blocks=[gate('g', 'What is twice {w}?', [6, 8], 'up'),
+                 scene(body('base', 'box', [2, 1, 2]), force([0, 1, 0], 'up', on='base', at=[0, 1.5, 0], label='lift, {up}', after='g'),
+                       shot(bind='cam'), shot('close:base', step=2), bind='step', steps=['A box.', 'Look closer.'])])
+```
+
+rupaka keeps a copy of three.js (0.185.0, MIT) in `rupaka/static/vendor/three/`. It loads only for a spec that has a scene, and never from a CDN:
+
+- [`page`](https://vedicreader.github.io/rupaka/render.html#page), [`save`](https://vedicreader.github.io/rupaka/render.html#save), [`show`](https://vedicreader.github.io/rupaka/render.html#show) and `md(frame=True)` put three.js in the page when a spec has a scene, so the page works offline and from `file://`.
+- A server that serves the runtime at a prefix also serves `bundle('three')` as `three.js` at that prefix, beside `rupaka.js`. The runtime loads it from there the first time that a scene mounts. A host that serves it at another place sets `Rupaka.base` before the first scene mounts.
+
+### Scenes and the board
+
+The board of the screen guide speaks one line for each step. It drives a scene with the host API, so “again”, “slower” and “next” need no new code:
+
+| board operation | host call |
+|----|----|
+| `{"op": "step", "n": 3}` with a scene spec | `Rupaka.set(el, {step: 3})`, where `step` is the `bind` of the scene |
+| `{"op": "demo", "set": {...}}` | `Rupaka.set(el, {...})`, for example a slider value or a step |
+| `{"op": "cam", "shot": "side"}` | `Rupaka.cam(el, 'side')`. It sets the key that a [`shot`](https://vedicreader.github.io/rupaka/spec.html#shot) block binds. It gives `false` for a bad name, or when the scene has no bound shot |
+
+`shots(spec)` gives the shot names that a spec knows, so a host can check a `cam` operation before it draws. Each scene element also tells its state: `data-rk-shot` is the shot now, and `data-rk-still` is `1` when nothing moves.
 
 ## The gallery
 

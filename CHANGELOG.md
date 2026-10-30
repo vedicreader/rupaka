@@ -2,6 +2,21 @@
 
 <!-- do not remove -->
 
+## 0.0.8
+
+- A new block family draws 3D scenes. The `scene` block holds `body`, `force`, `label3d` and `shot` blocks. Each one has a manifest and an example.
+- A `body` is a `box`, `cylinder`, `cone`, `sphere`, `capsule`, `torus` or `group`. `in` puts it in another body, so it moves and turns with that body. An item of `rot` can be a state key, and a change of it eases over `turn` ms.
+- A `force` is an arrow on a body. Its length is `mag` times the scene `scale`, so the arrows of one scene compare. It grows when it shows and when `mag` changes.
+- A `label3d` is a chip with a leader line to a point. The chips of a scene never overlap. A chip goes to a free place around its point and keeps it while it stays free. A chip with no free place does not show.
+- A `shot` is a named camera: `wide`, `side`, `front`, `top` or `close:<body id>`. The scene finds the framing from the bounds of what shows. The camera moves to the newest shot with easing. With `prefers-reduced-motion`, it cuts.
+- With `bind`, a scene builds one step at a time. A part with `step: n` shows from step n. `steps` gives one line for each step. A/D or the arrows go back and on, 1-9 go to a step, Q/E turn the view and W/S tilt it.
+- The look is toon style: flat colours in three soft bands, ink outlines from an edge pass on depth and normals, a soft floor and a blurred contact shadow. The colours come from the `--rk-*` vars, in light and dark.
+- `Rupaka.cam(el, shot)` sets the key that a bound `shot` block reads, for the `cam` operation of a board. It gives `false` for a bad name. `shots(spec)` gives the shot names that a spec knows.
+- `validate` refuses an unknown body kind, a size with the wrong count of numbers, a body id that is used twice, a body `in` a body below it, a force or a label `on` a missing body, a bad shot name, and a step outside the `steps` lines. A manifest prop can have `of`, a list of the values that it allows.
+- rupaka keeps three.js 0.185.0 (MIT) in `rupaka/static/vendor/three/`. It loads only for a spec with a scene. `page` puts it in the page, and a server serves `bundle('three')` as `three.js` beside `rupaka.js`. The tests check the hash of each vendored file.
+- `Rupaka.rgb(node, colour)` gives the RGB of a colour or a `--rk-*` var. `pixels` uses it now.
+- The headless check starts Chromium with `--enable-unsafe-swiftshader`, so WebGL draws on a machine with no GPU.
+
 ## 0.0.7
 
 - The fn `field` computes an `expr` formula for each cell of an n x n grid. It gives a list of n rows. Row `i` and column `j` go from 0 to n - 1. The formula can read `i`, `j` and number state keys. `n` is from 1 to 64, and the default is 16.
