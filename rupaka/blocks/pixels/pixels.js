@@ -5,11 +5,7 @@ Rupaka.block('pixels', (b, ctx) => {
   const {el, fmt} = Rupaka, s = ctx.s;
   const cv = el('canvas', {role: 'img', width: 0, height: 0, style: `width: ${b.size ?? 256}px`});
   const lbl = b.label ? el('span', {class: 'rk-lbl', 'aria-hidden': 'true'}) : null;
-  const probe = el('canvas', {width: 1, height: 1}).getContext('2d', {willReadFrequently: true});
-  const rgb = v => {
-    cv.style.color = `var(${v})`; probe.clearRect(0, 0, 1, 1); probe.fillStyle = getComputedStyle(cv).color; cv.style.color = '';
-    probe.fillRect(0, 0, 1, 1); return probe.getImageData(0, 0, 1, 1).data;
-  };
+  const rgb = v => Rupaka.rgb(cv, v);
   s.on(() => {
     const text = fmt(b.label || b.bind, s.st), v = s.get(b.bind) || [], m = Array.isArray(v[0]) ? v : [v];
     cv.setAttribute('aria-label', text); if (lbl) lbl.textContent = text;

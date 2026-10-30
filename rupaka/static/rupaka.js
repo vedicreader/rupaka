@@ -27,6 +27,35 @@
   Object.assign(R, {el, sv, get, fmt, show, hide, block: (name, f) => { R.blocks[name] = f; }, fn: (name, f) => { R.fns[name] = f; }});
   R.label = (b, ...more) => b.label ? el('span', {class: 'rk-lbl', text: b.label}, ...more) : null;
 
+  // The [r, g, b] (0 to 255) of a CSS colour or a --rk-* var, as it is in effect on `node`. A 1 x 1 canvas reads any colour syntax.
+  let probe;
+  R.rgb = (node, c) => {
+    node.style.color = c.startsWith('--') ? `var(${c})` : c;
+    const v = getComputedStyle(node).color;
+    node.style.color = '';
+    probe ??= el('canvas', {width: 1, height: 1}).getContext('2d', {willReadFrequently: true});
+    probe.clearRect(0, 0, 1, 1); probe.fillStyle = v; probe.fillRect(0, 0, 1, 1);
+    return [...probe.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+  };
+
+  // A vendored library that only some blocks need (three.js for a scene). page() puts it in the page when a spec needs it.
+  // Else it loads one time from `R.base` (the folder of rupaka.js, or a path that the host sets), never from another site.
+  const SRC = document.currentScript?.src || '', LIBS = {three: 'RupakaTHREE'}, loading = {};
+  R.base = SRC ? SRC.replace(/[?#].*$/, '').replace(/[^/]*$/, '') : '';
+  const query = SRC.match(/\?[^#]*/)?.[0] || '';
+  R.need = name => {
+    const g = LIBS[name];
+    if (!g) return Promise.reject(new Error(`unknown library "${name}"`));
+    if (window[g]) return Promise.resolve(window[g]);
+    return loading[name] ??= new Promise((ok, no) => {
+      if (!R.base) { delete loading[name]; return no(new Error(`${name}.js is not on this page`)); }
+      const s = el('script', {src: `${R.base}${name}.js${query}`});
+      s.onload = () => window[g] ? ok(window[g]) : no(new Error(`${name}.js did not load`));
+      s.onerror = () => { delete loading[name]; no(new Error(`${name}.js did not load`)); };
+      document.head.append(s);
+    });
+  };
+
   // The input keys are the keys of spec.state. `save(state)` runs after a change of one of them, with the value that Rupaka.state gives.
   const inputs = spec => Object.keys(spec.state || {});
   const snap = s => Object.fromEntries(inputs(s.spec).map(k => [k, structuredClone(s.st[k])]));

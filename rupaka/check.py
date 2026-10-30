@@ -30,7 +30,7 @@ def browser(path:str=None):
     "A headless browser for `check`; one at a time in this process, closed at the end."
     from playwright.sync_api import sync_playwright
     with _ONE, sync_playwright() as pw:
-        b = pw.chromium.launch(executable_path=browser_path(path), headless=True)
+        b = pw.chromium.launch(executable_path=browser_path(path), headless=True, args=['--enable-unsafe-swiftshader'])
         try: yield b
         finally: b.close()
 
