@@ -110,6 +110,7 @@
     const ctx = {s, spec, root, live: g => !g || s.get(`gate.${g}`) === 'done'};
     ctx.build = b => build(b, ctx);
     ctx.put = (b, k, val) => { if (!ctx.live(b.lock)) return false; s.set(k, val); return true; };   // a locked control refuses
+    if (spec.mode === 'learn') { root.dataset.rkMode = 'learn'; root.append(el('p', {class: 'rk-mode', text: 'Explainer'})); }   // no gate, so no prediction step
     if (spec.title) root.append(el('h3', {class: 'rk-title', text: spec.title}));
     if (spec.ask) root.append(el('p', {class: 'rk-ask', text: spec.ask}));
     root.append(...(spec.blocks || []).map(ctx.build));

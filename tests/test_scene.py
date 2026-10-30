@@ -1,7 +1,8 @@
-"The scene blocks in a headless browser: the view draws, the steps build, the chips never overlap, and three.js loads only for a scene."
+"The scene blocks in a headless browser: the view draws, the steps build, the chips never overlap, three.js loads only for a scene, and an explainer draws with no gate."
 import json
 import pytest
-from rupaka.spec import examples
+from rupaka.spec import examples, validate
+from rupaka.check import check
 from rupaka.render import page, bundle, three_js, THREE
 
 EX = examples()
@@ -88,6 +89,34 @@ def test_reduced_motion_cuts(br):
         s = pg.locator('.rk-scene .stage')
         assert s.get_attribute('data-rk-still') == '1' and s.get_attribute('data-rk-shot') == 'close:fan'
     finally: pg.close()
+
+# an explainer: the F-35 scene with no gate
+
+def explainer(spec):
+    "A copy of `spec` with mode learn, no gate, and no block that waits for a gate."
+    def strip(bs): return [{**{k: v for k, v in b.items() if k != 'after'}, **({'blocks': strip(b['blocks'])} if 'blocks' in b else {})}
+                           for b in bs if b['type'] != 'gate']
+    return {**spec, 'mode': 'learn', 'ask': 'Step through the scene with D.', 'blocks': strip(spec['blocks'])}
+
+LEARN = explainer(F35)
+
+def test_explainer_needs_the_mode():
+    assert validate(LEARN) == []
+    assert validate({k: v for k, v in LEARN.items() if k != 'mode'}) == ['blocks: needs at least one gate: the learner predicts first']
+    assert validate({**LEARN, 'mode': 'learning'}) == ['mode: "learning" is not a mode; use predict or learn']
+
+def test_explainer_passes_check(br):
+    r = check(LEARN, b=br)
+    assert r.errors == [] and r.info['light'] == [] and r.shots == []
+
+def test_explainer_shows_its_label_and_every_part(draw):
+    d = draw(LEARN); settled(d.pg)
+    assert d.pg.evaluate("[document.querySelector('.rk-mode').textContent, document.querySelector('.rk').dataset.rkMode]") == ['Explainer', 'learn']
+    assert d.pg.locator('.rk-gate').count() == 0
+    step(d, 6)
+    assert 'roll posts, 3900 lbf in all' in [c['text'] for c in chips(d.pg)] and d.errors == []
+    d = draw(F35)
+    assert d.pg.locator('.rk-mode').count() == 0 and d.pg.evaluate("document.querySelector('.rk').dataset.rkMode") is None
 
 # the host API: the board's cam operation
 
