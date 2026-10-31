@@ -5,7 +5,7 @@
    `bind` is the step: a part with `step: n` shows from step n. Keys on the view: A/D back and next, 1-9 a step, Q/E turn, W/S tilt. */
 (() => {
   const R = Rupaka, {el, sv, fmt} = R;
-  const SHOTS = {wide: {az: 35, el: 22, fov: 32}, side: {az: 0, el: 4, fov: 12}, front: {az: 90, el: 4, fov: 12},
+  const SHOTS = {wide: {az: 30, el: 18, fov: 30}, side: {az: 0, el: 4, fov: 12}, front: {az: 90, el: 4, fov: 12},
                  top: {az: 0, el: 89, fov: 12}, close: {az: 30, el: 18, fov: 28}};
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
   const inout = t => (t = clamp(t, 0, 1)) < .5 ? 4 * t ** 3 : 1 - (2 - 2 * t) ** 3 / 2;
@@ -45,11 +45,11 @@
 
   const TOON_V = `varying vec3 vN;
     void main() { vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;
-  // Three bands of light with soft, anti-aliased edges, so a flat colour stays true in the light band.
+  // Three bands of light with soft edges, so a flat colour stays true in the light band and a round part still reads as round.
   const TOON_F = `uniform vec3 color; uniform vec3 light; varying vec3 vN;
     void main() {
       vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
-      float d = dot(n, light), a = fwidth(d) * 1.5 + .002;
+      float d = dot(n, light), a = fwidth(d) + .11;
       float band = .66 + .16 * smoothstep(-.3 - a, -.3 + a, d) + .18 * smoothstep(.3 - a, .3 + a, d);
       gl_FragColor = vec4(color * band, 1.);
       #include <colorspace_fragment>
@@ -57,7 +57,7 @@
   const FLAT_V = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;
   // The floor fades into the page at its rim. A contact shadow is dark at its middle and soft at its edge.
   const FLOOR_F = `uniform vec3 color; varying vec2 vUv;
-    void main() { float r = length(vUv - .5) * 2.; gl_FragColor = vec4(color, 1. - smoothstep(.35, 1., r)); }`;
+    void main() { float r = length(vUv - .5) * 2., a = 1. - smoothstep(0., 1., r); gl_FragColor = vec4(color, a * a); }`;
   // The contact shadow: the scene seen from under the floor, dark where a part is near the floor, then blurred.
   const DARK_V = `varying float vY; void main() { vec4 p = modelMatrix * vec4(position, 1.); vY = p.y; gl_Position = projectionMatrix * viewMatrix * p; }`;
   const DARK_F = `uniform float floor, fade; varying float vY;
@@ -73,7 +73,8 @@
     void main() { float r = length(vUv - .5) * 2.; gl_FragColor = vec4(color, alpha * texture2D(map, vec2(vUv.x, 1. - vUv.y)).a * (1. - smoothstep(.7, 1., r))); }`;
   const POST_V = `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }`;
   // The ink: a line where the depth steps toward the viewer (the outline) or where the normal turns fast (a crease).
-  const POST_F = `uniform sampler2D tC; uniform sampler2D tN; uniform sampler2D tD; uniform vec2 texel; uniform float w, near, far; uniform vec3 ink;
+  // Where no part draws, the floor and its shadow fade into the page near the edges of the view, so the ground has no edge.
+  const POST_F = `uniform sampler2D tC; uniform sampler2D tN; uniform sampler2D tD; uniform vec2 texel; uniform float w, near, far; uniform vec3 ink, bg;
     varying vec2 vUv;
     float lin(float d) { float z = d * 2. - 1.; return 2. * near * far / (far + near - z * (far - near)); }
     void main() {
@@ -87,6 +88,8 @@
         de += min(lin(d) - l0, l0);
         if (d0 < 1. && d < 1.) ne = max(ne, 1. - dot(n0, texture2D(tN, uv).xyz * 2. - 1.));
       }
+      vec2 q = abs(vUv - .5) * 2.;
+      if (d0 >= 1.) col = mix(col, bg, smoothstep(.55, 1., max(q.x, q.y)));
       float e = d0 < 1. ? max(smoothstep(.05, .16, de / l0), smoothstep(.3, .6, ne)) : 0.;
       gl_FragColor = vec4(mix(col, ink, e * .92), 1.);
       #include <colorspace_fragment>
@@ -175,10 +178,11 @@
     function palette() {
       const g = v => R.rgb(stage, v).map(x => x / 255);
       const bg = g('--rk-bg'), fg = g('--rk-fg'), acc = g('--rk-acc'), ok = g('--rk-ok'), no = g('--rk-no');
-      const night = lum(bg) < lum(fg), paper = night ? fg : bg, ink = night ? bg : fg;
-      const tint = c => mix(c, paper, night ? .3 : .52), deep = c => mix(c, paper, night ? .05 : .15);
-      return {night, bg, floor: mix(bg, fg, night ? .1 : .06), shade: mix(ink, [0, 0, 0], .5), line: mix(ink, [0, 0, 0], night ? .7 : .3),
-              body: mix(paper, ink, .2), light: mix(paper, [1, 1, 1], .6), dark: mix(paper, ink, .48),
+      // On a dark page the parts take a dimmed paper, so a light part does not glare.
+      const night = lum(bg) < lum(fg), paper = night ? mix(fg, bg, .25) : bg, ink = night ? bg : fg;
+      const tint = c => mix(c, paper, night ? .35 : .62), deep = c => mix(c, paper, night ? .12 : .3);
+      return {night, bg, floor: mix(bg, fg, night ? .07 : .05), shade: mix(ink, [0, 0, 0], .5), line: mix(ink, [0, 0, 0], night ? .7 : .3),
+              body: mix(paper, ink, night ? .2 : .12), light: night ? mix(paper, fg, .3) : mix(paper, [1, 1, 1], .35), dark: mix(paper, ink, .4),
               glass: mix(mix(paper, ink, .45), acc, .12), acc: tint(acc), ok: tint(ok), no: tint(no), up: deep(ok), down: deep(no), side: deep(acc)};
     }
     const mats = {};
@@ -192,7 +196,7 @@
       for (const [k, m] of Object.entries(mats)) m.uniforms.color.value = col(pal[k] || pal.body);
       floor.material.uniforms.color.value = col(pal.floor);
       shadow.material.uniforms.color.value = col(pal.shade);
-      post.material.uniforms.ink.value = col(pal.line);
+      post.material.uniforms.ink.value = col(pal.line); post.material.uniforms.bg.value = col(pal.bg);
       kick();
     }
 
@@ -276,8 +280,12 @@
     // Chips: each one goes to the first free place around its point, and keeps its place while that stays free.
     const DIRS = [-45, -135, 0, 180, 45, 135, -90, 90].map(d => [Math.cos(rad(d)), Math.sin(rad(d))]);
     const hit = (p, q, m) => p.x < q.x + q.w + m && q.x < p.x + p.w + m && p.y < q.y + q.h + m && q.y < p.y + p.h + m;
+    // The leader of a chip: from its point to the nearest point of its box. Two leaders that cross are hard to follow.
+    const lead = (it, bx) => [[it.x, it.y], [clamp(it.x, bx.x, bx.x + bx.w), clamp(it.y, bx.y, bx.y + bx.h)]];
+    const side = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    const cross = ([a, b], [c, d]) => side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0;
     function layout() {
-      const placed = [], items = [];
+      const placed = [], items = [], segs = [];
       for (const q of parts) {
         if (!q.node.classList.contains('rk-chip')) continue;
         const a = q.node.hidden || !S.live(q.b) ? null : q.impl.anchor?.(q);
@@ -288,8 +296,9 @@
         }
         if (it && it.w) items.push(it); else off(q);
       }
-      const free = (bx, it, dots) => bx.x >= 4 && bx.y >= 4 && bx.x + bx.w <= W - 4 && bx.y + bx.h <= H - 4 && !placed.some(p => hit(bx, p, 6))
-        && (!dots || !items.some(o => o !== it && o.x > bx.x - 5 && o.x < bx.x + bx.w + 5 && o.y > bx.y - 5 && o.y < bx.y + bx.h + 5));
+      const free = (bx, it, strict) => bx.x >= 4 && bx.y >= 4 && bx.x + bx.w <= W - 4 && bx.y + bx.h <= H - 4 && !placed.some(p => hit(bx, p, 6))
+        && (!strict || (!items.some(o => o !== it && o.x > bx.x - 5 && o.x < bx.x + bx.w + 5 && o.y > bx.y - 5 && o.y < bx.y + bx.h + 5)
+                        && !segs.some(s => cross(s, lead(it, bx)))));
       const mid = new T.Vector3(view.tx, view.ty, view.tz).project(cam), mx = (mid.x + 1) / 2 * W, my = (1 - mid.y) / 2 * H;
       for (const it of items) {
         const at = ([dx, dy]) => ({x: it.x + dx - it.w / 2, y: it.y + dy - it.h / 2, w: it.w, h: it.h, d: [dx, dy]});
@@ -297,21 +306,20 @@
         const out = d => (d[0] * ox + d[1] * oy) / on - d[1] * .35;   // away from the middle, and a little up
         const dirs = [...DIRS].sort((p, q) => out(q) - out(p));
         if (it.q.d) tries.push(it.q.d);
-        for (const r of [30, 54, 84, 124]) for (const [cx, cy] of dirs) {
+        for (const r of [30, 54, 84, 124, 170]) for (const [cx, cy] of dirs) {
           const ext = Math.abs(cx) * it.w / 2 + Math.abs(cy) * it.h / 2;
           tries.push([cx * (r + ext), cy * (r + ext)]);
         }
-        // The first free place that covers almost no part; else the free place that covers the least.
-        let ok = tries.map(at).filter(x => free(x, it, true));
-        if (!ok.length) ok = tries.map(at).filter(x => free(x, it, false));
-        const cs = ok.map(cover), i = cs.findIndex(c => c < .08), bx = ok[i >= 0 ? i : cs.indexOf(Math.min(...cs))];
+        // A chip must not cover a part. So the first free place that covers almost no part wins, and a place with no dot
+        // under it and no crossed leader wins over one with them. If each free place covers a part, the one that covers the least wins.
+        const ok = tries.map(at).filter(x => free(x, it, false)), cs = ok.map(cover), clear = ok.filter((x, i) => cs[i] < .03);
+        const bx = clear.find(x => free(x, it, true)) || clear[0] || ok[cs.indexOf(Math.min(...cs))];
         if (!bx) { off(it.q); continue; }
-        placed.push(bx); it.q.d = bx.d;
+        placed.push(bx); segs.push(lead(it, bx)); it.q.d = bx.d;
         it.q.node.style.transform = `translate(${bx.x.toFixed(1)}px, ${bx.y.toFixed(1)}px)`;
         it.q.node.classList.remove('off');
         const ln = it.q.ln ??= leads.appendChild(sv('g', {}, sv('line'), sv('circle', {r: 2.6})));
-        const ex = clamp(it.x, bx.x, bx.x + bx.w), ey = clamp(it.y, bx.y, bx.y + bx.h);
-        const [l, c] = ln.children;
+        const [, [ex, ey]] = lead(it, bx), [l, c] = ln.children;
         l.setAttribute('x1', it.x); l.setAttribute('y1', it.y); l.setAttribute('x2', ex); l.setAttribute('y2', ey);
         c.setAttribute('cx', it.x); c.setAttribute('cy', it.y);
         ln.style.display = '';
@@ -399,7 +407,7 @@
       floor = new T.Mesh(new T.PlaneGeometry(1, 1), flatMat(FLOOR_F, {color: {value: col(pal.floor)}}));
       floor.rotation.x = -Math.PI / 2; floor.userData.flat = true;
       const c = all.getCenter(new T.Vector3()), r = Math.max(all.max.x - all.min.x, all.max.z - all.min.z, S.size * .5) * 2.4;
-      floor.position.set(c.x, S.floor, c.z); floor.scale.set(r, r, 1); floor.visible = b.ground !== false;
+      floor.position.set(c.x, S.floor, c.z); floor.scale.set(r * 1.4, r * 1.4, 1); floor.visible = b.ground !== false;
       world.add(floor);
       const sr = r * .5, fade = S.size * .35;
       shRT = new T.WebGLRenderTarget(512, 512); shRT2 = new T.WebGLRenderTarget(512, 512);
@@ -418,7 +426,7 @@
       rtN = new T.WebGLRenderTarget(1, 1, {depthTexture: new T.DepthTexture(1, 1)});
       post = new T.Mesh(new T.PlaneGeometry(2, 2), new T.ShaderMaterial({
         uniforms: {tC: {value: rtC.texture}, tN: {value: rtN.texture}, tD: {value: rtN.depthTexture}, texel: {value: new T.Vector2()},
-                   w: {value: 1}, near: {value: .1}, far: {value: 100}, ink: {value: col(pal.line)}},
+                   w: {value: 1}, near: {value: .1}, far: {value: 100}, ink: {value: col(pal.line)}, bg: {value: col(pal.bg)}},
         vertexShader: POST_V, fragmentShader: POST_F, depthTest: false, depthWrite: false}));
       postCam = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
       const pass = new T.Scene(); pass.add(post); post.frustumCulled = false; S.pass = pass;
@@ -460,6 +468,6 @@
       try { start(lib); }
       catch (e) { console.error('rupaka: scene', e); msg.hidden = false; msg.textContent = 'This browser cannot draw the 3D view.'; stage.dataset.rkGl = 'error'; }
     }, e => { console.error('rupaka: scene', e); msg.hidden = false; msg.textContent = `The 3D view could not load: ${e.message}`; stage.dataset.rkGl = 'error'; });
-    return el('div', {}, R.label(b), stage, bar, b.steps ? say : null, sr);
+    return el('div', {}, R.label(b), stage, b.steps ? say : null, bar, sr);
   });
 })();
