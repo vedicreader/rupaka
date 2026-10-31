@@ -28,7 +28,7 @@ A model can write a spec safely, because a spec cannot run code.
 | gate | the block that asks for the prediction and hides the result until the lock in |
 | spec | the JSON object: `state`, `derive`, `blocks` and `tables`, and a `mode` that is `predict` (the default) or `learn` |
 
-The blocks are [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate), [`readout`](https://vedicreader.github.io/rupaka/spec.html#readout), [`caption`](https://vedicreader.github.io/rupaka/spec.html#caption), [`row`](https://vedicreader.github.io/rupaka/spec.html#row), [`stack`](https://vedicreader.github.io/rupaka/spec.html#stack), [`slider`](https://vedicreader.github.io/rupaka/spec.html#slider), [`toggle`](https://vedicreader.github.io/rupaka/spec.html#toggle), [`choice`](https://vedicreader.github.io/rupaka/spec.html#choice), [`wheel`](https://vedicreader.github.io/rupaka/spec.html#wheel), [`ranklist`](https://vedicreader.github.io/rupaka/spec.html#ranklist), [`bars`](https://vedicreader.github.io/rupaka/spec.html#bars), [`axis`](https://vedicreader.github.io/rupaka/spec.html#axis), [`point`](https://vedicreader.github.io/rupaka/spec.html#point), [`plot`](https://vedicreader.github.io/rupaka/spec.html#plot), [`grid`](https://vedicreader.github.io/rupaka/spec.html#grid) and [`pixels`](https://vedicreader.github.io/rupaka/spec.html#pixels).
+The blocks are [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate), [`readout`](https://vedicreader.github.io/rupaka/spec.html#readout), [`caption`](https://vedicreader.github.io/rupaka/spec.html#caption), [`row`](https://vedicreader.github.io/rupaka/spec.html#row), [`stack`](https://vedicreader.github.io/rupaka/spec.html#stack), [`slider`](https://vedicreader.github.io/rupaka/spec.html#slider), [`toggle`](https://vedicreader.github.io/rupaka/spec.html#toggle), [`choice`](https://vedicreader.github.io/rupaka/spec.html#choice), [`wheel`](https://vedicreader.github.io/rupaka/spec.html#wheel), [`ranklist`](https://vedicreader.github.io/rupaka/spec.html#ranklist), [`bars`](https://vedicreader.github.io/rupaka/spec.html#bars), [`axis`](https://vedicreader.github.io/rupaka/spec.html#axis), [`point`](https://vedicreader.github.io/rupaka/spec.html#point), [`plot`](https://vedicreader.github.io/rupaka/spec.html#plot), [`grid`](https://vedicreader.github.io/rupaka/spec.html#grid), [`pixels`](https://vedicreader.github.io/rupaka/spec.html#pixels), [`pair`](https://vedicreader.github.io/rupaka/spec.html#pair) and [`flow`](https://vedicreader.github.io/rupaka/spec.html#flow).
 For 3D, a [`scene`](https://vedicreader.github.io/rupaka/spec.html#scene) holds [`body`](https://vedicreader.github.io/rupaka/spec.html#body), [`force`](https://vedicreader.github.io/rupaka/spec.html#force), [`label3d`](https://vedicreader.github.io/rupaka/spec.html#label3d) and [`shot`](https://vedicreader.github.io/rupaka/spec.html#shot) blocks (see the section on 3D scenes below).
 
 ## Install
@@ -89,6 +89,8 @@ A host page can read and change a demo that it mounted. In these calls, `el` is 
 | `Rupaka.settle(el, gate, pick, {answer})` | closes the gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate) as if the learner picked `pick`. It draws the verdict and shows the blocks that wait for the gate. With `pick` null, the gate closes with no verdict. An unknown gate does nothing and gives `false`. The options object is optional. |
 | `Rupaka.open(el, gate)` | opens the closed gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate) again, as the Try another button of the gate does. It removes the pick, the reason and the verdict, and hides the blocks that wait for the gate. It draws one time. It does not move the focus. A gate that is open does not change, and the call gives `true`. A gate that waits for the host to save a prediction does not open, and the call gives `false`. An unknown gate does nothing and gives `false`. |
 | `Rupaka.mount(el, spec, {save})` | calls `save(state)` after each change of an input key. `state` is the value that `Rupaka.state(el)` gives. |
+| `Rupaka.append(el, block, {into})` | adds one block at the end of the demo, or at the end of the [`stack`](https://vedicreader.github.io/rupaka/spec.html#stack) or [`row`](https://vedicreader.github.io/rupaka/spec.html#row) at the path `into`, with no rebuild. The parts that show stay. It gives the path of the new block, for example `'blocks.3'`. An unknown block type or a bad `into` throws an error. |
+| `Rupaka.anchor(el, path)` | gives the element of the block or the part at `path`, or `null`. Each block has `data-rk-id`: its path in the spec, such as `'blocks.2'`. A part adds to it: `'blocks.2.cells.0'`, `'blocks.2.to'`, `'blocks.3.nodes.1'`. The element can be hidden, for example in a later step. |
 
 `Rupaka.set`, `Rupaka.settle` and `Rupaka.open` never send `rk-predict`, never add to `st.log` and never call [`save`](https://vedicreader.github.io/rupaka/render.html#save). `Rupaka.options` only reads. A `lock` does not stop `Rupaka.set`. Each call throws an error when no demo is mounted in `el`.
 
@@ -148,6 +150,23 @@ Set `"mode": "learn"` on the spec. Then [`validate`](https://vedicreader.github.
 
 ``` python
 ex = demo('box', 'A box', mode='learn', state=dict(step=1), blocks=[scene(body('b', 'box', [1, 1, 1]), bind='step', steps=['A box.'])])
+```
+
+### Panels that build with a voice
+
+A board panel shows a worked example one row at a time, while a voice speaks. Use an explainer with the state key `step`:
+
+- A block with `"step": n` shows when the step is `n` or more, and draws in from the left. The host moves on with `Rupaka.set(el, {step: n})`.
+- A [\[`pair`\](https://vedicreader.github.io/rupaka/spec.html#pair)](https://vedicreader.github.io/rupaka/spec.html#pair) is one row: input cells, an arrow and the answer, for example `[18] → 47`. Its cells come in one by one, 80 ms apart.
+- A [\[`flow`\](https://vedicreader.github.io/rupaka/spec.html#flow)](https://vedicreader.github.io/rupaka/spec.html#flow) is two to five nodes with at most eight arrows, in a [`row`](https://vedicreader.github.io/rupaka/spec.html#row) or a `cycle`.
+- A server can stream the panel. It sends the start of the spec, then one block at a time. `append(spec, block)` checks each block in Python, and `Rupaka.append(el, block)` adds it in the page.
+- `Rupaka.anchor(el, path)` gives the element of a part, so the board can draw a curve from a mark on the page to that part.
+- `theme='paper'` on [`host`](https://vedicreader.github.io/rupaka/render.html#host), [`page`](https://vedicreader.github.io/rupaka/render.html#page) or [`Demo`](https://vedicreader.github.io/rupaka/render.html#demo) (the attribute `data-rk-theme="paper"`) gives a warm paper ground, light boxes, sketch lines and a hand font, Patrick Hand (OFL).
+
+``` python
+panel = demo('targets', 'Make a question and its answer', mode='learn', state=dict(step=1),
+             blocks=[pair(['[18]'], '47', heads=['Input tensor', 'Target'], step=1), pair(['[18, 47]'], '56', step=2),
+                     flow([dict(id='g', text='Guess'), dict(id='c', text='Compare'), dict(id='a', text='Adjust')], step=3)])
 ```
 
 ## The gallery

@@ -2,6 +2,17 @@
 
 <!-- do not remove -->
 
+## 0.0.9
+
+- In an explainer, any block can have `step`. It shows when the state key `step` is at that value or more, and draws in from the left. The host moves on with `Rupaka.set(el, {step: n})`. A block that has its own `step` (a slider, a scene part) keeps it; put it in a `stack` to show it by step. `validate` refuses a step in a demo that predicts, and a step with no int state key `step`.
+- `Rupaka.append(el, block, {into})` adds one block to a mounted demo with no rebuild, at the end or in a `stack` or `row`. It gives the path of the new block. `append(spec, block, into)` in Python adds the block only when the grown spec passes `validate`, and gives the errors.
+- A new block, `pair`, shows one row of a worked example: input cells, an arrow and the answer. It can have two `heads` and a number `n`. The cells, the arrow and the answer draw in 80 ms apart.
+- A new block, `flow`, shows two to five nodes and at most eight arrows, in a `row` (left to right) or a `cycle` (a loop). With no edges, each node points to the next. A skip arrow goes over the row and an arrow back goes under it. `validate` checks the node ids, the node text (at most 32 characters) and the arrow words (at most 3 words).
+- `Rupaka.anchor(el, path)` gives the element of a block or of a part. Each block has a stable `data-rk-id`: its path in the spec, for example `blocks.2`, `blocks.2.cells.0` or `blocks.3.nodes.1`.
+- A paper theme: `data-rk-theme="paper"` on the demo element or a parent gives a warm paper ground, light boxes, sketch lines and a hand font. `host`, `page` and `Demo` take `theme='paper'`. The light and dark page themes do not change.
+- rupaka keeps the hand font Patrick Hand (SIL Open Font License 1.1) in `rupaka/static/fonts/`, with its licence in `LICENSES.txt`. `font_css` loads it.
+- A manifest prop can have `least` and `most`, the count of items that a list allows.
+
 ## 0.0.8
 
 - A new block family draws 3D scenes. The `scene` block holds `body`, `force`, `label3d` and `shot` blocks. Each one has a manifest and an example.
