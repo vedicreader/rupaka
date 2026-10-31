@@ -17,6 +17,18 @@
 - `Rupaka.rgb(node, colour)` gives the RGB of a colour or a `--rk-*` var. `pixels` uses it now.
 - The headless check starts Chromium with `--enable-unsafe-swiftshader`, so WebGL draws on a machine with no GPU.
 - A spec with `"mode": "learn"` is an explainer. It has no gate, so it shows a thing at once, with no prediction step. The runtime shows a small "Explainer" label above the title. `validate` refuses a gate in an explainer, a block that waits for a gate, and a `mode` that is not `predict` or `learn`. A spec with no `mode` still needs a gate. `demo` takes `mode`.
+- `rupaka.css` has shared tokens for space, radius, type size and motion: `--rk-s1` to `--rk-s6`, `--rk-r`, `--rk-r-s`, `--rk-t-lbl`, `--rk-t-meta`, `--rk-t-small`, `--rk-t-big`, `--rk-dur-1` to `--rk-dur-3` and `--rk-ease`. Each token takes the abhyasa var first, if the page has it. The block CSS uses these tokens.
+- A disabled button shows as an outline with readable text. A selected option has a light tint of the accent colour. The reason box has no resize grip.
+- A block that shows after the reveal moves up 6 px into its place. Its colour does not fade.
+- With `prefers-reduced-motion`, rupaka stops all transitions and animations.
+- The `ranklist` SVG is at most 360 px wide, so its text is near the size of the body text.
+- The `grid` example says "strongest colour" in place of "darkest colour". The strongest colour is correct in light and dark.
+- The selected day of a `wheel` fits inside its dot.
+- The floor of a scene fades into the page. The view has no ground band and no cut edge.
+- The parts of a scene have softer colours. On a dark page, a light part does not glare. Round parts show three soft bands, so they look round.
+- A scene chip goes first to a free place that covers no part. Among those places, a place where its leader line crosses no other leader line wins. If each free place covers a part, the chip goes to the place that covers the least. A chip searches farther from its point than before.
+- The step line of a scene shows above the Back and Next buttons. The step count uses the small meta type.
+- The `wide` shot looks from a lower and closer angle: 30 degrees around, 18 degrees up.
 
 ## 0.0.7
 

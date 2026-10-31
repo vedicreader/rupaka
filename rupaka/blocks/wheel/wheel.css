@@ -6,10 +6,10 @@
 .rk-wheel .tick text, .rk-wheel text.tick { font-size: 15px; fill: var(--rk-ink2); cursor: pointer; }
 .rk-wheel.ang text.tick { font-size: 10.5px; cursor: inherit; }
 .rk-wheel.ang .outer text { font-size: 12px; fill: var(--rk-mute); letter-spacing: .06em; }
-.rk-wheel .tick.on text { fill: var(--rk-bg); font-weight: 600; }
+.rk-wheel .tick.on text { fill: var(--rk-bg); font-weight: 600; font-size: 13px; }
 .rk-wheel.ang text.tick.on { fill: var(--rk-fg); font-weight: 600; }
 .rk-wheel .tick .dot { fill: transparent; }
-.rk-wheel .tick.on .dot { fill: var(--rk-acc); }
+.rk-wheel .tick.on .dot { fill: var(--rk-acc); r: 19px; }
 .rk-wheel .wedge { fill: color-mix(in srgb, var(--rk-acc) 16%, transparent); }
 .rk-wheel .hand { stroke: var(--rk-acc); stroke-width: 1.5; }
 .rk-wheel .val { font: 400 30px var(--rk-head); fill: var(--rk-fg); }
