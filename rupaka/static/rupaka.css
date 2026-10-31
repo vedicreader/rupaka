@@ -9,6 +9,7 @@
   --rk-acc: var(--acc, var(--mh-accent, var(--lee-accent, LinkText)));
   --rk-ok: var(--ok, var(--lee-green, color-mix(in srgb, green 70%, CanvasText)));
   --rk-no: var(--no, var(--lee-red, color-mix(in srgb, firebrick 80%, CanvasText)));
+  --rk-in: var(--rk-mute); --rk-out: var(--rk-acc);   /* the input cells and the answer of a pair */
   --rk-serif: var(--serif, var(--mh-serif, ui-serif, Georgia, serif));
   --rk-head: var(--head, var(--mh-serif, var(--rk-serif)));
   --rk-mono: var(--mono, var(--lee-mono, ui-monospace, monospace));

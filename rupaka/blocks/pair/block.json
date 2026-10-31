@@ -1,0 +1,13 @@
+{
+  "name": "pair",
+  "since": "0.0.9",
+  "purpose": "One row of a worked example: input cells, an arrow and the answer, for example [18] → 47. The parts come in one by one.",
+  "binds": "none",
+  "keys": "none",
+  "props": {
+    "cells": {"type": "texts", "req": true, "least": 1, "most": 6, "doc": "the input cells, one to six; {path} takes a state value"},
+    "to": {"type": "text", "req": true, "doc": "the answer at the end of the arrow"},
+    "heads": {"type": "texts", "least": 2, "most": 2, "doc": "two small labels above the cells and above the answer, for the first row"},
+    "n": {"type": "int", "min": 1, "max": 9, "doc": "a number in a circle at the start of the row"}
+  }
+}

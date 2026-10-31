@@ -1,0 +1,10 @@
+{
+  "rupaka": 1, "id": "pair-example", "mode": "learn", "title": "Make a question and its answer",
+  "ask": "Each row is one practice example. The model sees the input and learns the target.",
+  "state": {"step": 3},
+  "blocks": [
+    {"type": "pair", "step": 1, "heads": ["Input tensor", "Target: known answer"], "cells": ["[18]"], "to": "47"},
+    {"type": "pair", "step": 2, "cells": ["[18, 47]"], "to": "56"},
+    {"type": "pair", "step": 3, "n": 3, "cells": ["The", "sky", "is"], "to": "blue"}
+  ]
+}

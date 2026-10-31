@@ -6,11 +6,11 @@ Docs: https://vedicreader.github.io/rupaka/spec.html.md"""
 
 # %% auto #0
 __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'MAX_WORDS', 'TOP', 'MODES', 'SHOTS', 'UPGRADES',
-           'manifests', 'fn_manifests', 'from_', 'is_', 'demo', 'gate', 'readout', 'caption', 'row', 'stack', 'slider',
-           'toggle', 'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot', 'grid', 'pixels', 'scene', 'body',
-           'force', 'label3d', 'shot', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'field', 'fmt', 'parse_expr', 'get',
-           'js_str', 'show_value', 'fmt_text', 'noise', 'run', 'long_sentences', 'validate', 'shot_error', 'shots',
-           'append', 'upgrade', 'examples', 'gallery']
+           'manifests', 'fn_manifests', 'from_', 'is_', 'demo', 'gate', 'readout', 'caption', 'row', 'stack', 'pair',
+           'slider', 'toggle', 'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot', 'grid', 'pixels',
+           'scene', 'body', 'force', 'label3d', 'shot', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'field', 'fmt',
+           'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'noise', 'run', 'long_sentences', 'validate',
+           'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
 import json, math, re
@@ -62,6 +62,7 @@ def readout(text, label=None, **kw): return _b('readout', text=text, label=label
 def caption(text, label=None, **kw): return _b('caption', text=text, label=label, **kw)
 def row(*blocks, **kw): return _b('row', blocks=list(blocks), **kw)
 def stack(*blocks, **kw): return _b('stack', blocks=list(blocks), **kw)
+def pair(cells, to, heads=None, n=None, **kw): return _b('pair', cells=list(cells), to=to, heads=list(heads) if heads else None, n=n, **kw)
 def slider(bind, label=None, min=None, max=None, step=None, **kw): return _b('slider', bind=bind, label=label, min=min, max=max, step=step, **kw)
 def toggle(bind, label=None, **kw): return _b('toggle', bind=bind, label=label, **kw)
 def choice(bind, options, label=None, **kw): return _b('choice', bind=bind, options=list(options), label=label, **kw)
@@ -384,6 +385,8 @@ def _props(m, x, path, known, tables, err, skip=()):
         if 'of' in props[k] and v not in props[k]['of']: err(f'{path}.{k}', f'"{v}" is not one of: {", ".join(props[k]["of"])}'); continue
         lo, hi = props[k].get('min', -math.inf), props[k].get('max', math.inf)
         if ('min' in props[k] or 'max' in props[k]) and not lo <= v <= hi: err(f'{path}.{k}', f'must be from {lo} to {hi}'); continue
+        n0, n1 = props[k].get('least', 0), props[k].get('most', math.inf)
+        if isinstance(v, list) and not n0 <= len(v) <= n1: err(f'{path}.{k}', f'needs {n0} to {n1} items' if n0 != n1 else f'needs {n0} items'); continue
         rs = _reads(t, v)
         for r in sorted(rs - known - _SPECIAL - (set(x['over']) if t == 'expr' and x.get('over') else set())):
             err(f'{path}.{k}', f'"{r}" is not in state or derive')

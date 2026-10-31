@@ -1,0 +1,13 @@
+.rk-pair .heads { display: flex; justify-content: space-between; gap: var(--rk-s4); font-size: var(--rk-t-small); color: var(--rk-ink2); margin: 0 0 var(--rk-s2); }
+.rk-pair .line { display: flex; align-items: center; gap: var(--rk-s3); }
+.rk-pair .cells { display: flex; flex-wrap: wrap; gap: var(--rk-s2); }
+.rk-pair .cell, .rk-pair .to { padding: var(--rk-s2) var(--rk-s4); min-width: 2.6em; text-align: center; border: 1.5px solid var(--rk-in);
+  background: color-mix(in srgb, var(--rk-in) 10%, var(--rk-bg)); border-radius: var(--rk-r-s); font-variant-numeric: tabular-nums; line-height: 1.4; }
+.rk-pair .to { border-color: var(--rk-out); background: color-mix(in srgb, var(--rk-out) 10%, var(--rk-bg)); }
+.rk-pair .arrow { flex: 1 1 48px; min-width: 32px; height: 1.5px; background: var(--rk-ink2); position: relative; }
+.rk-pair .arrow::after { content: ''; position: absolute; right: 1px; top: 50%; width: 8px; height: 8px; border: solid var(--rk-ink2); border-width: 1.5px 1.5px 0 0;
+  transform: translateY(-50%) rotate(45deg); }
+.rk-pair .n { flex: none; width: 1.7em; height: 1.7em; display: grid; place-items: center; border: 1.5px solid var(--rk-mute); border-radius: 50%;
+  font-size: var(--rk-t-meta); color: var(--rk-ink2); }
+/* The cells, the arrow and the answer draw in one by one, 80 ms apart, when the row shows. */
+.rk-pair .cell, .rk-pair .arrow, .rk-pair .to { animation: rk-draw var(--rk-dur-2) var(--rk-ease) backwards; animation-delay: calc(var(--i) * 80ms); }

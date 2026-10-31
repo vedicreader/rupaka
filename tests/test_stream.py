@@ -67,3 +67,32 @@ def test_append_refuses_a_bad_block(draw):
         err = d.pg.evaluate("([b, o]) => { try { Rupaka.append(document.querySelector('[data-rupaka]'), b, o); } catch (e) { return e.message; } }", [b, dict(into=into)])
         assert msg in err
     assert d.pg.locator('.rk > .rk-b').count() == 1 and len(d.pg.evaluate(f"{H}.rupaka.spec.blocks")) == 1
+
+# pair
+
+from rupaka.spec import examples
+PAIR = examples()['pair']
+
+def test_pair_rows_build_by_step(draw):
+    d = draw({**PAIR, 'state': dict(step=1)})
+    row = lambda i: d.pg.locator('.rk-pair').nth(i)
+    assert row(0).locator('.cell').all_inner_texts() == ['[18]'] and row(0).locator('.to').inner_text() == '47'
+    assert row(0).locator('.heads').inner_text().split('\n') == ['Input tensor', 'Target: known answer']
+    assert not row(1).is_visible()
+    set_step(d, 2)
+    assert row(1).is_visible() and row(1).locator('.cell').all_inner_texts() == ['[18, 47]'] and row(1).locator('.to').inner_text() == '56'
+    assert d.errors == []
+
+def test_pair_parts_come_one_by_one(draw):
+    "Each cell, then the arrow, then the answer, starts 80 ms after the one before it."
+    d = draw({**PAIR, 'state': dict(step=2)}); set_step(d, 3)
+    delays = d.pg.locator('.rk-pair').nth(2).locator('.cell, .arrow, .to').evaluate_all("ns => ns.map(n => getComputedStyle(n).animationDelay)")
+    assert delays == ['0s', '0.08s', '0.16s', '0.24s', '0.32s']
+    assert d.pg.locator('.rk-pair').nth(2).locator('.n').inner_text() == '3'
+
+def test_pair_reads_the_state(draw):
+    d = draw(dict(id='pr', mode='learn', state=dict(x=18), derive=[dict(fn='expr', expr='x + 29', out='y')],
+                  blocks=[dict(type='pair', cells=['[{x}]'], to='{y}')]))
+    assert d.pg.locator('.rk-pair .to').inner_text() == '47'
+    d.pg.evaluate(f"Rupaka.set({H}, {{x: 1}})")
+    assert d.pg.locator('.rk-pair .cell').inner_text() == '[1]' and d.pg.locator('.rk-pair .to').inner_text() == '30'
