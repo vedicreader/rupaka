@@ -1,0 +1,13 @@
+{
+  "name": "flow",
+  "since": "0.0.9",
+  "purpose": "A few nodes and the arrows between them, left to right or as a loop, for example guess → compare → adjust.",
+  "binds": "none",
+  "keys": "none",
+  "props": {
+    "nodes": {"type": "list", "req": true, "least": 2, "most": 5, "doc": "the nodes, each {\"id\": a short id, \"text\": at most 32 characters}"},
+    "edges": {"type": "list", "most": 8, "doc": "the arrows, each {\"from\": id, \"to\": id, \"text\": at most 3 words}; with no edges, each node points to the next"},
+    "layout": {"type": "str", "of": ["row", "cycle"], "default": "row", "doc": "row: left to right; cycle: a loop"},
+    "label": {"type": "str", "doc": "a small label above the flow"}
+  }
+}

@@ -1,0 +1,13 @@
+.rk-flow svg { max-width: 600px; }
+.rk-flow .node rect { fill: color-mix(in srgb, var(--rk-in) 10%, var(--rk-bg)); stroke: var(--rk-in); stroke-width: 1.5; }
+.rk-flow .node text { font-size: 15px; fill: var(--rk-fg); }
+.rk-flow .edge path { fill: none; stroke: var(--rk-ink2); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.rk-flow .edge .et { font-size: 13px; fill: var(--rk-ink2); }
+/* The sketch line is a second, offset stroke. Only the paper theme shows it. */
+.rk-flow .sk { display: none; }
+.rk-flow .node .sk { fill: none; stroke-width: 1; opacity: .55; }
+.rk-flow .edge .sk { stroke-width: 1; opacity: .5; }
+/* The nodes rise in one by one, 80 ms apart, and then each arrow draws along its line. */
+.rk-flow .node { animation: rk-rise var(--rk-dur-3) var(--rk-ease) backwards; animation-delay: calc(var(--i) * 80ms); }
+.rk-flow .edge path { stroke-dasharray: 1; animation: rk-line var(--rk-dur-3) var(--rk-ease) backwards; animation-delay: calc(var(--i) * 80ms); }
+@keyframes rk-line { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }

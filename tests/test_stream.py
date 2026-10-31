@@ -96,3 +96,47 @@ def test_pair_reads_the_state(draw):
     assert d.pg.locator('.rk-pair .to').inner_text() == '47'
     d.pg.evaluate(f"Rupaka.set({H}, {{x: 1}})")
     assert d.pg.locator('.rk-pair .cell').inner_text() == '[1]' and d.pg.locator('.rk-pair .to').inner_text() == '30'
+
+# flow
+
+FLOW = examples()['flow']
+BOX = "g => { const r = g.querySelector('rect').getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width, h: r.height}; }"
+
+def still(d): d.pg.evaluate("Promise.all(document.getAnimations().map(a => a.finished))")
+
+def boxes(d, i):
+    "The centre and size of each node box of flow i, after the draw-in."
+    still(d)
+    return d.pg.locator('.rk-flow').nth(i).locator('.node').evaluate_all(f"gs => gs.map({BOX})")
+
+def test_flow_row_goes_left_to_right(draw):
+    d = draw(FLOW)
+    bs = boxes(d, 0)
+    assert d.pg.locator('.rk-flow').nth(0).locator('.node').all_text_contents() == ['Guess', 'Compare', 'Adjust']
+    assert bs[0]['x'] < bs[1]['x'] < bs[2]['x'] and len({round(b['y']) for b in bs}) == 1
+    assert d.pg.locator('.rk-flow').nth(0).locator('.edge').count() == 2           # no edges: each node points to the next
+    assert d.errors == []
+
+def test_flow_cycle_makes_a_loop(draw):
+    "The nodes go round the middle, and the words of an arrow sit outside the loop."
+    d = draw(FLOW)
+    bs, f = boxes(d, 1), d.pg.locator('.rk-flow').nth(1)
+    cx, cy = sum(b['x'] for b in bs) / 4, sum(b['y'] for b in bs) / 4
+    assert bs[0]['y'] < cy < bs[2]['y'] and bs[3]['x'] < cx < bs[1]['x']             # top, right, bottom, left
+    assert f.locator('.edge').count() == 4 and f.locator('.et').all_text_contents() == ['compare', 'next batch']
+    t = f.locator('.et').first.evaluate(f"t => {{ const r = t.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }}")
+    assert t[0] > cx and t[1] < cy                                                    # 'compare' is on the top right, outside the arc
+    assert 'Guess the next token to Measure the loss' in f.locator('svg').get_attribute('aria-label')
+
+def test_flow_nodes_never_overlap(draw):
+    d = draw(FLOW)
+    for i in (0, 1):
+        bs = boxes(d, i)
+        assert not [(a, b) for j, a in enumerate(bs) for b in bs[j + 1:] if abs(a['x'] - b['x']) < (a['w'] + b['w']) / 2 and abs(a['y'] - b['y']) < (a['h'] + b['h']) / 2]
+
+def test_flow_skip_and_back_arrows_curve(draw):
+    nodes = [dict(id=c, text=c.upper()) for c in 'abcd']
+    d = draw(dict(id='f', mode='learn', blocks=[dict(type='flow', nodes=nodes, edges=[{'from': 'a', 'to': 'b'}, {'from': 'a', 'to': 'c', 'text': 'skip'}, {'from': 'd', 'to': 'a', 'text': 'again'}])]))
+    ys = d.pg.locator('.rk-flow .et').evaluate_all("ts => ts.map(t => t.getBoundingClientRect().y)")
+    row = boxes(d, 0)[0]['y']
+    assert ys[0] < row < ys[1] and d.errors == []                                     # a skip goes over the row, a step back under it

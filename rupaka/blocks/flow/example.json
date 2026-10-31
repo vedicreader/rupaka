@@ -1,0 +1,14 @@
+{
+  "rupaka": 1, "id": "flow-example", "mode": "learn", "title": "How a model learns",
+  "ask": "The model makes a guess, compares it with the known answer, and adjusts its weights. Then it starts again.",
+  "state": {"step": 2},
+  "blocks": [
+    {"type": "flow", "step": 1, "label": "One training step", "nodes": [
+      {"id": "guess", "text": "Guess"}, {"id": "compare", "text": "Compare"}, {"id": "adjust", "text": "Adjust"}]},
+    {"type": "flow", "step": 2, "layout": "cycle", "label": "The training loop", "nodes": [
+      {"id": "guess", "text": "Guess the next token"}, {"id": "loss", "text": "Measure the loss"}, {"id": "grad", "text": "Find the gradient"},
+      {"id": "step", "text": "Adjust the weights"}],
+     "edges": [{"from": "guess", "to": "loss", "text": "compare"}, {"from": "loss", "to": "grad"}, {"from": "grad", "to": "step"},
+               {"from": "step", "to": "guess", "text": "next batch"}]}
+  ]
+}
