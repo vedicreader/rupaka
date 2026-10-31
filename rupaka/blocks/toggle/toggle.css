@@ -1,5 +1,7 @@
 .rk-toggle .sw { display: inline-flex; align-items: center; gap: 10px; }
-.rk-toggle .sw i { width: 30px; height: 16px; border-radius: 8px; border: 1px solid var(--rk-mute); position: relative; display: inline-block; }
-.rk-toggle .sw i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--rk-mute); transition: left .15s; }
+.rk-toggle .sw i { width: 30px; height: 16px; border-radius: 8px; border: 1px solid var(--rk-mute); position: relative; display: inline-block;
+                   transition: background-color var(--rk-dur-2) var(--rk-ease), border-color var(--rk-dur-2) var(--rk-ease); }
+.rk-toggle .sw i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--rk-mute);
+                          transition: left var(--rk-dur-2) var(--rk-ease), background-color var(--rk-dur-2) var(--rk-ease); }
 .rk-toggle .sw[aria-checked=true] i { border-color: var(--rk-acc); background: color-mix(in srgb, var(--rk-acc) 18%, transparent); }
 .rk-toggle .sw[aria-checked=true] i::after { left: 16px; background: var(--rk-acc); }

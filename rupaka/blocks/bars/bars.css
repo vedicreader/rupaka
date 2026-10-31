@@ -1,8 +1,8 @@
-.rk-bars .bar { transition: transform .25s ease; }
-.rk-bars rect { transition: width .25s ease, x .25s ease; }
+.rk-bars .bar { transition: transform var(--rk-dur-2) var(--rk-ease); }
+.rk-bars rect { rx: 2px; transition: width var(--rk-dur-2) var(--rk-ease), x var(--rk-dur-2) var(--rk-ease); }
 .rk-bars rect.p0, .rk-bars .key i.p0 { fill: var(--rk-acc); background: var(--rk-acc); }
 .rk-bars rect.p1, .rk-bars .key i.p1 { fill: color-mix(in srgb, var(--rk-acc) 50%, var(--rk-bg)); background: color-mix(in srgb, var(--rk-acc) 50%, var(--rk-bg)); }
 .rk-bars text.v { fill: var(--rk-mute); font-size: 13px; font-variant-numeric: tabular-nums; }
 .rk-bars text.t { font-size: 15px; }
-.rk-bars .key { font-size: 13px; color: var(--rk-mute); display: flex; gap: 16px; margin-top: 4px; }
-.rk-bars .key i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+.rk-bars .key { font-size: var(--rk-t-meta); color: var(--rk-mute); display: flex; gap: var(--rk-s4); margin-top: var(--rk-s1); }
+.rk-bars .key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }

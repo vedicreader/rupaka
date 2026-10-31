@@ -6,8 +6,8 @@
 .rk-ranklist.live .row { cursor: grab; }
 .rk-ranklist .row.drag rect.hit, .rk-ranklist .row:focus-visible rect.hit { fill: color-mix(in srgb, var(--rk-acc) 12%, transparent); }
 .rk-ranklist .row:focus { outline: none; }
-.rk-ranklist .row { transition: transform .18s ease; } .rk-ranklist .row.drag { transition: none; }
+.rk-ranklist .row { transition: transform var(--rk-dur-2) var(--rk-ease); } .rk-ranklist .row.drag { transition: none; }
 .rk-ranklist:not(.live) .grip { display: none; }
 
 /* a drag must own the pointer: no text selection, no pan */
-.rk-ranklist svg { touch-action: none; user-select: none; -webkit-user-select: none; }
+.rk-ranklist svg { touch-action: none; user-select: none; -webkit-user-select: none; max-width: 360px; }

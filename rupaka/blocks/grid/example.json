@@ -3,7 +3,7 @@
   "state": {"m": [[1, 2], [3, 4]]},
   "blocks": [
     {"type": "grid", "bind": "m", "label": "Numbers", "rows": ["top", "bottom"], "cols": ["left", "right"], "lock": "most"},
-    {"type": "gate", "id": "most", "prompt": "You raise the top left cell to 5. Which cell is darkest then?", "options": ["top left", "bottom right"], "answer": {"is": "top left"}},
-    {"type": "caption", "after": "most", "text": "The largest value gets the darkest colour. Now raise the top left cell to 5."}
+    {"type": "gate", "id": "most", "prompt": "You raise the top left cell to 5. Which cell has the strongest colour then?", "options": ["top left", "bottom right"], "answer": {"is": "top left"}},
+    {"type": "caption", "after": "most", "text": "The largest value gets the strongest colour. Now raise the top left cell to 5."}
   ]
 }
