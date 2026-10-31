@@ -81,15 +81,19 @@
     return s;
   }
 
+  // In an explainer, a block with `step` shows from that step of the state key `step`. These blocks use `step` for their own meaning.
+  // A Python test keeps this list equal to the manifests that have a `step` prop.
+  R.ownStep = new Set(['body', 'force', 'grid', 'label3d', 'point', 'shot', 'slider', 'wheel']);
   function build(b, ctx) {
     const f = R.blocks[b.type];
     if (!f) throw new Error(`unknown block "${b.type}"`);
-    const node = f(b, ctx);
+    const node = f(b, ctx), from = ctx.learn && b.step != null && !R.ownStep.has(b.type) ? +b.step : null;
     node.classList.add('rk-b', `rk-${b.type}`);
     node.setAttribute('data-rk-type', b.type);
     if (b.after) node.setAttribute('data-rk-after', b.after);
     if (b.lock) node.setAttribute('data-rk-lock', b.lock);
-    if (b.after) { const sync = () => hide(node, !ctx.live(b.after)); ctx.s.on(sync); sync(); }
+    if (from != null) node.setAttribute('data-rk-step', from);
+    if (b.after || from != null) { const sync = () => hide(node, !ctx.live(b.after) || (from != null && ctx.step() < from)); ctx.s.on(sync); sync(); }
     if (b.lock && !(node instanceof SVGElement)) {
       const note = el('div', {class: 'rk-note rk-locknote', text: 'Locked until you lock in your prediction.'});
       node.append(note);
@@ -107,7 +111,8 @@
     const v = spec.rupaka ?? R.schema;
     if (!(v === R.schema || v === R.schema - 1)) throw new Error(`schema ${v} is not supported; this runtime draws ${R.schema - 1} and ${R.schema}`);
     const s = store(spec, typeof save === 'function' ? save : null), root = el('div', {class: 'rk', 'data-rk': spec.id || ''});
-    const ctx = {s, spec, root, live: g => !g || s.get(`gate.${g}`) === 'done'};
+    const ctx = {s, spec, root, live: g => !g || s.get(`gate.${g}`) === 'done', learn: spec.mode === 'learn',
+                 step: () => s.st.step == null ? Infinity : +s.st.step};   // with no step key, each part shows
     ctx.build = b => build(b, ctx);
     ctx.put = (b, k, val) => { if (!ctx.live(b.lock)) return false; s.set(k, val); return true; };   // a locked control refuses
     if (spec.mode === 'learn') { root.dataset.rkMode = 'learn'; root.append(el('p', {class: 'rk-mode', text: 'Explainer'})); }   // no gate, so no prediction step

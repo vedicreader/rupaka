@@ -23,8 +23,8 @@ import rupaka
 # %% ../nbs/00_spec.ipynb #c006
 PKG = Path(rupaka.__file__).parent
 SCHEMA = 1
-#: props that every block can have
-COMMON = ('type', 'after')
+#: props that every block can have; `step` only in an explainer
+COMMON = ('type', 'after', 'step')
 
 @functools.cache
 def manifests() -> dict:
@@ -483,8 +483,9 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
         if m.get('parent') and (parent or {}).get('type') != m.parent: err(p, f'a {b["type"]} must be inside a {m.parent}')
         only = m.props.get('blocks', {}).get('only')
         if only: [err(f'{p}.blocks[{j}]', f'a {m.name} holds only {", ".join(only)}') for j, c in enumerate(b.get('blocks') or []) if c.get('type') not in only]
-        skip = ('type', 'after', 'blocks') + (('lock',) if m.get('lockable') else ())
+        skip = ('type', 'after', 'blocks') + (('lock',) if m.get('lockable') else ()) + (('step',) if 'step' not in m.props else ())
         reads[p] = _props(m, b, p, known, tables, err, skip=skip)
+        if (e := _step_err(b, m, learn, st)): err(f'{p}.step', e)
         if 'lock' in b and not m.get('lockable'): err(f'{p}.lock', f'a {m.name} has no controls to lock')
         if b['type'] == 'scene': _check_scene(p, b, st, st0, err)
         for k, t in ((k, m.props[k]['type']) for k in b if k in m.props):
@@ -506,6 +507,14 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
         if gid in _all_waits(p, allp, waits): err(f'{p}.after', f'the gate "{gid}" waits for itself')
     for gid, (p, g) in gates.items(): errs += _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads)
     return errs
+
+def _step_err(b, m, learn, st):
+    "Why the reveal `step` of block `b` is bad, or None. An explainer shows the part from that value of the state key `step`."
+    if 'step' not in b or 'step' in m.props: return None
+    isint = lambda v: isinstance(v, int) and not isinstance(v, bool) and v >= 1
+    if not isint(b['step']): return 'must be an int from 1'
+    if not learn: return 'only an explainer shows its parts by step; add "mode": "learn", or remove "step"'
+    if not isint(st.get('step')): return 'needs the state key "step" as an int from 1, so that the host can set the step'
 
 def _waits(p, allp):
     "The gates that block `p` waits for: its own `after` and the `after` of each block that holds it."

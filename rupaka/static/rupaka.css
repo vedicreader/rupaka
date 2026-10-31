@@ -45,6 +45,9 @@
 /* A block that waits for a gate rises a little when it shows. Only the place moves, so its colours stay true while it moves. */
 .rk .rk-b[data-rk-after]:not([hidden], .rk-chip, svg, svg *) { animation: rk-rise var(--rk-dur-3) var(--rk-ease); }
 @keyframes rk-rise { from { translate: 0 6px; } }
+/* A part that shows at its step draws in from the left. A wipe, not a fade, so its colours stay true while it moves. */
+.rk .rk-b[data-rk-step]:not([hidden], svg, svg *) { animation: rk-draw var(--rk-dur-3) var(--rk-ease) backwards; }
+@keyframes rk-draw { from { clip-path: inset(0 100% 0 0); translate: 0 4px; } to { clip-path: inset(0); } }
 @media (prefers-reduced-motion: reduce) {
   .rk *, .rk *::before, .rk *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 0s !important; }
 }
