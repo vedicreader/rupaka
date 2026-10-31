@@ -93,6 +93,7 @@
     if (b.after) node.setAttribute('data-rk-after', b.after);
     if (b.lock) node.setAttribute('data-rk-lock', b.lock);
     if (from != null) node.setAttribute('data-rk-step', from);
+    if (ctx.ids?.has(b)) node.setAttribute('data-rk-id', ctx.id(b));
     if (b.after || from != null) { const sync = () => hide(node, !ctx.live(b.after) || (from != null && ctx.step() < from)); ctx.s.on(sync); sync(); }
     if (b.lock && !(node instanceof SVGElement)) {
       const note = el('div', {class: 'rk-note rk-locknote', text: 'Locked until you lock in your prediction.'});
@@ -112,9 +113,13 @@
     const v = spec.rupaka ?? R.schema;
     if (!(v === R.schema || v === R.schema - 1)) throw new Error(`schema ${v} is not supported; this runtime draws ${R.schema - 1} and ${R.schema}`);
     const s = store(spec, typeof save === 'function' ? save : null), root = el('div', {class: 'rk', 'data-rk': spec.id || ''});
-    const ctx = {s, spec, root, nodes: new WeakMap(), live: g => !g || s.get(`gate.${g}`) === 'done', learn: spec.mode === 'learn',
+    const ctx = {s, spec, root, nodes: new WeakMap(), ids: new WeakMap(), live: g => !g || s.get(`gate.${g}`) === 'done', learn: spec.mode === 'learn',
                  step: () => s.st.step == null ? Infinity : +s.st.step};   // with no step key, each part shows
     ctx.build = b => build(b, ctx);
+    // Each block has a stable id: its path in the spec, such as 'blocks.2' or 'blocks.0.blocks.1'. A part adds its own path: 'blocks.2.cells.0'.
+    ctx.tag = (b, p) => { if (b && typeof b === 'object') { ctx.ids.set(b, p); (b.blocks || []).forEach((k, i) => ctx.tag(k, `${p}.blocks.${i}`)); } };
+    ctx.id = (b, part) => { const p = ctx.ids.get(b); return p == null ? null : part == null ? p : `${p}.${part}`; };
+    (spec.blocks || []).forEach((b, i) => ctx.tag(b, `blocks.${i}`));
     ctx.put = (b, k, val) => { if (!ctx.live(b.lock)) return false; s.set(k, val); return true; };   // a locked control refuses
     if (spec.mode === 'learn') { root.dataset.rkMode = 'learn'; root.append(el('p', {class: 'rk-mode', text: 'Explainer'})); }   // no gate, so no prediction step
     if (spec.title) root.append(el('h3', {class: 'rk-title', text: spec.title}));
@@ -147,10 +152,15 @@
     const s = mounted(host), ctx = CTX.get(s), into = opts?.into;
     const box = into ? get(s.spec, into) : s.spec, at = into ? ctx.nodes.get(box) : ctx.root;
     if (!box || (into && !GROUPS.has(box.type)) || !at) throw new Error(`${into} is not a stack or a row of this demo`);
-    const b = structuredClone(block), node = ctx.build(b), list = box.blocks ||= [];
+    const b = structuredClone(block), list = box.blocks ||= [], path = `${into ? into + '.' : ''}blocks.${list.length}`;
+    ctx.tag(b, path);
+    const node = ctx.build(b);
     list.push(b); at.append(node); s.emit('*');
-    return `${into ? into + '.' : ''}blocks.${list.length - 1}`;
+    return path;
   };
+  // The element of a block or of a part at `path` (its data-rk-id), or null. A host draws a curve from a mark on its page to this element.
+  // The element can be hidden, for example a part of a later step: check it before you draw.
+  R.anchor = (host, path) => CTX.get(mounted(host)).root.querySelector(`[data-rk-id="${CSS.escape(String(path))}"]`);
   R.set = (host, state) => {
     const s = mounted(host), ks = inputs(s.spec).filter(k => state && Object.hasOwn(state, k));
     if (!ks.length) return;

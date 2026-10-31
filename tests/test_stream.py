@@ -140,3 +140,29 @@ def test_flow_skip_and_back_arrows_curve(draw):
     ys = d.pg.locator('.rk-flow .et').evaluate_all("ts => ts.map(t => t.getBoundingClientRect().y)")
     row = boxes(d, 0)[0]['y']
     assert ys[0] < row < ys[1] and d.errors == []                                     # a skip goes over the row, a step back under it
+
+# anchor
+
+def anchor(d, path): return d.pg.evaluate(f"p => {{ const e = Rupaka.anchor({H}, p); return e && [e.dataset.rkId, e.textContent]; }}", path)
+
+def test_anchor_returns_the_right_element(draw):
+    d = draw(PAIR)
+    assert anchor(d, 'blocks.1') == ['blocks.1', '[18, 47]56']
+    assert anchor(d, 'blocks.1.cells.0') == ['blocks.1.cells.0', '[18, 47]']
+    assert anchor(d, 'blocks.2.cells.2') == ['blocks.2.cells.2', 'is'] and anchor(d, 'blocks.0.to') == ['blocks.0.to', '47']
+    assert anchor(d, 'blocks.9') is None and anchor(d, 'blocks.0"]') is None
+
+def test_anchor_finds_flow_nodes_and_appended_parts(draw):
+    d = draw(PANEL)
+    p = append(d, FLOW['blocks'][1])
+    assert anchor(d, f'{p}.nodes.2') == [f'{p}.nodes.2', 'Find thegradient']   # two lines of text
+    assert anchor(d, f'{p}.edges.3') == [f'{p}.edges.3', 'next batch']
+    assert anchor(d, 'blocks.0.blocks.0') == ['blocks.0.blocks.0', 'first']
+
+def test_anchor_ids_are_stable(draw):
+    "A step change or a new state keeps the same element at each id, so a curve stays on its part."
+    d = draw({**PAIR, 'state': dict(step=1)})
+    d.pg.evaluate(f"window.__a = Rupaka.anchor({H}, 'blocks.0.cells.0')")
+    set_step(d, 3); append(d, dict(type='pair', cells=['x'], to='y'))
+    assert d.pg.evaluate(f"Rupaka.anchor({H}, 'blocks.0.cells.0') === __a") and anchor(d, 'blocks.3.to') == ['blocks.3.to', 'y']
+    assert d.pg.evaluate(f"(() => {{ try {{ Rupaka.anchor(document.body, 'blocks.0'); }} catch (e) {{ return e.message; }} }})()") == 'no rupaka demo is mounted in this element'

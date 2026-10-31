@@ -29,14 +29,14 @@ Rupaka.block('flow', (b, ctx) => {
     else c = [(A[0] + Z[0]) / 2, d > 0 ? up - 48 : up + hmax + 48 - 8];   // a skip goes over the row, a step back goes under it
     const a = edge(i, d === 1 && !cyc ? Z : c), z = edge(k, d === 1 && !cyc ? A : c), mid = [(a[0] + 2 * c[0] + z[0]) / 4, (a[1] + 2 * c[1] + z[1]) / 4];
     const jog = [c[0] + 2, c[1] - 2.5];
-    svg.append(sv('g', {class: 'edge', style: `--i: ${n + j}`},
+    svg.append(sv('g', {class: 'edge', style: `--i: ${n + j}`, 'data-rk-id': ctx.id(b, `edges.${j}`)},
       sv('path', {class: 'ln', d: q(a, c, z) + head(c, z), pathLength: 1}),
       sv('path', {class: 'sk', d: q([a[0] + 1, a[1] + 1.5], jog, [z[0] - 1, z[1] + 1]), pathLength: 1}),
       e.text ? sv('text', {class: 'et', x: f(mid[0] + 10 * out[0]), y: f(mid[1] + 12 * out[1] + 4), text: e.text,
                            'text-anchor': out[0] > .3 ? 'start' : out[0] < -.3 ? 'end' : 'middle'}) : null));
   });
   ns.forEach((x, i) => { const [cx, cy] = ctr(i), bx = boxes[i], x0 = cx - bx.w / 2, y0 = cy - bx.h / 2;
-    svg.append(sv('g', {class: 'node', style: `--i: ${i}`},
+    svg.append(sv('g', {class: 'node', style: `--i: ${i}`, 'data-rk-id': ctx.id(b, `nodes.${i}`)},
       sv('rect', {x: f(x0), y: f(y0), width: f(bx.w), height: f(bx.h), rx: 6}),
       sv('rect', {class: 'sk', x: f(x0 + 1.5), y: f(y0 - 1), width: f(bx.w - 2), height: f(bx.h + 1.5), rx: 8}),
       bx.ls.map((l, r) => sv('text', {x: f(cx), y: f(cy + (r - (bx.ls.length - 1) / 2) * LH + 5), 'text-anchor': 'middle', text: l})))); });
