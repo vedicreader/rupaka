@@ -10,7 +10,7 @@ __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'MAX_WOR
            'toggle', 'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot', 'grid', 'pixels', 'scene', 'body',
            'force', 'label3d', 'shot', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'field', 'fmt', 'parse_expr', 'get',
            'js_str', 'show_value', 'fmt_text', 'noise', 'run', 'long_sentences', 'validate', 'shot_error', 'shots',
-           'upgrade', 'examples', 'gallery']
+           'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
 import json, math, re
@@ -605,6 +605,16 @@ def shots(spec) -> list:
     "The shot names that the scenes of `spec` know, for the board's `cam` operation."
     ids = [b['id'] for _, b, parent in _walk(spec.get('blocks')) if b.get('type') == 'body' and (parent or {}).get('type') == 'scene']
     return [*SHOTS, *(f'close:{i}' for i in ids)] if any(b.get('type') == 'scene' for _, b, _ in _walk(spec.get('blocks'))) else []
+
+# %% ../nbs/00_spec.ipynb #str02
+def append(spec:dict, block:dict, into:str=None) -> L:
+    "Add `block` to `spec` at the end, or in the stack or row at the path `into`, when the spec stays good. The errors of the grown spec."
+    s = deepcopy(spec)
+    box = get(s, into) if into else s
+    if not isinstance(box, dict) or (into and box.get('type') not in ('stack', 'row')): return L([f'{into}: is not a stack or a row'])
+    box.setdefault('blocks', []).append(deepcopy(block))
+    if not (errs := validate(s)): (get(spec, into) if into else spec).setdefault('blocks', []).append(deepcopy(block))
+    return errs
 
 # %% ../nbs/00_spec.ipynb #c084
 UPGRADES = {0: lambda s: s}   #: schema n -> a function that moves a spec from n to n + 1

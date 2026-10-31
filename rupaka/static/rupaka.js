@@ -100,6 +100,7 @@
       const sync = () => { const l = !ctx.live(b.lock); node.classList.toggle('rk-locked', l); note.hidden = !l; };
       ctx.s.on(sync); sync();
     }
+    ctx.nodes?.set(b, node);
     return node;
   }
 
@@ -111,7 +112,7 @@
     const v = spec.rupaka ?? R.schema;
     if (!(v === R.schema || v === R.schema - 1)) throw new Error(`schema ${v} is not supported; this runtime draws ${R.schema - 1} and ${R.schema}`);
     const s = store(spec, typeof save === 'function' ? save : null), root = el('div', {class: 'rk', 'data-rk': spec.id || ''});
-    const ctx = {s, spec, root, live: g => !g || s.get(`gate.${g}`) === 'done', learn: spec.mode === 'learn',
+    const ctx = {s, spec, root, nodes: new WeakMap(), live: g => !g || s.get(`gate.${g}`) === 'done', learn: spec.mode === 'learn',
                  step: () => s.st.step == null ? Infinity : +s.st.step};   // with no step key, each part shows
     ctx.build = b => build(b, ctx);
     ctx.put = (b, k, val) => { if (!ctx.live(b.lock)) return false; s.set(k, val); return true; };   // a locked control refuses
@@ -138,6 +139,18 @@
     return s;
   };
   R.state = host => snap(mounted(host));
+  // Add one block to a mounted demo with no rebuild, so a stream can grow a panel. The block goes at the end, or at the end of the
+  // stack or row at the path `opts.into` (for example 'blocks.0'). The parts that show stay as they are. It gives the path of the new block.
+  // The host checks the block first (rupaka.spec.append in Python): the runtime only refuses an unknown type or a bad place.
+  const GROUPS = new Set(['stack', 'row']);
+  R.append = (host, block, opts) => {
+    const s = mounted(host), ctx = CTX.get(s), into = opts?.into;
+    const box = into ? get(s.spec, into) : s.spec, at = into ? ctx.nodes.get(box) : ctx.root;
+    if (!box || (into && !GROUPS.has(box.type)) || !at) throw new Error(`${into} is not a stack or a row of this demo`);
+    const b = structuredClone(block), node = ctx.build(b), list = box.blocks ||= [];
+    list.push(b); at.append(node); s.emit('*');
+    return `${into ? into + '.' : ''}blocks.${list.length - 1}`;
+  };
   R.set = (host, state) => {
     const s = mounted(host), ks = inputs(s.spec).filter(k => state && Object.hasOwn(state, k));
     if (!ks.length) return;
