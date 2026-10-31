@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.20">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Build a demo spec in Python, check it, and move an old spec to the new schema.">
+
+<title>spec – rupaka</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./favicon.svg" rel="icon" type="image/svg+xml">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-17888a1159294d3eb470f19f6f52f5a5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-66a38d7287321bc50e069add96f8c30e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="spec – rupaka">
+<meta property="og:description" content="Build a demo spec in Python, check it, and move an old spec to the new schema.">
+<meta property="og:site_name" content="rupaka">
+<meta name="twitter:title" content="spec – rupaka">
+<meta name="twitter:description" content="Build a demo spec in Python, check it, and move an old spec to the new schema.">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">rupaka</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./spec.html">spec</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rupaka</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./spec.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">spec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./render.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">render</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./check.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">check</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./agent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">agent</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gallery.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">gallery</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./poll.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">poll</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#manifests" id="toc-manifests" class="nav-link active" data-scroll-target="#manifests">Manifests</a></li>
+  <li><a href="#builders" id="toc-builders" class="nav-link" data-scroll-target="#builders">Builders</a></li>
+  <li><a href="#the-expr-grammar" id="toc-the-expr-grammar" class="nav-link" data-scroll-target="#the-expr-grammar">The expr grammar</a></li>
+  <li><a href="#the-fns-in-python" id="toc-the-fns-in-python" class="nav-link" data-scroll-target="#the-fns-in-python">The fns in Python</a></li>
+  <li><a href="#validate" id="toc-validate" class="nav-link" data-scroll-target="#validate">validate</a>
+  <ul class="collapse">
+  <li><a href="#the-think-rule" id="toc-the-think-rule" class="nav-link" data-scroll-target="#the-think-rule">The think rule</a></li>
+  <li><a href="#text" id="toc-text" class="nav-link" data-scroll-target="#text">Text</a></li>
+  <li><a href="#validate-1" id="toc-validate-1" class="nav-link" data-scroll-target="#validate-1">validate</a></li>
+  <li><a href="#scenes" id="toc-scenes" class="nav-link" data-scroll-target="#scenes">Scenes</a></li>
+  <li><a href="#tests-for-validate" id="toc-tests-for-validate" class="nav-link" data-scroll-target="#tests-for-validate">Tests for validate</a></li>
+  <li><a href="#explainers" id="toc-explainers" class="nav-link" data-scroll-target="#explainers">Explainers</a></li>
+  <li><a href="#tests-for-scenes" id="toc-tests-for-scenes" class="nav-link" data-scroll-target="#tests-for-scenes">Tests for scenes</a></li>
+  </ul></li>
+  <li><a href="#upgrade" id="toc-upgrade" class="nav-link" data-scroll-target="#upgrade">upgrade</a></li>
+  <li><a href="#the-block-examples" id="toc-the-block-examples" class="nav-link" data-scroll-target="#the-block-examples">The block examples</a></li>
+  <li><a href="#the-gallery" id="toc-the-gallery" class="nav-link" data-scroll-target="#the-gallery">The gallery</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/vedicreader/rupaka/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="spec.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">spec</h1>
+</div>
+
+<div>
+  <div class="description">
+    Build a demo spec in Python, check it, and move an old spec to the new schema.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>A demo is one JSON object: the spec. It lists blocks, a small state, derived values and data tables. This module reads the block and fn manifests, gives a builder for each block, and checks a spec with <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a>.</p>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> enforces the think rule: a block that shows a value which a gate’s answer depends on must wait for that gate. So the learner always predicts before the demo shows the result. An explainer (<code>"mode": "learn"</code>) is the one spec with no gate: it shows a thing at once, with no prediction step.</p>
+<section id="manifests" class="level2">
+<h2 class="anchored" data-anchor-id="manifests">Manifests</h2>
+<p>Each block is a folder in <code>rupaka/blocks/</code>, with a <code>block.json</code> manifest. Each fn has a manifest in <code>rupaka/fns/</code>. A manifest gives the purpose in one line, the props with their types, and the keys. The validator and the agent prompt read the manifests, so they never drift from the code.</p>
+<div id="b58afa80" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.037990+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.222527+00:00&quot;,&quot;total&quot;:0.18454049400000372}}" data-execution_count="4">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L35" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="fn_manifests" class="level3">
+<h3 class="anchored" data-anchor-id="fn_manifests">fn_manifests</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fn_manifests()<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The fn manifests, by name.</em></p>
+</section>
+</div>
+<div id="6a26dffc" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.222680+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.227182+00:00&quot;,&quot;total&quot;:0.004506026000001384}}" data-execution_count="5">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L30" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="manifests-1" class="level3">
+<h3 class="anchored" data-anchor-id="manifests-1">manifests</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> manifests()<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The block manifests, by name.</em></p>
+</section>
+</div>
+<p>Each block folder has its code, its style, its manifest and one example.</p>
+<div id="c008" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>test_eq(<span class="bu">set</span>(manifests()), {<span class="st">'axis'</span>, <span class="st">'bars'</span>, <span class="st">'body'</span>, <span class="st">'caption'</span>, <span class="st">'choice'</span>, <span class="st">'force'</span>, <span class="st">'gate'</span>, <span class="st">'grid'</span>, <span class="st">'label3d'</span>, <span class="st">'pixels'</span>, <span class="st">'plot'</span>, <span class="st">'point'</span>, <span class="st">'ranklist'</span>, <span class="st">'readout'</span>, <span class="st">'row'</span>,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                          <span class="st">'scene'</span>, <span class="st">'shot'</span>, <span class="st">'slider'</span>, <span class="st">'stack'</span>, <span class="st">'toggle'</span>, <span class="st">'wheel'</span>})</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> manifests(): <span class="cf">assert</span> <span class="bu">all</span>((PKG<span class="op">/</span><span class="st">'blocks'</span><span class="op">/</span>n<span class="op">/</span>f).exists() <span class="cf">for</span> f <span class="kw">in</span> (<span class="ss">f'</span><span class="sc">{</span>n<span class="sc">}</span><span class="ss">.js'</span>, <span class="ss">f'</span><span class="sc">{</span>n<span class="sc">}</span><span class="ss">.css'</span>, <span class="st">'example.json'</span>)), n</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The fns are <a href="https://vedicreader.github.io/rupaka/spec.html#rules"><code>rules</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#rrf"><code>rrf</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#softmax"><code>softmax</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#lookup"><code>lookup</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#expr"><code>expr</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#field"><code>field</code></a>, and four small helpers.</p>
+<div id="c010" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>test_eq(<span class="bu">set</span>(fn_manifests()), {<span class="st">'expr'</span>, <span class="st">'field'</span>, <span class="st">'fmt'</span>, <span class="st">'ids'</span>, <span class="st">'lookup'</span>, <span class="st">'pick'</span>, <span class="st">'rrf'</span>, <span class="st">'rules'</span>, <span class="st">'softmax'</span>, <span class="st">'sort'</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="builders" class="level2">
+<h2 class="anchored" data-anchor-id="builders">Builders</h2>
+<p>A builder makes the dict for one block, so a notebook author does not type JSON. A prop with the value <code>None</code> is left out.</p>
+<div id="ff0d517b" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.230906+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.236301+00:00&quot;,&quot;total&quot;:0.005398647999996342}}" data-execution_count="7">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L50" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="demo" class="level3">
+<h3 class="anchored" data-anchor-id="demo">demo</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> demo(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>:<span class="bu">str</span>, title:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>, ask:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>, state:<span class="bu">dict</span><span class="op">=</span><span class="va">None</span>, derive:<span class="bu">tuple</span><span class="op">=</span>(), blocks:<span class="bu">tuple</span><span class="op">=</span>(), tables:<span class="bu">dict</span><span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    concept:<span class="bu">str</span><span class="op">=</span><span class="va">None</span>, mode:<span class="bu">str</span><span class="op">=</span><span class="va">None</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A whole demo spec; <code>mode='learn'</code> makes an explainer with no gate.</em></p>
+</section>
+</div>
+<div id="fe561a31" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.236430+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.240335+00:00&quot;,&quot;total&quot;:0.0039085449999873845}}" data-execution_count="8">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L46" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="is_" class="level3">
+<h3 class="anchored" data-anchor-id="is_">is_</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> is_(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    v</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A fixed gate answer.</em></p>
+</section>
+</div>
+<div id="0bdd9470" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.240462+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.244370+00:00&quot;,&quot;total&quot;:0.003910660000002508}}" data-execution_count="9">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L42" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="from_" class="level3">
+<h3 class="anchored" data-anchor-id="from_">from_</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> from_(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    path:<span class="bu">str</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Gate options read from a list in the state, for example <code>from_('join.alts')</code>.</em></p>
+</section>
+</div>
+<p>These are the builders for the blocks. Each one takes the props of its manifest. <a href="https://vedicreader.github.io/rupaka/spec.html#body"><code>body</code></a> takes <code>inside</code> for the <code>in</code> prop, because <code>in</code> is a Python keyword.</p>
+<div id="6a39e766" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.252301+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.256312+00:00&quot;,&quot;total&quot;:0.004014363999999659}}" data-execution_count="11">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L80" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="shot" class="level3">
+<h3 class="anchored" data-anchor-id="shot">shot</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> shot(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    name:NoneType<span class="op">=</span><span class="va">None</span>, bind:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="98dd82a9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.256442+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.260584+00:00&quot;,&quot;total&quot;:0.004145038999993744}}" data-execution_count="12">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L79" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="label3d" class="level3">
+<h3 class="anchored" data-anchor-id="label3d">label3d</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> label3d(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    text, on:NoneType<span class="op">=</span><span class="va">None</span>, at:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="7cc423a3" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.260710+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.264932+00:00&quot;,&quot;total&quot;:0.00422354600000574}}" data-execution_count="13">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L78" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="force" class="level3">
+<h3 class="anchored" data-anchor-id="force">force</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> force(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">dir</span>, mag, on:NoneType<span class="op">=</span><span class="va">None</span>, at:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="a5ff6f87" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.265081+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.269254+00:00&quot;,&quot;total&quot;:0.0041771089999969035}}" data-execution_count="14">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L77" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="body" class="level3">
+<h3 class="anchored" data-anchor-id="body">body</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> body(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>, kind, size:NoneType<span class="op">=</span><span class="va">None</span>, at:NoneType<span class="op">=</span><span class="va">None</span>, inside:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="1f4dc22a" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.269380+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.273527+00:00&quot;,&quot;total&quot;:0.004150337999988096}}" data-execution_count="15">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L76" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="scene" class="level3">
+<h3 class="anchored" data-anchor-id="scene">scene</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> scene(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>blocks, bind:NoneType<span class="op">=</span><span class="va">None</span>, steps:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="e342ca74" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.273648+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.277625+00:00&quot;,&quot;total&quot;:0.003980810999991036}}" data-execution_count="16">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L75" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="pixels" class="level3">
+<h3 class="anchored" data-anchor-id="pixels">pixels</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pixels(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    bind, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="ffe11ebe" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.277750+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.281721+00:00&quot;,&quot;total&quot;:0.003975410999998985}}" data-execution_count="17">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L74" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="grid" class="level3">
+<h3 class="anchored" data-anchor-id="grid">grid</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> grid(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    bind, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="02568166" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.281850+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.285683+00:00&quot;,&quot;total&quot;:0.00383660100000327}}" data-execution_count="18">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L73" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="plot" class="level3">
+<h3 class="anchored" data-anchor-id="plot">plot</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    series, <span class="op">**</span>kw</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="5fa16c1f" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.285805+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.289671+00:00&quot;,&quot;total&quot;:0.003869983000001298}}" data-execution_count="19">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L72" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="point" class="level3">
+<h3 class="anchored" data-anchor-id="point">point</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> point(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    bind:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="0409f5e5" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.289798+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.293929+00:00&quot;,&quot;total&quot;:0.004134508999996456}}" data-execution_count="20">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L71" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="axis" class="level3">
+<h3 class="anchored" data-anchor-id="axis">axis</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> axis(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    x, <span class="op">*</span>blocks, y:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="328b2631" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.294081+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.298046+00:00&quot;,&quot;total&quot;:0.003968467999996506}}" data-execution_count="21">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L70" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="bars" class="level3">
+<h3 class="anchored" data-anchor-id="bars">bars</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> bars(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    bind, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="c6497881" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.298171+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.302097+00:00&quot;,&quot;total&quot;:0.003929114000001732}}" data-execution_count="22">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L69" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="ranklist" class="level3">
+<h3 class="anchored" data-anchor-id="ranklist">ranklist</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ranklist(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    bind, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="ec7823ab" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.302228+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.306578+00:00&quot;,&quot;total&quot;:0.0043529089999907455}}" data-execution_count="23">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L68" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="wheel" class="level3">
+<h3 class="anchored" data-anchor-id="wheel">wheel</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wheel(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    bind, items, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="e7fae9dd" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.306704+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.310755+00:00&quot;,&quot;total&quot;:0.004054579000012382}}" data-execution_count="24">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L67" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="choice" class="level3">
+<h3 class="anchored" data-anchor-id="choice">choice</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> choice(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    bind, options, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="b2cd6fde" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.310878+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.314908+00:00&quot;,&quot;total&quot;:0.0040337709999960225}}" data-execution_count="25">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L66" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="toggle" class="level3">
+<h3 class="anchored" data-anchor-id="toggle">toggle</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> toggle(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    bind, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="9706b450" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.315056+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.319422+00:00&quot;,&quot;total&quot;:0.004370029999989811}}" data-execution_count="26">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L65" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="slider" class="level3">
+<h3 class="anchored" data-anchor-id="slider">slider</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> slider(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    bind, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="bu">min</span>:NoneType<span class="op">=</span><span class="va">None</span>, <span class="bu">max</span>:NoneType<span class="op">=</span><span class="va">None</span>, step:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="426061a9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.319551+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.323427+00:00&quot;,&quot;total&quot;:0.003879851999997186}}" data-execution_count="27">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L64" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="stack" class="level3">
+<h3 class="anchored" data-anchor-id="stack">stack</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> stack(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>blocks, <span class="op">**</span>kw</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="d996dbf9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.323562+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.327413+00:00&quot;,&quot;total&quot;:0.0038518090000110305}}" data-execution_count="28">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L63" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="row" class="level3">
+<h3 class="anchored" data-anchor-id="row">row</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> row(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>blocks, <span class="op">**</span>kw</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="dc9b431d" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.327537+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.331481+00:00&quot;,&quot;total&quot;:0.003947869000000992}}" data-execution_count="29">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L62" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="caption" class="level3">
+<h3 class="anchored" data-anchor-id="caption">caption</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> caption(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    text, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="633e1a66" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.331602+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.335533+00:00&quot;,&quot;total&quot;:0.003933852999992382}}" data-execution_count="30">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L61" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="readout" class="level3">
+<h3 class="anchored" data-anchor-id="readout">readout</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> readout(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    text, label:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kw</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="9525e6ab" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.335658+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.340146+00:00&quot;,&quot;total&quot;:0.00449160799999504}}" data-execution_count="31">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L57" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="gate" class="level3">
+<h3 class="anchored" data-anchor-id="gate">gate</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gate(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>, prompt, options, answer, why:NoneType<span class="op">=</span><span class="va">None</span>, context:NoneType<span class="op">=</span><span class="va">None</span>, again:NoneType<span class="op">=</span><span class="va">None</span>, hides:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Predict, then reveal: blocks with <code>after=id</code> wait for this gate.</em></p>
+</section>
+</div>
+<p>The derive builders name a fn and the key it writes (<code>out</code>).</p>
+<div id="3cb62098" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.343610+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.347491+00:00&quot;,&quot;total&quot;:0.0038851519999951734}}" data-execution_count="33">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L89" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="fmt" class="level3">
+<h3 class="anchored" data-anchor-id="fmt">fmt</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fmt(</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    text, out</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="f0d7cdd4" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.347612+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.351656+00:00&quot;,&quot;total&quot;:0.004047917000008283}}" data-execution_count="34">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L88" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="field" class="level3">
+<h3 class="anchored" data-anchor-id="field">field</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> field(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    f, out, n:<span class="bu">int</span><span class="op">=</span><span class="dv">16</span>, seed:<span class="bu">int</span><span class="op">=</span><span class="dv">0</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="9eee6488" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.351786+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.355773+00:00&quot;,&quot;total&quot;:0.0039903989999885425}}" data-execution_count="35">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L87" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="expr" class="level3">
+<h3 class="anchored" data-anchor-id="expr">expr</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> expr(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    f, out, over:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="14a33b92" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.355896+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.360295+00:00&quot;,&quot;total&quot;:0.004403283000002034}}" data-execution_count="36">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L86" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="lookup" class="level3">
+<h3 class="anchored" data-anchor-id="lookup">lookup</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lookup(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    table, key, out, by:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="b86bcfd8" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.360420+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.364541+00:00&quot;,&quot;total&quot;:0.004124239999995893}}" data-execution_count="37">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L85" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="softmax" class="level3">
+<h3 class="anchored" data-anchor-id="softmax">softmax</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> softmax(</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>    src, out, t:NoneType<span class="op">=</span><span class="va">None</span>, labels:NoneType<span class="op">=</span><span class="va">None</span>, sort:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="2cde060e" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.364663+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.368158+00:00&quot;,&quot;total&quot;:0.0034966839999981403}}" data-execution_count="38">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L84" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="rrf" class="level3">
+<h3 class="anchored" data-anchor-id="rrf">rrf</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rrf(</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    ins, k, out</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="3fa2ee2d" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.368245+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.370789+00:00&quot;,&quot;total&quot;:0.002546222000006537}}" data-execution_count="39">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L83" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="rules" class="level3">
+<h3 class="anchored" data-anchor-id="rules">rules</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rules(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    table, ins, out, alts:<span class="bu">int</span><span class="op">=</span><span class="dv">4</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<p>A small demo: two numbers, a gate on their sum, and a readout that waits for the gate.</p>
+<div id="c018" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> demo(<span class="st">'sum'</span>, <span class="st">'Sum'</span>, state<span class="op">=</span><span class="bu">dict</span>(a<span class="op">=</span><span class="dv">2</span>, b<span class="op">=</span><span class="dv">3</span>), derive<span class="op">=</span>[expr(<span class="st">'a + b'</span>, <span class="st">'sum'</span>)],</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>         blocks<span class="op">=</span>[gate(<span class="st">'s'</span>, <span class="st">'What is </span><span class="sc">{a}</span><span class="st"> + </span><span class="sc">{b}</span><span class="st">?'</span>, [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>], <span class="st">'sum'</span>), readout(<span class="st">'</span><span class="sc">{a}</span><span class="st"> + </span><span class="sc">{b}</span><span class="st"> = </span><span class="sc">{sum}</span><span class="st">'</span>, after<span class="op">=</span><span class="st">'s'</span>)])</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>test_eq(d[<span class="st">'blocks'</span>][<span class="dv">1</span>], {<span class="st">'type'</span>: <span class="st">'readout'</span>, <span class="st">'text'</span>: <span class="st">'</span><span class="sc">{a}</span><span class="st"> + </span><span class="sc">{b}</span><span class="st"> = </span><span class="sc">{sum}</span><span class="st">'</span>, <span class="st">'after'</span>: <span class="st">'s'</span>})</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>test_eq(d[<span class="st">'derive'</span>], [{<span class="st">'fn'</span>: <span class="st">'expr'</span>, <span class="st">'expr'</span>: <span class="st">'a + b'</span>, <span class="st">'out'</span>: <span class="st">'sum'</span>}])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="the-expr-grammar" class="level2">
+<h2 class="anchored" data-anchor-id="the-expr-grammar">The expr grammar</h2>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#expr"><code>expr</code></a> holds a formula in a tiny safe grammar: numbers, names, <code>+ - * / ^</code>, parentheses and a few math functions. The runtime parses it in JavaScript. This is the same parser in Python, so <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> can check a formula and run it. There is no <code>eval</code> in either one. A name must be a state key, a constant or one of the functions.</p>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#_safe"><code>_safe</code></a> turns a math error into the value JavaScript gives, so both sides agree: <code>nan</code> or an infinity.</p>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#parse_expr"><code>parse_expr</code></a> returns a function of a dict of values, and the set of names that the formula reads.</p>
+<div id="c3ca6a76" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.383496+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.393271+00:00&quot;,&quot;total&quot;:0.009777745999997478}}" data-execution_count="43">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L122" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="parse_expr" class="level3">
+<h3 class="anchored" data-anchor-id="parse_expr">parse_expr</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> parse_expr(</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    src:<span class="bu">str</span>, <span class="co"># the formula</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    fns:<span class="bu">dict</span><span class="op">=</span><span class="va">None</span>, <span class="co"># more functions by name, on top of `EXPR_FNS`</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Parse a formula. Return <code>(f, names)</code>: <code>f(env)</code> gives a number, and <code>names</code> are the values it reads.</em></p>
+</section>
+</div>
+<p><code>2*x^2 - 1</code> at x = 3 is 17. The power binds before the minus sign, so <code>-x^2</code> at x = 3 is −9.</p>
+<div id="c026" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>f, ns <span class="op">=</span> parse_expr(<span class="st">'2*x^2 - 1'</span>)</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>test_eq(f(<span class="bu">dict</span>(x<span class="op">=</span><span class="dv">3</span>)), <span class="dv">17</span>)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>test_eq(ns, {<span class="st">'x'</span>})</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>test_eq(parse_expr(<span class="st">'-x^2'</span>)[<span class="dv">0</span>](<span class="bu">dict</span>(x<span class="op">=</span><span class="dv">3</span>)), <span class="op">-</span><span class="dv">9</span>)</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>test_eq(parse_expr(<span class="st">'max(a, b) + floor(7/2)'</span>)[<span class="dv">0</span>](<span class="bu">dict</span>(a<span class="op">=</span><span class="dv">1</span>, b<span class="op">=</span><span class="dv">4</span>)), <span class="dv">7</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Names that reach into objects, calls of unknown functions, and a second statement are refused.</p>
+<div id="c028" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bad <span class="kw">in</span> (<span class="st">'constructor'</span>, <span class="st">'__proto__'</span>, <span class="st">'alert(1)'</span>, <span class="st">'x;y'</span>, <span class="st">'x.y'</span>, <span class="st">'2 +'</span>): test_fail(<span class="kw">lambda</span>: parse_expr(bad)[<span class="dv">0</span>](<span class="bu">dict</span>(x<span class="op">=</span><span class="dv">1</span>, y<span class="op">=</span><span class="dv">2</span>)), contains<span class="op">=</span><span class="st">'expr'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="the-fns-in-python" class="level2">
+<h2 class="anchored" data-anchor-id="the-fns-in-python">The fns in Python</h2>
+<p>Each fn has a Python twin with the same result. <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> runs the derive list on the opening state with these twins, so it can check that each gate answer is one of the options. The browser tests compare the two sides.</p>
+<p>First, two helpers that copy the runtime: <a href="https://vedicreader.github.io/rupaka/spec.html#get"><code>get</code></a> reads a path such as <code>fused.0.id</code>, and <a href="https://vedicreader.github.io/rupaka/spec.html#show_value"><code>show_value</code></a> writes a value as the runtime does.</p>
+<div id="107f33d9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.401129+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.405330+00:00&quot;,&quot;total&quot;:0.0042031379999940555}}" data-execution_count="45">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L216" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="fmt_text" class="level3">
+<h3 class="anchored" data-anchor-id="fmt_text">fmt_text</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fmt_text(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    s, st</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">str</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Fill <code>{path}</code> and <code>{path:2}</code> from the state, as the runtime does.</em></p>
+</section>
+</div>
+<div id="3bd86060" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.405422+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.408802+00:00&quot;,&quot;total&quot;:0.003383060999993859}}" data-execution_count="46">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L206" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="show_value" class="level3">
+<h3 class="anchored" data-anchor-id="show_value">show_value</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_value(</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>    v, d:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">str</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A value as the runtime shows it: numbers rounded as <code>toFixed(d)</code> (default 4) does, with a true minus sign.</em></p>
+</section>
+</div>
+<div id="08cc09fd" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.408889+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.411685+00:00&quot;,&quot;total&quot;:0.00279785400000776}}" data-execution_count="47">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L197" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="js_str" class="level3">
+<h3 class="anchored" data-anchor-id="js_str">js_str</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> js_str(</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>    v</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">str</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em><code>String(v)</code> in JavaScript, for the values a spec holds.</em></p>
+</section>
+</div>
+<div id="e705e9c7" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.411766+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.414584+00:00&quot;,&quot;total&quot;:0.0028211460000022726}}" data-execution_count="48">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L176" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="get" class="level3">
+<h3 class="anchored" data-anchor-id="get">get</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get(</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    o, path</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Read a path such as <code>fused.0.id</code> in dicts and lists; own keys only, as the runtime does.</em></p>
+</section>
+</div>
+<div id="c031" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>st <span class="op">=</span> <span class="bu">dict</span>(fused<span class="op">=</span>[<span class="bu">dict</span>(<span class="bu">id</span><span class="op">=</span><span class="st">'B'</span>, value<span class="op">=</span><span class="fl">0.0328</span>)], k<span class="op">=-</span><span class="dv">60</span>, xs<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">2</span>])</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>test_eq(get(st, <span class="st">'fused.0.id'</span>), <span class="st">'B'</span>)</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>test_eq(get(st, <span class="st">'fused.0.__proto__'</span>), <span class="va">None</span>)</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>test_eq(fmt_text(<span class="st">'</span><span class="sc">{fused.0.id}</span><span class="st"> </span><span class="sc">{fused.0.value:2}</span><span class="st"> </span><span class="sc">{k}</span><span class="st"> </span><span class="sc">{xs}</span><span class="st">'</span>, st), <span class="st">'B 0.03 −60 1, 2'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#js_str"><code>js_str</code></a> gives the text of <code>String(v)</code> in JavaScript, and <a href="https://vedicreader.github.io/rupaka/spec.html#show_value"><code>show_value</code></a> rounds as <code>toFixed</code> does, so a tie such as 1.03125 goes up:</p>
+<div id="5898ccb8" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>test_eq([js_str(v) <span class="cf">for</span> v <span class="kw">in</span> (<span class="dv">2</span>, <span class="fl">2.0</span>, <span class="fl">0.1</span>, <span class="fl">1.5</span>, <span class="op">-</span><span class="fl">0.0</span>, <span class="fl">1e21</span>, <span class="fl">1e-7</span>, <span class="fl">0.00001</span>, <span class="va">True</span>, <span class="va">None</span>, <span class="st">'a'</span>, [<span class="dv">1</span>, <span class="va">None</span>])],</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>        [<span class="st">'2'</span>, <span class="st">'2'</span>, <span class="st">'0.1'</span>, <span class="st">'1.5'</span>, <span class="st">'0'</span>, <span class="st">'1e+21'</span>, <span class="st">'1e-7'</span>, <span class="st">'0.00001'</span>, <span class="st">'true'</span>, <span class="st">'null'</span>, <span class="st">'a'</span>, <span class="st">'1,'</span>])</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>test_eq([show_value(v) <span class="cf">for</span> v <span class="kw">in</span> (<span class="fl">2.0</span>, <span class="op">-</span><span class="fl">1.5</span>, <span class="dv">1</span><span class="op">/</span><span class="dv">3</span>, <span class="fl">1.03125</span>, <span class="va">None</span>, <span class="va">True</span>, [<span class="dv">1</span>, <span class="va">None</span>])], [<span class="st">'2'</span>, <span class="st">'−1.5'</span>, <span class="st">'0.3333'</span>, <span class="st">'1.0313'</span>, <span class="st">''</span>, <span class="st">'true'</span>, <span class="st">'1, '</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Now the fns. <a href="https://vedicreader.github.io/rupaka/spec.html#rules"><code>rules</code></a> orders its <code>alts</code> with the same small hash as the runtime, so both sides give the same options.</p>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#rrf"><code>rrf</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#softmax"><code>softmax</code></a> and <a href="https://vedicreader.github.io/rupaka/spec.html#lookup"><code>lookup</code></a> follow the runtime line by line.</p>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#expr"><code>expr</code></a> gives a number, or a series of points with <code>over</code>. <a href="https://vedicreader.github.io/rupaka/spec.html#field"><code>field</code></a> gives the rows of an n x n grid, with <a href="https://vedicreader.github.io/rupaka/spec.html#noise"><code>noise</code></a> from a hash that gives the same bits as the runtime. The small helpers finish the set.</p>
+<div id="943dfcf4" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.426428+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.429241+00:00&quot;,&quot;total&quot;:0.002814966000002528}}" data-execution_count="52">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L288" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="noise" class="level3">
+<h3 class="anchored" data-anchor-id="noise">noise</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> noise(</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>    seed:<span class="bu">int</span>, i, j</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">float</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The <code>noise(i, j)</code> of a field with <code>seed</code>: mean 0, variance 1, and the same bits as the runtime.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#run"><code>run</code></a> gives the opening state of a demo: the state, then each derive in order. Each gate starts open.</p>
+<div id="29598f1a" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.430812+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.433786+00:00&quot;,&quot;total&quot;:0.0029773600000027045}}" data-execution_count="54">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L316" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="run" class="level3">
+<h3 class="anchored" data-anchor-id="run">run</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    spec, state:<span class="bu">dict</span><span class="op">=</span><span class="va">None</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The state of <code>spec</code> after the derive list, from its opening state or from <code>state</code>.</em></p>
+</section>
+</div>
+<p>The fused scores of the two spike lists at k = 60: B is first, because it is in both lists.</p>
+<div id="c041" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>sp <span class="op">=</span> <span class="bu">dict</span>(state<span class="op">=</span><span class="bu">dict</span>(bm25<span class="op">=</span><span class="bu">list</span>(<span class="st">'ACEB'</span>), vec<span class="op">=</span><span class="bu">list</span>(<span class="st">'DFGB'</span>), k<span class="op">=</span><span class="dv">60</span>), derive<span class="op">=</span>[rrf([<span class="st">'bm25'</span>, <span class="st">'vec'</span>], <span class="st">'k'</span>, <span class="st">'fused'</span>)], blocks<span class="op">=</span>[])</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>st <span class="op">=</span> run(sp)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>test_eq(st[<span class="st">'fused'</span>][<span class="dv">0</span>][<span class="st">'id'</span>], <span class="st">'B'</span>)</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>test_close(st[<span class="st">'fused'</span>][<span class="dv">0</span>][<span class="st">'value'</span>], <span class="dv">1</span><span class="op">/</span><span class="dv">64</span> <span class="op">+</span> <span class="dv">1</span><span class="op">/</span><span class="dv">64</span>)</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>test_eq(run(sp, {<span class="op">**</span>sp[<span class="st">'state'</span>], <span class="st">'k'</span>: <span class="dv">1</span>})[<span class="st">'fused'</span>][<span class="dv">0</span>][<span class="st">'id'</span>], <span class="st">'A'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#softmax"><code>softmax</code></a> at a high temperature makes the shares more equal.</p>
+<div id="c043" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>sp <span class="op">=</span> <span class="bu">dict</span>(state<span class="op">=</span><span class="bu">dict</span>(z<span class="op">=</span>[<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>]), derive<span class="op">=</span>[softmax(<span class="st">'z'</span>, <span class="st">'p'</span>, t<span class="op">=</span><span class="dv">1</span>), softmax(<span class="st">'z'</span>, <span class="st">'q'</span>, t<span class="op">=</span><span class="dv">2</span>)], blocks<span class="op">=</span>[])</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>st <span class="op">=</span> run(sp)</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>test_close(st[<span class="st">'p'</span>][<span class="dv">0</span>][<span class="st">'value'</span>], <span class="fl">0.6652</span>, eps<span class="op">=</span><span class="fl">1e-4</span>)</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> st[<span class="st">'q'</span>][<span class="dv">0</span>][<span class="st">'value'</span>] <span class="op">&lt;</span> st[<span class="st">'p'</span>][<span class="dv">0</span>][<span class="st">'value'</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#field"><code>field</code></a> runs a formula on each cell of an n x n grid. Row <code>i</code> and column <code>j</code> go from 0 to n − 1. This formula fades a ramp into <a href="https://vedicreader.github.io/rupaka/spec.html#noise"><code>noise</code></a> as <code>t</code> goes from 0 to 1000:</p>
+<div id="a464f4db" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>DIFF <span class="op">=</span> <span class="st">'sqrt(1 - t/1000) * (i + j)/30 + sqrt(t/1000) * noise(i, j)'</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fld(f, t<span class="op">=</span><span class="dv">500</span>, seed<span class="op">=</span><span class="dv">7</span>, n<span class="op">=</span><span class="dv">16</span>): <span class="cf">return</span> run(<span class="bu">dict</span>(state<span class="op">=</span><span class="bu">dict</span>(t<span class="op">=</span>t), derive<span class="op">=</span>[field(f, <span class="st">'img'</span>, n<span class="op">=</span>n, seed<span class="op">=</span>seed)]))[<span class="st">'img'</span>]</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>img <span class="op">=</span> fld(DIFF)</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>test_eq((<span class="bu">len</span>(img), <span class="bu">len</span>(img[<span class="dv">0</span>])), (<span class="dv">16</span>, <span class="dv">16</span>))</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>[<span class="bu">round</span>(v, <span class="dv">3</span>) <span class="cf">for</span> v <span class="kw">in</span> img[<span class="dv">0</span>][:<span class="dv">4</span>]]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The same seed gives the same field, and another seed gives another field. At t = 0 there is no noise, so each cell is (i + j) / 30.</p>
+<div id="4d101561" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>test_eq(fld(DIFF), img)</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> fld(DIFF, seed<span class="op">=</span><span class="dv">8</span>) <span class="op">!=</span> img</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>test_eq(fld(DIFF, t<span class="op">=</span><span class="dv">0</span>)[<span class="dv">3</span>][<span class="dv">4</span>], <span class="dv">7</span><span class="op">/</span><span class="dv">30</span>)</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>fld(DIFF, t<span class="op">=</span><span class="dv">0</span>)[<span class="dv">3</span>][:<span class="dv">4</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="validate" class="level2">
+<h2 class="anchored" data-anchor-id="validate">validate</h2>
+<p><code>validate(spec)</code> returns a list of errors. Each error has a path and one sentence, for example <code>blocks[3].bind: "fused" is not in state or derive</code>. An empty list means the spec is good. It checks, in order:</p>
+<ol type="1">
+<li>The shape: the schema number, the top-level keys, the mode, and a list of blocks.</li>
+<li>Each derive: the fn exists, its props have the right types, and it reads only keys that come before it.</li>
+<li>Each block: the type exists, its props have the right types, the required props are there, and each <code>bind</code> names a key. Each <code>after</code> and each <code>lock</code> names a gate, and no gate waits for itself. A block above its gate can wait for it, for example a mark on a figure.</li>
+<li>A demo has at least one gate, and an explainer has none (see below). Each gate: its answer resolves on the opening state and is one of its options. A gate whose answer a live control can change names its inputs with <code>context</code>.</li>
+<li>The think rule (below).</li>
+<li>Text: each sentence has at most 20 words.</li>
+</ol>
+<p>First, the prop types. A scene adds four: <code>vec3</code> ([x, y, z]), <code>vec3key</code> ([x, y, z], where an item can be a state key), <code>nums</code> (one to three sizes) and <code>texts</code> (lines of text). <a href="https://vedicreader.github.io/rupaka/spec.html#_reads"><code>_reads</code></a> gives the keys that a value of a type reads, so the think rule can follow them.</p>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#_props"><code>_props</code></a> checks the props of one block or one derive entry against its manifest. A prop with <code>min</code> or <code>max</code> in its manifest must be in that range. A prop with <code>of</code> must be one of the values in that list. It returns the keys that the entry reads.</p>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#_walk"><code>_walk</code></a> visits every block with its path and its parent, in reading order.</p>
+<section id="the-think-rule" class="level3">
+<h3 class="anchored" data-anchor-id="the-think-rule">The think rule</h3>
+<p>The answer of a gate has a root key: for <code>fused.0.id</code>, it is <code>fused</code>. A block must wait for the gate when it reads a key that gives the answer away:</p>
+<ul>
+<li>the root key itself;</li>
+<li>each derived key that the root is computed from (raw inputs are the question, so they stay visible);</li>
+<li>each derived key that is computed from any of these.</li>
+</ul>
+<p>A fixed answer (<code>{"is": ...}</code>) has no root key, so the gate names the keys that give it away in <code>hides</code>. A block waits for the gate when it, or a block that holds it, has <code>after</code> set to that gate, or to a gate that itself waits for it.</p>
+</section>
+<section id="text" class="level3">
+<h3 class="anchored" data-anchor-id="text">Text</h3>
+<p>ASD-STE100 asks for sentences of at most 20 words. This cheap check counts the words in each sentence of each text prop.</p>
+<div id="08040a62" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.447875+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.450600+00:00&quot;,&quot;total&quot;:0.0027272009999990132}}" data-execution_count="60">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L433" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="long_sentences" class="level3">
+<h3 class="anchored" data-anchor-id="long_sentences">long_sentences</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> long_sentences(</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>    s:<span class="bu">str</span></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">list</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The sentences of <code>s</code> that have more than <code>MAX_WORDS</code> words.</em></p>
+</section>
+</div>
+<div id="c054" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>test_eq(long_sentences(<span class="st">'Short one. '</span> <span class="op">+</span> <span class="st">'word '</span> <span class="op">*</span> <span class="dv">21</span> <span class="op">+</span> <span class="st">'end.'</span>), [<span class="st">'word '</span> <span class="op">*</span> <span class="dv">21</span> <span class="op">+</span> <span class="st">'end.'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="validate-1" class="level3">
+<h3 class="anchored" data-anchor-id="validate-1">validate</h3>
+<p>Now <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> puts the checks together.</p>
+<div id="7441b5c4" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.454905+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.460099+00:00&quot;,&quot;total&quot;:0.005196870000006015}}" data-execution_count="62">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L442" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="validate-2" class="level3">
+<h3 class="anchored" data-anchor-id="validate-2">validate</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> validate(</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    spec</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span>fastcore.foundation.L:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The errors of <code>spec</code>, each as <code>path: sentence</code>. An empty list means the spec is good.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#_check_blocks"><code>_check_blocks</code></a> does the block checks, the gate checks and the think rule. An explainer has no gate, so the think rule has nothing to check. Its blocks cannot wait for a gate or lock to a gate, and the error says why. It gives each scene to <a href="https://vedicreader.github.io/rupaka/spec.html#_check_scene"><code>_check_scene</code></a> (below).</p>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#_check_gate"><code>_check_gate</code></a> checks one gate: its answer, its options, its context, and the think rule for its answer.</p>
+</section>
+<section id="scenes" class="level3">
+<h3 class="anchored" data-anchor-id="scenes">Scenes</h3>
+<p>A <a href="https://vedicreader.github.io/rupaka/spec.html#scene"><code>scene</code></a> holds <a href="https://vedicreader.github.io/rupaka/spec.html#body"><code>body</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#force"><code>force</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#label3d"><code>label3d</code></a> and <a href="https://vedicreader.github.io/rupaka/spec.html#shot"><code>shot</code></a> blocks. The manifests check each prop alone. <a href="https://vedicreader.github.io/rupaka/spec.html#_check_scene"><code>_check_scene</code></a> checks how the parts fit together:</p>
+<ul>
+<li>Each body id is used one time. A body that is <code>in</code> another body names a body above it, so a body cannot hold itself.</li>
+<li>A <code>size</code> has the right count of numbers for its <code>kind</code>.</li>
+<li>A force or a label that is <code>on</code> a body names a body of the same scene.</li>
+<li>A shot name is <code>wide</code>, <code>side</code>, <code>front</code>, <code>top</code> or <code>close:&lt;body id&gt;</code>. A shot that binds a key names a state key with a good shot name, so a host can set it.</li>
+<li>A part with a <code>step</code> is in a scene with <code>bind</code>, and the step is in the range of the <code>steps</code> lines.</li>
+<li>The step key is a state key with an int from 1. There are at most 8 steps, 40 bodies, 12 forces and 12 labels, and a chip has at most 60 characters.</li>
+</ul>
+<div id="6cd8527f" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.475671+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.478650+00:00&quot;,&quot;total&quot;:0.0029821090000012873}}" data-execution_count="66">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L551" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="shot_error" class="level3">
+<h3 class="anchored" data-anchor-id="shot_error">shot_error</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> shot_error(</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    v, ids</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">str</span> <span class="op">|</span> <span class="va">None</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Why <code>v</code> is not a shot name for a scene with the body <code>ids</code>, or None.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/rupaka/spec.html#shots"><code>shots</code></a> gives the shot names that the scenes of a spec know. A host checks the <code>cam</code> operation of a board with it.</p>
+<div id="ff703a44" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.479954+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.482830+00:00&quot;,&quot;total&quot;:0.00287793399999714}}" data-execution_count="68">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L595" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="shots" class="level3">
+<h3 class="anchored" data-anchor-id="shots">shots</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> shots(</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>    spec</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">list</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The shot names that the scenes of <code>spec</code> know, for the board’s <code>cam</code> operation.</em></p>
+</section>
+</div>
+</section>
+<section id="tests-for-validate" class="level3">
+<h3 class="anchored" data-anchor-id="tests-for-validate">Tests for validate</h3>
+<p>A good demo has no errors.</p>
+<div id="c062" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>good <span class="op">=</span> demo(<span class="st">'sum'</span>, <span class="st">'Sum'</span>, state<span class="op">=</span><span class="bu">dict</span>(a<span class="op">=</span><span class="dv">2</span>, b<span class="op">=</span><span class="dv">3</span>), derive<span class="op">=</span>[expr(<span class="st">'a + b'</span>, <span class="st">'sum'</span>)],</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>            blocks<span class="op">=</span>[gate(<span class="st">'s'</span>, <span class="st">'What is </span><span class="sc">{a}</span><span class="st"> + </span><span class="sc">{b}</span><span class="st">?'</span>, [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>], <span class="st">'sum'</span>), readout(<span class="st">'</span><span class="sc">{a}</span><span class="st"> + </span><span class="sc">{b}</span><span class="st"> = </span><span class="sc">{sum}</span><span class="st">'</span>, after<span class="op">=</span><span class="st">'s'</span>)])</span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>test_eq(validate(good), [])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A readout of the sum before the gate fails the think rule, with the path of the readout.</p>
+<div id="c064" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>bad <span class="op">=</span> deepcopy(good)<span class="op">;</span> <span class="kw">del</span> bad[<span class="st">'blocks'</span>][<span class="dv">1</span>][<span class="st">'after'</span>]</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>test_eq(validate(bad), [<span class="st">'blocks[1]: this readout shows "sum", which gives away the answer of gate "s"; add "after": "s"'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>An unknown block, an unknown fn, an unknown prop and a missing prop each fail with a path.</p>
+<div id="c066" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> errs_of(<span class="op">**</span>kw): <span class="cf">return</span> validate({<span class="op">**</span>deepcopy(good), <span class="op">**</span>kw})</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>test_eq(errs_of(blocks<span class="op">=</span>[<span class="op">*</span>good[<span class="st">'blocks'</span>], <span class="bu">dict</span>(<span class="bu">type</span><span class="op">=</span><span class="st">'dial'</span>)])[<span class="dv">0</span>][:<span class="dv">23</span>], <span class="st">'blocks[2].type: "dial" '</span>)</span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> errs_of(derive<span class="op">=</span>[<span class="bu">dict</span>(fn<span class="op">=</span><span class="st">'sum'</span>, out<span class="op">=</span><span class="st">'sum'</span>)])[<span class="dv">0</span>].startswith(<span class="st">'derive[0].fn: "sum" is not a fn'</span>)</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> errs_of(blocks<span class="op">=</span>[good[<span class="st">'blocks'</span>][<span class="dv">0</span>], {<span class="op">**</span>good[<span class="st">'blocks'</span>][<span class="dv">1</span>], <span class="st">'colour'</span>: <span class="st">'red'</span>}])[<span class="dv">0</span>].startswith(<span class="st">'blocks[1].colour: is not a prop of readout'</span>)</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="st">'blocks[1]: needs "text"'</span> <span class="kw">in</span> validate({<span class="op">**</span>good, <span class="st">'blocks'</span>: [good[<span class="st">'blocks'</span>][<span class="dv">0</span>], <span class="bu">dict</span>(<span class="bu">type</span><span class="op">=</span><span class="st">'readout'</span>, after<span class="op">=</span><span class="st">'s'</span>)]})[<span class="dv">0</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A bind to a key that is not in the state fails. So does an <code>after</code> that names no gate.</p>
+<div id="c068" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="st">'blocks[2].bind: "k" is not in state or derive'</span> <span class="kw">in</span> errs_of(blocks<span class="op">=</span>[<span class="op">*</span>good[<span class="st">'blocks'</span>], slider(<span class="st">'k'</span>)])</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>test_eq(errs_of(blocks<span class="op">=</span>[readout(<span class="st">'</span><span class="sc">{sum}</span><span class="st">'</span>, after<span class="op">=</span><span class="st">'t'</span>), good[<span class="st">'blocks'</span>][<span class="dv">0</span>]]), [<span class="st">'blocks[0].after: "t" is not a gate'</span>, <span class="st">'blocks[0]: this readout shows "sum", which gives away the answer of gate "s"; add "after": "s"'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A <a href="https://vedicreader.github.io/rupaka/spec.html#field"><code>field</code></a> needs an <code>n</code> from 1 to 64 and an int seed. A bad formula fails with its <code>expr:</code> error. The names <code>i</code>, <code>j</code> and <a href="https://vedicreader.github.io/rupaka/spec.html#noise"><code>noise</code></a> need no state key.</p>
+<div id="d795f32c" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>fd <span class="op">=</span> demo(<span class="st">'fd'</span>, state<span class="op">=</span><span class="bu">dict</span>(t<span class="op">=</span><span class="dv">500</span>), derive<span class="op">=</span>[field(DIFF, <span class="st">'img'</span>, n<span class="op">=</span><span class="dv">16</span>, seed<span class="op">=</span><span class="dv">7</span>)],</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>          blocks<span class="op">=</span>[gate(<span class="st">'g'</span>, <span class="st">'Which corner is largest?'</span>, [<span class="st">'top left'</span>, <span class="st">'bottom right'</span>], is_(<span class="st">'bottom right'</span>), hides<span class="op">=</span>[<span class="st">'img'</span>]), pixels(<span class="st">'img'</span>, <span class="st">'Grid at t = </span><span class="sc">{t}</span><span class="st">'</span>, after<span class="op">=</span><span class="st">'g'</span>)])</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> field_errs(<span class="op">**</span>kw): <span class="cf">return</span> validate({<span class="op">**</span>fd, <span class="st">'derive'</span>: [{<span class="op">**</span>fd[<span class="st">'derive'</span>][<span class="dv">0</span>], <span class="op">**</span>kw}]})</span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>test_eq(validate(fd), [])</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>test_eq([field_errs(n<span class="op">=</span>v) <span class="cf">for</span> v <span class="kw">in</span> (<span class="dv">0</span>, <span class="dv">65</span>, <span class="st">'16'</span>)], [[<span class="st">'derive[0].n: must be from 1 to 64'</span>], [<span class="st">'derive[0].n: must be from 1 to 64'</span>], [<span class="st">'derive[0].n: must be of type int'</span>]])</span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>test_eq(field_errs(seed<span class="op">=</span><span class="st">'7'</span>), [<span class="st">'derive[0].seed: must be of type int'</span>])</span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a>test_eq(field_errs(expr<span class="op">=</span><span class="st">'i +* j'</span>), [<span class="st">'derive[0].expr: expr: "i +* j" has an unexpected "*"'</span>])</span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a>field_errs(expr<span class="op">=</span><span class="st">'i +* j'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A gate answer must be one of its options. A demo needs a gate.</p>
+<div id="c070" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>test_eq(errs_of(blocks<span class="op">=</span>[gate(<span class="st">'s'</span>, <span class="st">'Sum?'</span>, [<span class="dv">1</span>, <span class="dv">2</span>], <span class="st">'sum'</span>)]), [<span class="st">'blocks[0].answer: the answer "5" is not one of the options [</span><span class="ch">\'</span><span class="st">1</span><span class="ch">\'</span><span class="st">, </span><span class="ch">\'</span><span class="st">2</span><span class="ch">\'</span><span class="st">]'</span>])</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>test_eq(errs_of(blocks<span class="op">=</span>[readout(<span class="st">'</span><span class="sc">{a}</span><span class="st">'</span>)]), [<span class="st">'blocks: needs at least one gate: the learner predicts first'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A live control that changes the answer needs a <code>context</code> on the gate, so the verdict names its inputs.</p>
+<div id="c072" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>live <span class="op">=</span> errs_of(blocks<span class="op">=</span>[slider(<span class="st">'a'</span>, lock<span class="op">=</span><span class="st">'s'</span>), <span class="op">*</span>good[<span class="st">'blocks'</span>]])</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>test_eq(live, [<span class="st">'blocks[1].context: the slider at blocks[0] changes the answer, so name the inputs, for example "For </span><span class="sc">{a}</span><span class="st">:"'</span>])</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>ok <span class="op">=</span> deepcopy(good)<span class="op">;</span> ok[<span class="st">'blocks'</span>] <span class="op">=</span> [slider(<span class="st">'a'</span>, lock<span class="op">=</span><span class="st">'s'</span>), {<span class="op">**</span>good[<span class="st">'blocks'</span>][<span class="dv">0</span>], <span class="st">'context'</span>: <span class="st">'For </span><span class="sc">{a}</span><span class="st"> + </span><span class="sc">{b}</span><span class="st">:'</span>}, good[<span class="st">'blocks'</span>][<span class="dv">1</span>]]</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>test_eq(validate(ok), [])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The think rule follows derived keys both ways. Here <code>twice</code> is computed from the answer <code>sum</code>, so a readout of <code>twice</code> must wait too.</p>
+<div id="c074" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> deepcopy(good)<span class="op">;</span> t[<span class="st">'derive'</span>].append(expr(<span class="st">'2 * sum'</span>, <span class="st">'twice'</span>))<span class="op">;</span> t[<span class="st">'blocks'</span>].append(readout(<span class="st">'</span><span class="sc">{twice}</span><span class="st">'</span>))</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>test_eq(validate(t), [<span class="st">'blocks[2]: this readout shows "twice", which gives away the answer of gate "s"; add "after": "s"'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A block inside a <a href="https://vedicreader.github.io/rupaka/spec.html#stack"><code>stack</code></a> that waits for the gate passes, because the stack waits.</p>
+<div id="c076" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>t[<span class="st">'blocks'</span>][<span class="dv">2</span>] <span class="op">=</span> stack(readout(<span class="st">'</span><span class="sc">{twice}</span><span class="st">'</span>), after<span class="op">=</span><span class="st">'s'</span>)</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>test_eq(validate(t), [])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A fixed answer names the keys that give it away in <code>hides</code>.</p>
+<div id="c078" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>h <span class="op">=</span> demo(<span class="st">'h'</span>, state<span class="op">=</span><span class="bu">dict</span>(m<span class="op">=</span><span class="dv">1</span>), derive<span class="op">=</span>[expr(<span class="st">'m * x'</span>, <span class="st">'line'</span>, over<span class="op">=</span><span class="bu">dict</span>(x<span class="op">=</span>[<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">3</span>]))],</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>         blocks<span class="op">=</span>[gate(<span class="st">'g'</span>, <span class="st">'Steeper or flatter?'</span>, [<span class="st">'steeper'</span>, <span class="st">'flatter'</span>], is_(<span class="st">'steeper'</span>), hides<span class="op">=</span>[<span class="st">'line'</span>]),</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>                 axis([<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>], plot(<span class="st">'line'</span>), y<span class="op">=</span>[<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>])])</span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>test_eq(validate(h), [<span class="st">'blocks[1].blocks[0]: this plot shows "line", which gives away the answer of gate "g"; add "after": "g"'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A plain-text prop, such as <code>ask</code> or a label, cannot hold <code>{path}</code>: the runtime would show the braces.</p>
+<div id="c080" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> errs_of(ask<span class="op">=</span><span class="st">'The list has </span><span class="sc">{a}</span><span class="st"> items.'</span>)[<span class="dv">0</span>].startswith(<span class="st">'ask: is plain text'</span>)</span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> errs_of(blocks<span class="op">=</span>[<span class="op">*</span>good[<span class="st">'blocks'</span>], readout(<span class="st">'</span><span class="sc">{a}</span><span class="st">'</span>, label<span class="op">=</span><span class="st">'a is </span><span class="sc">{a}</span><span class="st">'</span>)])[<span class="dv">0</span>].startswith(<span class="st">'blocks[2].label: is plain text'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Each sentence has at most 20 words.</p>
+<div id="c082" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="st">'more than 20 words'</span> <span class="kw">in</span> errs_of(ask<span class="op">=</span><span class="st">' '</span>.join([<span class="st">'word'</span>] <span class="op">*</span> <span class="dv">25</span>) <span class="op">+</span> <span class="st">'.'</span>)[<span class="dv">0</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="explainers" class="level3">
+<h3 class="anchored" data-anchor-id="explainers">Explainers</h3>
+<p>An explainer shows a thing at once, for example a 3D scene that builds one step at a time. It has no gate and no prediction step. Only <code>"mode": "learn"</code> makes a spec an explainer. The default mode is <code>predict</code>, and then a spec with no gate is still refused. All the other checks still run. The runtime shows a small “Explainer” label above the title.</p>
+<p>A scene with no gate passes as an explainer:</p>
+<div id="lrn03" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb69"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>ex <span class="op">=</span> demo(<span class="st">'box'</span>, <span class="st">'A box'</span>, mode<span class="op">=</span><span class="st">'learn'</span>, state<span class="op">=</span><span class="bu">dict</span>(step<span class="op">=</span><span class="dv">1</span>), blocks<span class="op">=</span>[scene(body(<span class="st">'b'</span>, <span class="st">'box'</span>, [<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>]), bind<span class="op">=</span><span class="st">'step'</span>, steps<span class="op">=</span>[<span class="st">'A box.'</span>])])</span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>test_eq(validate(ex), [])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>With no mode, the same spec is refused with the usual message. A mode that is not <code>predict</code> or <code>learn</code> is refused.</p>
+<div id="lrn05" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>test_eq(validate({k: v <span class="cf">for</span> k, v <span class="kw">in</span> ex.items() <span class="cf">if</span> k <span class="op">!=</span> <span class="st">'mode'</span>}), [<span class="st">'blocks: needs at least one gate: the learner predicts first'</span>])</span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>test_eq(validate({<span class="op">**</span>ex, <span class="st">'mode'</span>: <span class="st">'learning'</span>}), [<span class="st">'mode: "learning" is not a mode; use predict or learn'</span>])</span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>test_eq(validate({<span class="op">**</span>good, <span class="st">'mode'</span>: <span class="st">'predict'</span>}), [])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>An explainer cannot have a gate, and its blocks cannot wait for a gate. The other checks still run, for example on a text that reads a missing key.</p>
+<div id="lrn07" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb71"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>test_eq(validate({<span class="op">**</span>good, <span class="st">'mode'</span>: <span class="st">'learn'</span>}), [<span class="st">'blocks[0]: an explainer has no gate; remove the gate, or remove "mode": "learn"'</span>])</span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>test_eq(validate({<span class="op">**</span>ex, <span class="st">'blocks'</span>: [<span class="op">*</span>ex[<span class="st">'blocks'</span>], readout(<span class="st">'</span><span class="sc">{a}</span><span class="st">'</span>, after<span class="op">=</span><span class="st">'s'</span>)]}), [<span class="st">'blocks[1].text: "a" is not in state or derive'</span>, <span class="st">'blocks[1].after: "s" is not a gate; an explainer has no gate, so remove "after"'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="tests-for-scenes" class="level3">
+<h3 class="anchored" data-anchor-id="tests-for-scenes">Tests for scenes</h3>
+<p>A small scene: a box and a cone, a force on the box, a label, and a shot that a host can set. The force shows the answer, so it waits for the gate.</p>
+<div id="s3d111" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb72"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> demo(<span class="st">'lift'</span>, <span class="st">'Lift'</span>, state<span class="op">=</span><span class="bu">dict</span>(step<span class="op">=</span><span class="dv">1</span>, cam<span class="op">=</span><span class="st">'wide'</span>, w<span class="op">=</span><span class="dv">4</span>), derive<span class="op">=</span>[expr(<span class="st">'w * 2'</span>, <span class="st">'up'</span>)],</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>          blocks<span class="op">=</span>[gate(<span class="st">'g'</span>, <span class="st">'What is twice </span><span class="sc">{w}</span><span class="st">?'</span>, [<span class="dv">6</span>, <span class="dv">8</span>], <span class="st">'up'</span>),</span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>                  scene(body(<span class="st">'base'</span>, <span class="st">'box'</span>, [<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>]), body(<span class="st">'top'</span>, <span class="st">'cone'</span>, [<span class="fl">0.6</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>], inside<span class="op">=</span><span class="st">'base'</span>),</span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>                        force([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>], <span class="st">'up'</span>, on<span class="op">=</span><span class="st">'base'</span>, at<span class="op">=</span>[<span class="dv">0</span>, <span class="fl">1.5</span>, <span class="dv">0</span>], label<span class="op">=</span><span class="st">'lift, </span><span class="sc">{up}</span><span class="st">'</span>, after<span class="op">=</span><span class="st">'g'</span>),</span>
+<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a>                        label3d(<span class="st">'the base'</span>, on<span class="op">=</span><span class="st">'base'</span>), shot(bind<span class="op">=</span><span class="st">'cam'</span>), shot(<span class="st">'close:top'</span>, step<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a>                        bind<span class="op">=</span><span class="st">'step'</span>, steps<span class="op">=</span>[<span class="st">'A box with a cone.'</span>, <span class="st">'Look at the cone.'</span>])])</span>
+<span id="cb72-7"><a href="#cb72-7" aria-hidden="true" tabindex="-1"></a>test_eq(validate(sc), [])</span>
+<span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a>test_eq(shots(sc), [<span class="st">'wide'</span>, <span class="st">'side'</span>, <span class="st">'front'</span>, <span class="st">'top'</span>, <span class="st">'close:base'</span>, <span class="st">'close:top'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A helper puts one bad part in the scene, and gives the errors.</p>
+<div id="s3d113" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> scene_errs(i, <span class="op">**</span>kw):</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> deepcopy(sc)<span class="op">;</span> part <span class="op">=</span> s[<span class="st">'blocks'</span>][<span class="dv">1</span>][<span class="st">'blocks'</span>][i]</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> kw.items():</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> v <span class="kw">is</span> <span class="va">None</span>: part.pop(k, <span class="va">None</span>)</span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>: part[k] <span class="op">=</span> v</span>
+<span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">list</span>(validate(s))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>An unknown body kind, a force on a missing body, and a bad shot name are each refused with a clear sentence.</p>
+<div id="s3d115" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb74"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>test_eq(scene_errs(<span class="dv">0</span>, kind<span class="op">=</span><span class="st">'pyramid'</span>), [<span class="st">'blocks[1].blocks[0].kind: "pyramid" is not one of: box, cylinder, cone, sphere, capsule, torus, group'</span>])</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>test_eq(scene_errs(<span class="dv">2</span>, on<span class="op">=</span><span class="st">'wing'</span>), [<span class="st">'blocks[1].blocks[2].on: "wing" is not a body in this scene; use one of: base, top'</span>])</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>test_eq(scene_errs(<span class="dv">5</span>, name<span class="op">=</span><span class="st">'close:wing'</span>), [<span class="st">'blocks[1].blocks[5].name: "wing" is not a body in this scene, so "close:wing" is not a shot'</span>])</span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>test_eq(scene_errs(<span class="dv">5</span>, name<span class="op">=</span><span class="st">'zoom'</span>), [<span class="st">'blocks[1].blocks[5].name: "zoom" is not a shot; use wide, side, front, top or close:&lt;body id&gt;'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A bound shot must start with a good name. A body cannot be in a body below it, and a size needs the right count of numbers.</p>
+<div id="s3d117" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb75"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a>bad <span class="op">=</span> deepcopy(sc)<span class="op">;</span> bad[<span class="st">'state'</span>][<span class="st">'cam'</span>] <span class="op">=</span> <span class="st">'far'</span></span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>test_eq(validate(bad), [<span class="st">'blocks[1].blocks[4].bind: the opening value: "far" is not a shot; use wide, side, front, top or close:&lt;body id&gt;'</span>])</span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>test_eq(scene_errs(<span class="dv">0</span>, <span class="op">**</span>{<span class="st">'in'</span>: <span class="st">'top'</span>}), [<span class="st">'blocks[1].blocks[0].in: "top" is not a body above this one in the scene'</span>])</span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>test_eq(scene_errs(<span class="dv">1</span>, size<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]), [<span class="st">'blocks[1].blocks[1].size: a cone needs 2 numbers'</span>])</span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="st">'must be [x, y, z]'</span> <span class="kw">in</span> scene_errs(<span class="dv">1</span>, at<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">1</span>])[<span class="dv">0</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A part goes only in a scene. A part with a step needs the step key, and the step must be in the range of the lines.</p>
+<div id="s3d119" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb76"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>test_eq(errs_of(blocks<span class="op">=</span>[<span class="op">*</span>good[<span class="st">'blocks'</span>], body(<span class="st">'b'</span>, <span class="st">'box'</span>)]), [<span class="st">'blocks[2]: a body must be inside a scene'</span>])</span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>test_eq(scene_errs(<span class="dv">5</span>, step<span class="op">=</span><span class="dv">3</span>), [<span class="st">'blocks[1].blocks[5].step: the scene has 2 steps'</span>])</span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>nb <span class="op">=</span> deepcopy(sc)<span class="op">;</span> <span class="kw">del</span> nb[<span class="st">'blocks'</span>][<span class="dv">1</span>][<span class="st">'bind'</span>]</span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="st">'blocks[1].blocks[5].step: a step needs a scene with bind'</span> <span class="kw">in</span> validate(nb)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The think rule holds in a scene too. The force shows <code>up</code>, the answer of the gate, so it must wait for the gate.</p>
+<div id="s3d121" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb77"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a>test_eq(scene_errs(<span class="dv">2</span>, after<span class="op">=</span><span class="va">None</span>), [<span class="st">'blocks[1].blocks[2]: this force shows "up", which gives away the answer of gate "g"; add "after": "g"'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="upgrade" class="level2">
+<h2 class="anchored" data-anchor-id="upgrade">upgrade</h2>
+<p><code>upgrade(spec)</code> moves a spec from schema N−1 to N. Schema 1 is the first, so today the step is the identity. The frame and the test are in place for schema 2.</p>
+<div id="79c697a4" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.488129+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.490922+00:00&quot;,&quot;total&quot;:0.0027964209999993273}}" data-execution_count="70">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L603" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="upgrade-1" class="level3">
+<h3 class="anchored" data-anchor-id="upgrade-1">upgrade</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb78"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> upgrade(</span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>    spec:<span class="bu">dict</span></span>
+<span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A copy of <code>spec</code> at the current schema.</em></p>
+</section>
+</div>
+<div id="c085" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb79"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a>test_eq(upgrade({<span class="op">**</span>good, <span class="st">'rupaka'</span>: <span class="dv">0</span>}), good)</span>
+<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>test_fail(<span class="kw">lambda</span>: upgrade({<span class="op">**</span>good, <span class="st">'rupaka'</span>: <span class="dv">9</span>}), contains<span class="op">=</span><span class="st">'newer'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="the-block-examples" class="level2">
+<h2 class="anchored" data-anchor-id="the-block-examples">The block examples</h2>
+<p>Each block’s <code>example.json</code> must pass <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a>. The browser tests draw each one.</p>
+<div id="ae92c4a2" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.491964+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.494505+00:00&quot;,&quot;total&quot;:0.002544608999997422}}" data-execution_count="72">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L613" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="examples" class="level3">
+<h3 class="anchored" data-anchor-id="examples">examples</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb80"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> examples()<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The example spec of each block, by block name.</em></p>
+</section>
+</div>
+<div id="c088" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb81"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n, ex <span class="kw">in</span> examples().items(): test_eq((n, validate(ex)), (n, []))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="the-gallery" class="level2">
+<h2 class="anchored" data-anchor-id="the-gallery">The gallery</h2>
+<p>Hand-made demos live in <code>rupaka/demos/</code>. The agent shows two of them to the model as examples, and abhyasa can import them.</p>
+<div id="4337c199" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-10-31T05:25:13.495574+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-10-31T05:25:13.498089+00:00&quot;,&quot;total&quot;:0.002517738999998187}}" data-execution_count="74">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/spec.py#L618" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="gallery" class="level3">
+<h3 class="anchored" data-anchor-id="gallery">gallery</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb82"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gallery()<span class="op">-&gt;</span><span class="bu">dict</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The gallery demos, by id.</em></p>
+</section>
+</div>
+<p>Each gallery demo passes <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a>.</p>
+<div id="c092" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb83"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>test_eq({k: <span class="bu">list</span>(validate(s)) <span class="cf">for</span> k, s <span class="kw">in</span> gallery().items()}, {k: [] <span class="cf">for</span> k <span class="kw">in</span> gallery()})</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> {<span class="st">'vowel-sandhi'</span>, <span class="st">'reciprocal-rank-fusion'</span>, <span class="st">'softmax-temperature'</span>, <span class="st">'nakshatra-pada'</span>, <span class="st">'parabola-vertex'</span>} <span class="op">&lt;=</span> <span class="bu">set</span>(gallery())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/vedicreader\.github\.io\/rupaka");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/vedicreader/rupaka/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
