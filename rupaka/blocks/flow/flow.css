@@ -4,7 +4,7 @@
 .rk-flow .edge path { fill: none; stroke: var(--rk-ink2); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .rk-flow .edge .et { font-size: 13px; fill: var(--rk-ink2); }
 /* The sketch line is a second, offset stroke. Only the paper theme shows it. */
-.rk-flow .sk { display: none; }
+.rk-flow .sk { display: var(--rk-sketch); }
 .rk-flow .node .sk { fill: none; stroke-width: 1; opacity: .55; }
 .rk-flow .edge .sk { stroke-width: 1; opacity: .5; }
 /* The nodes rise in one by one, 80 ms apart, and then each arrow draws along its line. */

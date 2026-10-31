@@ -76,9 +76,10 @@ def spec_json(spec) -> str:
     "The spec as JSON that is safe inside a `<script>` element."
     return json.dumps(spec, ensure_ascii=False).replace('<', '\\u003c')
 
-def host(spec) -> str:
-    "The host element: a div that carries its spec as inert JSON."
-    return f'<div data-rupaka><script type="application/json">{spec_json(spec)}</script></div>'
+def host(spec, theme:str=None) -> str:
+    "The host element: a div that carries its spec as inert JSON; `theme='paper'` gives it the paper look."
+    t = f' data-rk-theme="{html.escape(theme)}"' if theme else ''
+    return f'<div data-rupaka{t}><script type="application/json">{spec_json(spec)}</script></div>'
 
 # %% ../nbs/01_render.ipynb #c015
 FONTS = [('Literata', 'normal', '200 600', 'literata-latin-wght-normal.woff2', 'U+0000-00FF,U+2000-206F,U+2190-2193,U+2212'),
@@ -86,7 +87,9 @@ FONTS = [('Literata', 'normal', '200 600', 'literata-latin-wght-normal.woff2', '
          ('Literata', 'italic', '200 600', 'literata-latin-wght-italic.woff2', 'U+0000-00FF,U+2000-206F'),
          ('Literata', 'italic', '200 600', 'literata-latin-ext-wght-italic.woff2', 'U+0100-02BA,U+1E00-1E9F'),
          ('Libre Baskerville', 'normal', '400', 'libre-baskerville-latin-400-normal.woff2', 'U+0000-00FF,U+2000-206F'),
-         ('Libre Baskerville', 'normal', '400', 'libre-baskerville-latin-ext-400-normal.woff2', 'U+0100-02BA,U+1E00-1E9F')]
+         ('Libre Baskerville', 'normal', '400', 'libre-baskerville-latin-ext-400-normal.woff2', 'U+0100-02BA,U+1E00-1E9F'),
+         ('Patrick Hand', 'normal', '400', 'patrick-hand-latin-400-normal.woff2', 'U+0000-00FF,U+2000-206F,U+2190-2193,U+2212'),
+         ('Patrick Hand', 'normal', '400', 'patrick-hand-latin-ext-400-normal.woff2', 'U+0100-02BA,U+1E00-1E9F')]
 
 def font_css(fonts:str='link', base:str='fonts/') -> str:
     "The `@font-face` rules: linked from `base`, embedded as data URIs, or none."
@@ -98,11 +101,11 @@ def font_css(fonts:str='link', base:str='fonts/') -> str:
                      for n, s, w, f, u in FONTS)
 
 # %% ../nbs/01_render.ipynb #c017
-def page(specs, title:str=None, fonts:str='link', lead:str='') -> str:
+def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None) -> str:
     "One self-contained HTML document that draws `specs`, with no network."
     specs = listify(specs) if not isinstance(specs, dict) else [specs]
     title = title or specs[0].get('title') or specs[0].get('id', 'rupaka')
-    body = '<hr class="rk-sect">'.join(host(s) for s in specs)
+    body = '<hr class="rk-sect">'.join(host(s, theme) for s in specs)
     head = f'<h1 class="rk-h1">{html.escape(title)}</h1><p class="rk-lead">{html.escape(lead)}</p>' if len(specs) > 1 else ''
     css = '\n'.join([font_css(fonts), assets().page.read_text(), bundle('css'),
                      '.rk-h1 { font: 400 30px/1.3 var(--head); margin: 0 0 6px; } .rk-lead { color: var(--mute); margin: 0 0 8px; font-size: 16px; }',
@@ -142,9 +145,9 @@ def md(spec, frame:bool=False, height:int=760) -> str:
     return f'```{{=html}}\n<iframe class="rk-frame" sandbox="allow-scripts" style="width:100%;height:{height}px;border:0" srcdoc="{src}"></iframe>\n```'
 
 # %% ../nbs/01_render.ipynb #c030
-def Demo(spec, **kw):
-    "The host element of `spec` for a FastHTML page."
-    return Div(Script(Safe(spec_json(spec)), type='application/json'), data_rupaka='', **kw)
+def Demo(spec, theme:str=None, **kw):
+    "The host element of `spec` for a FastHTML page; `theme='paper'` gives it the paper look."
+    return Div(Script(Safe(spec_json(spec)), type='application/json'), data_rupaka='', data_rk_theme=theme, **kw)
 
 def Assets(prefix:str='/rupaka', v:str=''):
     "The style and the script of the runtime, served at `prefix`; `v` busts the cache."

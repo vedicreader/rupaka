@@ -166,3 +166,32 @@ def test_anchor_ids_are_stable(draw):
     set_step(d, 3); append(d, dict(type='pair', cells=['x'], to='y'))
     assert d.pg.evaluate(f"Rupaka.anchor({H}, 'blocks.0.cells.0') === __a") and anchor(d, 'blocks.3.to') == ['blocks.3.to', 'y']
     assert d.pg.evaluate(f"(() => {{ try {{ Rupaka.anchor(document.body, 'blocks.0'); }} catch (e) {{ return e.message; }} }})()") == 'no rupaka demo is mounted in this element'
+
+# the paper theme
+
+from rupaka.render import page
+from rupaka.check import contrast
+from rupaka.spec import gallery
+
+def paper(draw, spec, **kw): return draw(spec, html=page(spec, fonts='embed', theme='paper'), **kw)
+
+def test_paper_theme_has_the_hand_font_and_sketch_lines(draw):
+    d = paper(draw, FLOW)
+    d.pg.evaluate("document.fonts.ready")
+    assert d.pg.evaluate("getComputedStyle(document.querySelector('.rk-title')).fontFamily").startswith('"Patrick Hand"')
+    assert d.pg.evaluate("document.fonts.check('16px \"Patrick Hand\"')")
+    assert d.pg.locator('.rk-flow .edge .sk').first.evaluate("n => getComputedStyle(n).display") != 'none'
+    assert d.errors == []
+
+def test_page_themes_keep_their_look(draw):
+    "With no theme, light and dark stay as they were: the page font, and no sketch lines."
+    for mode in ('light', 'dark'):
+        d = draw(FLOW, mode=mode)
+        assert 'Patrick Hand' not in d.pg.evaluate("getComputedStyle(document.querySelector('.rk-title')).fontFamily")
+        assert d.pg.locator('.rk-flow .edge .sk').first.evaluate("n => getComputedStyle(n).display") == 'none'
+
+def test_paper_theme_passes_contrast(draw):
+    for spec in (PAIR, FLOW, *gallery().values()):
+        for mode in ('light', 'dark'):           # paper is always light, also on a dark page
+            d = paper(draw, spec, mode=mode); still(d)
+            assert contrast(d.pg) == [], (spec['id'], mode)

@@ -1,5 +1,5 @@
-The fonts in this directory are subsets served unmodified as WOFF2: Literata, Noto Serif Devanagari, Tiro Devanagari Sanskrit and Libre
-Baskerville (latin, latin-ext, devanagari) from Fontsource; the noto-* script families (each script's subset plus latin and latin-ext) from Google Fonts.
+The fonts in this directory are subsets served unmodified as WOFF2: Literata, Noto Serif Devanagari, Tiro Devanagari Sanskrit, Libre
+Baskerville and Patrick Hand (latin, latin-ext, devanagari) from Fontsource; the noto-* script families (each script's subset plus latin and latin-ext) from Google Fonts.
 Each is licensed under the SIL Open Font License, Version 1.1, whose text follows.
 
 Literata                   Copyright 2017 The Literata Project Authors (https://github.com/googlefonts/literata)
@@ -7,6 +7,7 @@ Noto Serif Devanagari      Copyright 2022 The Noto Project Authors (https://gith
 Tiro Devanagari Sanskrit   Copyright Tiro Typeworks Ltd. (https://github.com/TiroTypeworks/Indigenous-Devanagari)
 Libre Baskerville          Copyright 2012 The Libre Baskerville Project Authors (https://github.com/impallari/Libre-Baskerville),
                            with Reserved Font Name Libre Baskerville
+Patrick Hand               Copyright (c) 2010-2012 Patrick Wagesreiter (mail@patrickwagesreiter.at) (https://github.com/google/fonts/tree/main/ofl/patrickhand)
 Noto Serif Tamil, Noto Sans Tamil, Noto Serif Malayalam, Noto Serif Telugu, Noto Serif Kannada, Noto Serif Bengali, Noto Serif Gurmukhi,
 Noto Serif Grantha         Copyright 2022 The Noto Project Authors (https://github.com/notofonts)
 
