@@ -1,0 +1,8 @@
+/* The paper: one look for every picture of an idea. The paper theme of a demo (rupaka.css) and the side panel of the board
+   (board.css) take these tokens, with the hand font Patrick Hand (OFL): a host loads it with font_css(). The paper is always light. */
+:root {
+  --rk-paper: hsl(42 62% 96%); --rk-paper-ink: hsl(28 16% 15%); --rk-paper-ink2: hsl(28 12% 26%); --rk-paper-mute: hsl(30 10% 36%);
+  --rk-paper-line: hsl(38 28% 82%); --rk-paper-in: hsl(207 62% 46%); --rk-paper-out: hsl(4 72% 56%);
+  --rk-paper-acc: hsl(210 60% 36%); --rk-paper-ok: hsl(130 42% 25%); --rk-paper-no: hsl(4 64% 40%);
+  --rk-hand: 'Patrick Hand', 'Comic Neue', ui-rounded, system-ui, sans-serif;
+}

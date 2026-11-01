@@ -23,7 +23,7 @@ def assets() -> AttrDict:
     "The files of the runtime, in bundle order."
     blocks = sorted((PKG/'blocks').glob('*/'))
     return AttrDict(js=[STATIC/'rupaka.js', *sorted((PKG/'fns').glob('*.js')), *[d/f'{d.name}.js' for d in blocks], STATIC/'boot.js'],
-                    css=[STATIC/'rupaka.css', *[d/f'{d.name}.css' for d in blocks]], page=STATIC/'page.css', fonts=STATIC/'fonts')
+                    css=[STATIC/'paper.css', STATIC/'rupaka.css', *[d/f'{d.name}.css' for d in blocks]], page=STATIC/'page.css', fonts=STATIC/'fonts')
 
 def bundle(kind:str='js') -> str:
     "The runtime as one script (`js`) or one style sheet (`css`), with this package's version in the script. `three` gives three.js."
