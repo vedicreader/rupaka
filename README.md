@@ -169,6 +169,21 @@ panel = demo('targets', 'Make a question and its answer', mode='learn', state=di
                      flow([dict(id='g', text='Guess'), dict(id='c', text='Compare'), dict(id='a', text='Adjust')], step=3)])
 ```
 
+## The screen-guide board
+
+`rupaka.board` is the board of the screen guide. A learner says “I don’t get X”, and a model answers with a board: one short spoken
+line for each step, and marks on the page (a circle, a box, an arrow, a label, a sketch on a figure) and a small worked example in a
+side panel. abhyasa and Leela both use it.
+
+- The model writes JSON lines in a closed language (`OPS`). `parse_board(text, ctx)` checks each line against the page context: a
+  bad line drops, and two bad lines in a row end the board. The model never sends HTML, script or a link.
+- `clean_context(raw)` keeps only the known keys of what the page sends (its anchors, the focus, the thread and the demo) and cuts them to size.
+- `stream_board(chunks, ctx, on_step)` gives each step to the page as soon as it is whole.
+- `static/board.js` draws a checked board as `window.rupakaBoard.play(board)`. The side panel is on the paper of the demos, in the hand font.
+  A host serves `bundle('js')`, `bundle('css')` and the pen libraries in `assets().libs`.
+
+The decisions about learning (when the tutor is sure, which sources to trust, the prompts) stay in the app.
+
 ## The gallery
 
 `rupaka/demos/` holds hand-made demos: vowel sandhi, reciprocal rank fusion, softmax and temperature, nakṣatra and pāda, and a parabola.

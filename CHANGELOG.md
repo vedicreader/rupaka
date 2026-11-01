@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.10
+
+- A new module, `rupaka.board`, has the board of the screen guide, from abhyasa 0.0.16: the board language (`OPS`, `FIELDS`, `LIMITS`), `check_line`, `parse_board`, `clean_context`, `norm_tex`, the video cues (`cue_at`, `cue_quote`, `video_id`, `video_cues`) and `stream_board`. It needs only fastcore. `parse_board` and `stream_board` take `verbatim`, the check of a quote, so an app can give its own rules for sources.
+- rupaka ships the board files: `static/board.js`, `static/board.css` and `static/texparts.js`, with Rough.js 4.6.6 and perfect-freehand 1.2.2 (MIT) in `static/vendor/board/`. `rupaka.board.assets()` gives their paths, and `rupaka.board.bundle('js')` and `bundle('css')` give one script and one style sheet.
+- The script sets `window.rupakaBoard` and `window.rupakaTex`. The old names `window.abhyasaBoard` and `window.abhyasaTex` are the same objects, so abhyasa and Leela can move one step at a time.
+- `paper.css` holds the tokens of the paper look (`--rk-paper`, `--rk-paper-ink`, `--rk-hand` and others). The paper theme of a demo and the side panel of the board both use them, so they look the same. `bundle('css')` starts with it.
+
 ## 0.0.9
 
 - In an explainer, any block can have `step`. It shows when the state key `step` is at that value or more, and draws in from the left. The host moves on with `Rupaka.set(el, {step: n})`. A block that has its own `step` (a slider, a scene part) keeps it; put it in a `stack` to show it by step. `validate` refuses a step in a demo that predicts, and a step with no int state key `step`.
