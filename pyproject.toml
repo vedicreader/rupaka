@@ -22,6 +22,7 @@ dependencies = ["fastcore>=1.8"]
 
 [project.optional-dependencies]
 check = ["playwright>=1.40"]
+film = ["manimgl>=1.7", "setuptools<81", "audioop-lts; python_version>='3.13'"]   # manimgl imports pkg_resources, and pydub needs audioop
 dev = ["ipykernel>=7.3.0", "nbdev>=3.3.26", "notebook>=7.6.3", "pytest>=8", "playwright>=1.40"]
 
 [project.urls]

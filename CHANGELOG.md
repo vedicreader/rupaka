@@ -2,6 +2,15 @@
 
 <!-- do not remove -->
 
+## 0.0.10
+
+- A new module, `rupaka.film`, makes a demo into a narrated explainer video with manimgl. `plan(spec)` gives the film data: one beat for each idea, with its voice line, its seconds and its figure frames. `render(plan, out)` draws it with a fixed scene, `rupaka/manim/film_scene.py`, and writes the subtitles beside the video. `film(spec, out, wavs, secs)` does all the steps.
+- A film follows the demo loop. It asks the gate question, counts down three seconds, moves the input, shows the answer, and does what the caption asks. A prompt such as "b goes from 0 to 2" and a caption such as "Move t to 1000" become moves.
+- An explainer with the key `step` becomes one beat for each step. The voice says the captions of the step.
+- Python computes each value of a film with the twins of the fns. The plan is JSON, and the scene only draws it, so a spec from a model cannot run code in a film.
+- `narration`, `timed` and `track` let a host add its own voice: it speaks each line, gives the seconds, and gives the WAVs.
+- A new extra, `rupaka[film]`, installs manimgl. A film needs ffmpeg, and on Linux the pango headers. With no display, `render` uses `xvfb-run`.
+
 ## 0.0.9
 
 - In an explainer, any block can have `step`. It shows when the state key `step` is at that value or more, and draws in from the left. The host moves on with `Rupaka.set(el, {step: n})`. A block that has its own `step` (a slider, a scene part) keeps it; put it in a `stack` to show it by step. `validate` refuses a step in a demo that predicts, and a step with no int state key `step`.

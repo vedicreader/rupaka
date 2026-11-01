@@ -5,6 +5,7 @@ nbdev 3 on hatchling. Two kinds of code live here:
 - The Python (`spec`, `render`, `check`, `agent`): the notebooks under `nbs/` are the source, and `rupaka/*.py` is generated.
   Edit the notebook (with `fastcore.nbio`: `read_nb`, `mk_cell`, `write_nb`). Run `uv run nbdev-prepare` (with a hyphen). Never edit a generated file.
 - The runtime: plain JS and CSS written by hand under `rupaka/static/`, `rupaka/blocks/` and `rupaka/fns/`, tested with `uv run pytest`.
+- The film scene: plain manimgl Python written by hand in `rupaka/manim/film_scene.py`. It only draws a plan from `rupaka.film`. It runs no code from a spec.
 
 ## Blocks
 

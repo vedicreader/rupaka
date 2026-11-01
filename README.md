@@ -169,6 +169,24 @@ panel = demo('targets', 'Make a question and its answer', mode='learn', state=di
                      flow([dict(id='g', text='Guess'), dict(id='c', text='Compare'), dict(id='a', text='Adjust')], step=3)])
 ```
 
+## Films
+
+A film is a demo as a narrated explainer video. `rupaka.film` draws it with [manimgl](https://github.com/3b1b/manim), offline.
+The film follows the demo loop: it asks the gate question, counts down so that the viewer can predict, moves the input, shows the answer, and does what the caption asks.
+
+- `plan(spec)` gives the film data: one beat for each idea, with its voice line, its seconds and its figure frames. Python computes each value with the twins of the fns. The plan is JSON.
+- `render(plan, 'demo.mp4')` gives the plan to a fixed scene, `rupaka/manim/film_scene.py`, which only draws the data. A spec from a model cannot run code in a film either.
+- `narration(plan)` gives the voice lines. A host speaks them, gives the seconds to `timed`, and gives the WAVs to `track`. `film(spec, out, wavs, secs)` does all of it.
+- A gate prompt such as "b goes from 0 to 2" and a caption such as "Move t to 1000" become moves. The film draws the change as motion.
+- An explainer with the key `step` has one beat for each step.
+
+Install the extra with `pip install "rupaka[film]"`. manimgl needs ffmpeg, and on Linux the pango headers. With no display, `render` uses `xvfb-run`.
+
+```python
+from rupaka.film import film
+film(gallery()['parabola-vertex'], 'parabola.mp4')
+```
+
 ## The gallery
 
 `rupaka/demos/` holds hand-made demos: vowel sandhi, reciprocal rank fusion, softmax and temperature, nakṣatra and pāda, and a parabola.
