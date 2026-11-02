@@ -121,8 +121,6 @@ def cue_quote(cues, t:float, quote:str):
         if m.start() < at + len(p) + 1: return near[k][0], m.group(0)
         at += len(p) + 1
 
-def _in_cues(cues, t:float, quote:str) -> bool: return cue_quote(cues, t, quote) is not None
-
 # %% ../nbs/06_board.ipynb #g028
 def _demo_why(o, ctx) -> str:
     d = ctx.get('demo') or {}
@@ -195,7 +193,7 @@ def check_line(o, ctx) -> str:
         v, t, q = ctx.get('video') or {}, o.get('t'), o.get('quote')
         if not v.get('cues') or not re.fullmatch(r'[A-Za-z0-9_-]{11}', str(v.get('id') or '')): return 'no video on the page'
         if not (_num(t) and t >= 0 and isinstance(q, str) and len(q) <= 200): return 'a bad video mark'
-        if not _in_cues(v['cues'], t, q): return 'the quote is not in the transcript at that time'
+        if cue_quote(v['cues'], t, q) is None: return 'the quote is not in the transcript at that time'
     return ''
 
 # %% ../nbs/06_board.ipynb #p002
