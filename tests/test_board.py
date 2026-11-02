@@ -522,3 +522,13 @@ def test_a_wide_rank_goes_on_two_lines_and_no_label_covers_another(page):
     assert len({round(b[1]) for b in got['boxes']}) >= 4   # doer, the action, then the roles on two lines
     things = got['boxes'] + got['labels']
     assert not any(overlap(l, t) for l in got['labels'] for t in things if t is not l), got
+
+def test_an_arrow_past_a_rank_does_not_cross_the_box_at_its_left(page):
+    "Two inputs stand side by side. The arrow of the right one to the decoder, past the encoder, goes around on the right: it never crosses the left box."
+    play(page, [dict(say='Two inputs.', strokes=[dict(op='panel', head='Two inputs'), N('x', 'Input: I run'), N('e', 'Earlier: Je'), N('enc', 'Encoder'), N('dec', 'Decoder'),
+                                                 E('x', 'enc'), E('enc', 'dec'), E('e', 'dec', 'extra input')])])
+    got = page.evaluate("""() => { const r = e => [parseFloat(e.style.left), parseFloat(e.style.top), parseFloat(e.style.left) + e.offsetWidth, parseFloat(e.style.top) + e.offsetHeight], q = e => { const b = e.getBBox(); return [b.x, b.y, b.x + b.width, b.y + b.height]; };
+        return {x: r(document.querySelector('.board-node[data-id=x]')), e: r(document.querySelector('.board-node[data-id=e]')),
+                path: q(document.querySelector('g.board-flow-edge[data-from=e][data-to=dec] path'))}; }""")   # the places of the layout, in the flow, with no pop-in
+    assert abs(got['x'][1] - got['e'][1]) < 2 and got['x'][2] <= got['e'][0], got   # side by side
+    assert got['path'][0] >= got['x'][2], got   # the arrow stays right of the left box

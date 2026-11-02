@@ -624,10 +624,13 @@
         const l = a.x < b.x, y0 = a.y + a.h / 2, y1 = b.y + b.h / 2;
         pts = [[l ? a.x + a.w : a.x, y0], [l ? b.x - 3 : b.x + b.w + 3, y1]]; d = rounded(pts);
         g.lx = (pts[0][0] + pts[1][0]) / 2 - 20; g.ly = Math.min(y0, y1) - 18;
-      } else if (rank[g.dataset.to] - rank[g.dataset.from] > 1) {   // past a rank: around on the left, so it crosses no box
-        const lx = Math.max(4, Math.min(a.x, b.x, ...Object.values(geo).filter(q => q.y > a.y && q.y < b.y).map(q => q.x)) - FLOW.loop), ay = a.y + a.h / 2, by = b.y + b.h / 2;
-        pts = [[a.x, ay], [lx, ay], [lx, by], [b.x - 3, by]]; d = rounded(pts, 10);
-        g.lx = lx + 6; g.ly = (ay + by) / 2 - 9;
+      } else if (rank[g.dataset.to] - rank[g.dataset.from] > 1) {   // past a rank: around on the left, so it crosses no box; on the right when a box stands left of it
+        const ay = a.y + a.h / 2, by = b.y + b.h / 2, mid = Object.values(geo).filter(q => q.y > a.y && q.y < b.y), line = q => q !== a && Math.abs(q.y + q.h / 2 - ay) < 2;
+        const rx = Math.max(a.x + a.w, b.x + b.w, ...mid.map(q => q.x + q.w)) + FLOW.loop, right = Object.values(geo).some(q => line(q) && q.x < a.x) && rx <= W - 4
+          && !Object.values(geo).some(q => line(q) && q.x > a.x);
+        const lx = Math.max(4, Math.min(a.x, b.x, ...mid.map(q => q.x)) - FLOW.loop);
+        pts = right ? [[a.x + a.w, ay], [rx, ay], [rx, by], [b.x + b.w + 3, by]] : [[a.x, ay], [lx, ay], [lx, by], [b.x - 3, by]]; d = rounded(pts, 10);
+        g.lx = (right ? rx : lx) + 6; g.ly = (ay + by) / 2 - 9;
       } else {   // down to the next rank
         const outs = gs.filter(e => e.dataset.from === g.dataset.from && rank[e.dataset.to] === rank[g.dataset.from] + 1), k = outs.indexOf(g);
         const x0 = a.x + a.w * (k + 1) / (outs.length + 1), y0 = a.y + a.h, x1 = b.x + b.w / 2, y1 = b.y - 3, m = (y1 - y0) / 2;   // a branch leaves from its own place
