@@ -215,9 +215,11 @@ def show_value(v, d=None) -> str:
     if isinstance(v, (list, tuple)): return ', '.join('' if x is None else js_str(x) for x in v)
     return js_str(v)
 
+_TPL = re.compile(r'\{([\w.]+)(?::(\d))?\}')
+
 def fmt_text(s, st) -> str:
     "Fill `{path}` and `{path:2}` from the state, as the runtime does."
-    return re.sub(r'\{([\w.]+)(?::(\d))?\}', lambda m: show_value(get(st, m[1]), None if m[2] is None else int(m[2])), str(s or ''))
+    return _TPL.sub(lambda m: show_value(get(st, m[1]), None if m[2] is None else int(m[2])), str(s or ''))
 
 # %% ../nbs/00_spec.ipynb #c033
 def _int32(x): x &= 0xffffffff; return x - (1 << 32) if x >= 1 << 31 else x
@@ -326,7 +328,6 @@ def run(spec, state:dict=None) -> dict:
     return st
 
 # %% ../nbs/00_spec.ipynb #c045
-_TPL = re.compile(r'\{([\w.]+)(?::\d)?\}')
 _SPECIAL = {'gate', 'log', '_'}
 def _root(path): return str(path).split('.')[0]
 
@@ -363,8 +364,8 @@ def _reads(t, v) -> set:
     if t in ('key', 'path'): return {_root(v)}
     if t == 'keys': return {_root(x) for x in v}
     if t == 'numkey': return {v} if isinstance(v, str) else set()
-    if t == 'text': return {_root(m) for m in _TPL.findall(v)}
-    if t == 'texts': return {_root(m) for x in v for m in _TPL.findall(x)}
+    if t == 'text': return {_root(m[1]) for m in _TPL.finditer(v)}
+    if t == 'texts': return {_root(m[1]) for x in v for m in _TPL.finditer(x)}
     if t == 'vec3key': return {_root(x) for x in v if isinstance(x, str)}
     if t == 'options': return {_root(v['from'])} if isinstance(v, dict) else set()
     if t == 'answer': return {_root(v)} if isinstance(v, str) else set()
