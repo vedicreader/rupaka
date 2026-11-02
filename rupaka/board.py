@@ -8,9 +8,9 @@ Docs: https://vedicreader.github.io/rupaka/board.html.md"""
 __all__ = ['STATIC', 'LIBS', 'OPS', 'FIELDS', 'LIMITS', 'PANEL', 'PAIRED', 'FILL', 'NODE_ID', 'MARKS', 'META', 'META_WHY',
            'SIDES', 'SURE', 'NEEDS', 'VERSION', 'FORMS', 'UNSAFE', 'SMALL', 'FLOW', 'BODY', 'KIND', 'WHAT', 'WATCH',
            'NUMBERS', 'KINDS', 'ANCHOR_ID', 'MOST', 'TRY', 'FOCUS', 'SHOWN', 'THREAD', 'TIERS', 'assets', 'bundle',
-           'norm_tex', 'flat', 'anchor_why', 'by_id', 'cue_at', 'cue_quote', 'plain_say', 'check_line', 'key_terms',
-           'named', 'page_terms', 'yt_link', 'verbatim', 'parse_board', 'PageContext', 'clean_context', 'video_id',
-           'video_cues', 'stream_board']
+           'norm_tex', 'flat', 'anchor_why', 'by_id', 'cue_at', 'cue_quote', 'plain_say', 'check_line', 'repair_line',
+           'key_terms', 'named', 'page_terms', 'yt_link', 'verbatim', 'parse_board', 'PageContext', 'clean_context',
+           'video_id', 'video_cues', 'stream_board']
 
 # %% ../nbs/06_board.ipynb #b005
 import json, math, re
@@ -38,7 +38,7 @@ FIELDS = dict(step={'say', 'src', 'quote'}, circle={'at'}, box={'at'}, underline
               panel={'title', 'head', 'cols', 'numbered', 'stages'}, row={'cells', 'to', 'at', 'chain'}, note={'text'},
               node={'id', 'text'}, edge={'from', 'to', 'text'}, myth={'think', 'fact', 'why'})
 LIMITS = dict(steps=6, strokes=6, lines=60, line_bytes=600, pts=64, say=160, text=60, quote_min=40, quote_max=600, set=6,
-              step_bytes=1500, cells=5, cell=24, title=40, head=60, note=90, rows=6, word=16, nodes=6, edges=8, edge=16, myth=60, myths=2, stages=3)
+              step_bytes=1500, cells=5, cell=24, title=40, head=60, note=90, rows=6, word=16, nodes=6, edges=8, edge=24, box=32, myth=60, myths=2, stages=3)
 PANEL = ('panel', 'row', 'note', 'node', 'edge', 'myth')   # the lines of the side panel
 PAIRED = ('row', 'note', 'node')   # the panel lines that go with the step whose line names them; a wrong idea is often not on the page, so it stays with its step
 FILL = ('row', 'note', 'node', 'myth')   # the lines that fill a panel: a panel line with none of them shows nothing
@@ -174,6 +174,11 @@ def _cell(c, n:int, blank=True) -> bool:
     if blank and isinstance(c, dict): return set(c) == {'blank'} and _cell(c['blank'], n, False)
     return _num(c) or (isinstance(c, str) and _short_ok(c, n + c.count('$')))
 
+def _markup(t) -> int:
+    "The characters of `t` that do not show: the `$` signs, the braces, and the letters of a TeX command (`\\times` shows as one sign)."
+    if not isinstance(t, str): return 0
+    return t.count('$') + t.count('{') + t.count('}') + sum(len(m) - 1 for m in re.findall(r'\\[A-Za-z]+', t))
+
 def _wide(c) -> bool:
     "Whether the text `c` has a word of more than 16 letters out of its maths: such a word does not fit in a cell, and a cell does not wrap."
     return any(len(w) > LIMITS['word'] for w in re.sub(r'\$[^$]*\$', ' ', str(_val(c))).split())
@@ -184,15 +189,15 @@ def _panel_why(o, ctx) -> str:
         for k in ('title', 'head'):
             if k in o and not _short_ok(o[k], LIMITS[k]): return f'a bad {k}'
         cs = o.get('cols', [])
-        if not (isinstance(cs, list) and len(cs) <= 2 and all(_short_ok(c, LIMITS['cell'] + 8) for c in cs)): return 'bad column names'
+        if not (isinstance(cs, list) and len(cs) <= 3 and all(_short_ok(c, LIMITS['cell'] + 8) for c in cs)): return 'bad column names'
         return '' if all(isinstance(o.get(k, False), bool) for k in ('numbered', 'stages')) else 'a bad numbered or stages'
-    if o['op'] == 'note': return '' if _short_ok(o.get('text'), LIMITS['note']) else 'a bad note'
+    if o['op'] == 'note': return '' if _short_ok(o.get('text'), LIMITS['note'] + _markup(o.get('text'))) else 'a bad note'
     if o['op'] == 'myth':
         if not all(_short_ok(o.get(k), LIMITS['myth']) for k in ('think', 'fact')): return 'a bad wrong idea'
         return '' if 'why' not in o or _short_ok(o['why'], LIMITS['note']) else 'a bad why'
     if o['op'] == 'node':
         if not (isinstance(o.get('id'), str) and NODE_ID.fullmatch(o['id'])): return 'a bad box id'
-        if not _cell(o.get('text'), LIMITS['cell'], False): return 'a bad box text'
+        if not _cell(o.get('text'), LIMITS['box'], False): return 'a bad box text'
         return 'a word of more than 16 letters in a box' if _wide(o['text']) else ''
     if o['op'] == 'edge':
         if not all(isinstance(o.get(k), str) and NODE_ID.fullmatch(o[k]) for k in ('from', 'to')): return 'a bad edge'
@@ -237,6 +242,32 @@ def check_line(o, ctx) -> str:
         if cue_quote(v['cues'], t, q) is None: return 'the quote is not in the transcript at that time'
     return ''
 
+# %% ../nbs/06_board.ipynb #87a89cd9
+def _sentences(t:str, n:int) -> str:
+    "The first whole sentences of `t` that fit in `n` characters that show, or ''."
+    out = ''
+    for s in re.split(r'(?<=[.!?])\s+', ' '.join(t.split())):
+        if len(c := f'{out} {s}'.strip()) - _markup(c) > n: break
+        out = c
+    return out
+
+def repair_line(o, ctx) -> tuple:
+    "`(line, why)`: the side-panel line `o` that `check_line` drops, made good (see above), and why; else `(None, '')`."
+    if not isinstance(o, dict) or o.get('op') not in PANEL or not check_line(o, ctx): return None, ''
+    op, r = o['op'], dict(o)
+    if op == 'panel':
+        for k in ('title', 'head', 'cols'):
+            if k in r and _panel_why({'op': 'panel', k: r[k]}, ctx): del r[k]
+        why = 'a bad title, head or column names of a panel: they go'
+    elif op == 'edge' and 'text' in r: del r['text']; why = 'a long label of an arrow: the label goes'
+    elif op == 'node' and isinstance(t := r.get('text'), str) and t.strip():
+        t = t.strip()
+        r['text'] = t.splitlines()[0].strip() if '\n' in t else t.split(':')[0].strip()
+        why = 'a long text of a box: its first part stays'
+    elif op == 'note' and isinstance(r.get('text'), str): r['text'] = _sentences(r['text'], LIMITS['note']); why = 'a long note: its first sentences stay'
+    else: return None, ''
+    return (r, why) if not check_line(r, ctx) else (None, '')
+
 # %% ../nbs/06_board.ipynb #p002
 SMALL = frozenset('the and but for nor yet with from into onto than then that this these those there here what which who whom whose when where why how '
                   'its it’s are was were been being has have had does did not each every one any all some most more less only also just very '
@@ -263,6 +294,8 @@ def _same(a:str, b:str) -> bool:
 def _line_terms(o) -> set: return key_terms(' '.join(str(_val(x)) for x in [*o.get('cells', ()), o.get('to', ''), *(o.get(k, '') for k in ('text', 'think', 'fact', 'why'))]))
 def _shares(ts, us) -> bool: return any(_same(t, u) for t in ts for u in us)
 
+def _words(ts) -> set: return {t for t in ts if t.isalpha() and len(t) > 1}
+
 def named(o, say:str) -> bool:
     "Whether the spoken line `say` names the panel line `o` (a row or a note): they share a key word or a symbol."
     return _shares(_line_terms(o), key_terms(say))
@@ -275,13 +308,18 @@ def page_terms(ctx) -> set:
     return key_terms(' '.join(map(str, parts)))
 
 def _pair(out, ctx):
-    """A row that names nothing on the page drops: the panel is an example made from the page, not from a later idea.
+    """A row that names no word of the page, of the other rows of its panel or of its title and head drops when another row of its panel is on the page (see above).
     Then each row and note goes with the step whose spoken line names it. A row that its own step does not name moves to the next step of
     its beat that names it; else it drops. It never moves back, so a stream sends it once, with its step. A circle line on its thing stays
     where it is: the stream sent it already, and the row draws its own circle."""
     page = page_terms(ctx)
-    for st in out.steps:
-        if page: st['strokes'] = [s for s in st['strokes'] if s['op'] not in ('row', 'node') or _shares(_line_terms(s), page) or out.dropped.append((-1, 'a row that names nothing on the page'))]
+    for panel, ls in (_beats(out) if page else ()):
+        rows = [s for s in ls if s['op'] == 'row' and _words(_line_terms(s))]
+        if not any(_shares(_words(_line_terms(s)), page) for s in rows): continue   # the tutor's own case: no row of it is on the page
+        near = lambda s: key_terms(' '.join(str((panel or {}).get(k, '')) for k in ('title', 'head'))) | {t for r in rows if r is not s for t in _line_terms(r)}
+        off = {id(s) for s in rows if not _shares(_words(_line_terms(s)), page | near(s))}   # one case of its own with the rows of its panel stays
+        for st in out.steps: st['strokes'] = [s for s in st['strokes'] if id(s) not in off]
+        out.dropped += [(-1, 'a row that names nothing on the page')] * len(off)
     for k, st in enumerate(out.steps):
         keep, moves = [], {}
         beat = list(takewhile(lambda t: not any(x['op'] == 'panel' for x in t['strokes']), out.steps[k + 1:]))
@@ -442,12 +480,13 @@ def _counts(steps):
         if NUMBERS.get(m[1].lower(), int(m[1]) if m[1].isdigit() else 0) != n: s['head'] = _COUNT.sub('', s['head'], 1)
 
 def parse_board(text:str, ctx, verbatim=verbatim) -> AttrDict:
-    "The checked board in the model's reply `text`: `steps`, `dropped` lines with why, `sure`, `need` and `failed`. `verbatim` checks a quote."
-    out = AttrDict(steps=[], dropped=[], sure=None, need='none', failed=False)
+    "The checked board in the model's reply `text`: `steps`, `dropped` lines with why, `fixed` lines with why (`repair_line`), `sure`, `need` and `failed`. `verbatim` checks a quote."
+    out = AttrDict(steps=[], dropped=[], fixed=[], sure=None, need='none', failed=False)
     run, skip = 0, False   # `skip`: the step before was about the board, so its strokes go too
     lines = [l.strip() for l in str(text or '').splitlines() if l.strip() and not l.strip().startswith('```')]
     for k, o in enumerate(_objects(lines[:LIMITS['lines']])):
         why = ''
+        if (fix := repair_line(o, ctx))[0] is not None: o = fix[0]; out.fixed.append((k, fix[1]))
         if o is None: why = 'not one JSON object of 600 bytes or less'
         elif isinstance(o, dict) and o.get('op') == 'v' and k == 0:
             if o.get('n', VERSION) > VERSION: out.failed = True; out.dropped.append((k, 'a newer board version')); break
@@ -469,7 +508,7 @@ def parse_board(text:str, ctx, verbatim=verbatim) -> AttrDict:
         if why == META_WHY: out.dropped.append((k, why)); skip = True; continue
         skip = False if isinstance(o, dict) and o.get('op') == 'step' else skip
         if why:
-            out.dropped.append((k, why)); run += 1
+            out.dropped.append((k, why)); run += not (isinstance(o, dict) and o.get('op') in PANEL)   # a panel line is not the language going wrong
             if run >= 2: out.failed = True; break
         else: run = 0
     _pair(out, ctx)
@@ -536,17 +575,20 @@ def _focus(raw, ids) -> list:
     return out
 
 # %% ../nbs/06_board.ipynb #gt02
-THREAD = dict(turns=3, said=300, says=6, say=160, total=1500)
+THREAD = dict(turns=3, said=300, says=6, say=160, shown=300, total=1500)
 TIERS = ('tutor', 'vault', 'web')
 
 def _turn(t) -> dict|None:
-    "One good turn of a thread: the question `said`, the lines `says` of its board, and its tier `t`. None when it is bad."
+    """One good turn of a thread: the question `said`, the lines `says` of its board, its tier `t`, and `shown`, what its side panel showed in
+    a few words (the host writes it, at most 300 characters). None when it is bad."""
     if not isinstance(t, dict) or not (said := _s(t.get('said', ''), THREAD['said'])) or not isinstance(t.get('says'), list): return None
     says = [s for s in (_s(x, THREAD['say']) for x in t['says'][:THREAD['says']]) if s]
     if not says or any(UNSAFE.search(s) for s in says): return None
-    return dict(said=said, says=says, t=t.get('t') if t.get('t') in TIERS else 'tutor')
+    out = dict(said=said, says=says, t=t.get('t') if t.get('t') in TIERS else 'tutor')
+    if (sh := _s(t.get('shown', ''), THREAD['shown'])) and not UNSAFE.search(sh): out['shown'] = sh
+    return out
 
-def _size(t) -> int: return len(t['said']) + sum(map(len, t['says']))
+def _size(t) -> int: return len(t['said']) + sum(map(len, t['says'])) + len(t.get('shown', ''))
 
 def _thread(raw) -> list:
     "The good turns of `raw`, the oldest first: the last 3, with at most 1500 characters in all. The oldest turn goes first."
