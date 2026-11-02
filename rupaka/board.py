@@ -6,10 +6,10 @@ Docs: https://vedicreader.github.io/rupaka/board.html.md"""
 
 # %% auto #0
 __all__ = ['STATIC', 'LIBS', 'OPS', 'FIELDS', 'LIMITS', 'PANEL', 'MARKS', 'META', 'META_WHY', 'SIDES', 'SURE', 'NEEDS', 'VERSION',
-           'FORMS', 'UNSAFE', 'WATCH', 'NUMBERS', 'KINDS', 'ANCHOR_ID', 'MOST', 'TRY', 'FOCUS', 'SHOWN', 'THREAD',
-           'TIERS', 'assets', 'bundle', 'norm_tex', 'flat', 'anchor_why', 'by_id', 'cue_at', 'cue_quote', 'plain_say',
-           'check_line', 'yt_link', 'verbatim', 'parse_board', 'PageContext', 'clean_context', 'video_id', 'video_cues',
-           'stream_board']
+           'FORMS', 'UNSAFE', 'SMALL', 'WATCH', 'NUMBERS', 'KINDS', 'ANCHOR_ID', 'MOST', 'TRY', 'FOCUS', 'SHOWN',
+           'THREAD', 'TIERS', 'assets', 'bundle', 'norm_tex', 'flat', 'anchor_why', 'by_id', 'cue_at', 'cue_quote',
+           'plain_say', 'check_line', 'key_terms', 'named', 'yt_link', 'verbatim', 'parse_board', 'PageContext',
+           'clean_context', 'video_id', 'video_cues', 'stream_board']
 
 # %% ../nbs/06_board.ipynb #b005
 import json, math, re
@@ -150,7 +150,9 @@ def plain_say(say:str) -> str:
     "The spoken line `say` with no semicolon: each part is a sentence of its own."
     return re.sub(r'\s*;\s*(\w?)', lambda m: '. ' + m[1].upper(), ' '.join(say.split())).strip()
 
-def _cell(c, n:int) -> bool: return (_num(c) and not isinstance(c, bool)) or _short_ok(c, n)
+def _cell(c, n:int) -> bool:
+    "Whether `c` is a number or a short text. The `$` signs around maths do not count."
+    return (_num(c) and not isinstance(c, bool)) or (isinstance(c, str) and _short_ok(c, n + c.count('$')))
 
 def _panel_why(o, ctx) -> str:
     "Why the side-panel line `o` (`panel`, `row` or `note`) drops, or ''."
@@ -200,6 +202,54 @@ def check_line(o, ctx) -> str:
         if not (_num(t) and t >= 0 and isinstance(q, str) and len(q) <= 200): return 'a bad video mark'
         if not _in_cues(v['cues'], t, q): return 'the quote is not in the transcript at that time'
     return ''
+
+# %% ../nbs/06_board.ipynb #p002
+SMALL = frozenset('the and but for nor yet with from into onto than then that this these those there here what which who whom whose when where why how '
+                  'its it’s are was were been being has have had does did not each every one any all some most more less only also just very '
+                  'can could will would shall should may might must you your our their they them she her him his out over under about '
+                  'same other next last first own such like get gets got make makes made use uses used see sees shows show step page'.split())
+_TERM = re.compile(r'\\[A-Za-z]+|[A-Za-z]+(?:[_^](?:\{[^{}]{1,12}\}|[A-Za-z0-9]+))+|[A-Za-z]+|\d+(?:\.\d+)?')
+
+def key_terms(s) -> set:
+    """The key words and symbols of `s`: each word of 3 letters or more that is not a small word, cut to its first 5 letters; each
+    number; each maths token such as `x_i` or `w_1x_1`; each single letter other than "a" and "I". `\\sum` counts as the word sum."""
+    out = set()
+    for t in _TERM.findall(str(s or '').replace('$', ' ')):
+        if t[0] == '\\': t = t[1:]
+        if t[0].isdigit() or '_' in t or '^' in t: out.add(norm_tex(t)); continue
+        if len(t) == 1: out.update({t} - {'a', 'A', 'I'}); continue
+        if len(t) >= 3 and (w := t.lower()) not in SMALL: out.add(w[:5])
+    return out
+
+def _same(a:str, b:str) -> bool:
+    "Whether two key terms are the same: the same symbol or number, or two words where one is the start of the other (add, adds, adding)."
+    if a == b: return True
+    return a.isalpha() and b.isalpha() and len(a) > 1 and len(b) > 1 and (a.startswith(b) or b.startswith(a))
+
+def named(o, say:str) -> bool:
+    "Whether the spoken line `say` names the panel line `o` (a row or a note): they share a key word or a symbol."
+    ts = key_terms(' '.join(str(x) for x in [*o.get('cells', ()), o.get('to', ''), o.get('text', '')]))
+    ss = key_terms(say)
+    return any(_same(t, s) for t in ts for s in ss)
+
+def _pair(out):
+    """Each row and note goes with the step whose spoken line names it. A row that its own step does not name moves to the next step of
+    its beat that names it; else it drops. It never moves back, so a stream sends it once, with its step. A circle line on its thing stays
+    where it is: the stream sent it already, and the row draws its own circle."""
+    for k, st in enumerate(out.steps):
+        keep, moves = [], {}
+        beat = list(takewhile(lambda t: not any(x['op'] == 'panel' for x in t['strokes']), out.steps[k + 1:]))
+        for s in st['strokes']:
+            if s['op'] not in PANEL[1:] or named(s, st['say']): keep.append(s); continue
+            room = lambda t: len(t['strokes']) + len(moves.get(id(t), ())) < LIMITS['strokes']
+            if (to := next((t for t in beat if named(s, t['say']) and room(t)), None)) is None:
+                out.dropped.append((-1, f"a {s['op']} that its step does not name")); continue
+            moves.setdefault(id(to), []).append({f: v for f, v in s.items() if f != 'w'})   # its word mark was a word of the other line
+        st['strokes'] = keep
+        for t in beat:
+            if (ms := moves.get(id(t))):   # before the rows of that step: they came first in the reply
+                at = next((i for i, x in enumerate(t['strokes']) if x['op'] in PANEL), len(t['strokes']))
+                t['strokes'][at:at] = ms
 
 # %% ../nbs/06_board.ipynb #g038
 WATCH = 'https://www.youtube.com/watch?v='
@@ -295,6 +345,7 @@ def parse_board(text:str, ctx, verbatim=verbatim) -> AttrDict:
             out.dropped.append((k, why)); run += 1
             if run >= 2: out.failed = True; break
         else: run = 0
+    _pair(out)
     _counts(out.steps)
     for st in out.steps:   # a row with `at` draws its own circle: a circle line on the same thing goes
         on = [json.dumps(s['at'], sort_keys=True) for s in st['strokes'] if s['op'] == 'row' and 'at' in s]
