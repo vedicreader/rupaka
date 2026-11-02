@@ -404,29 +404,24 @@ def _props(m, x, path, known, tables, err, skip=()):
     return reads
 
 # %% ../nbs/00_spec.ipynb #c051
+def _reach(xs, nxt):
+    "`xs` and every key that `nxt` gives from them, again and again."
+    out, todo = set(xs), list(xs)
+    while todo:
+        for r in nxt(todo.pop()):
+            if r not in out: out.add(r); todo.append(r)
+    return out
+
 def _taint(g, deps, state_keys):
     "The keys that give away the answer of gate `g`."
     a = g.get('answer')
     roots = {_root(a)} if isinstance(a, str) else set(g.get('hides') or [])
-    out, todo = set(roots), list(roots)
-    while todo:
-        k = todo.pop()
-        for r in deps.get(k, ()):
-            if r not in state_keys and r not in out: out.add(r); todo.append(r)
-    grew = True
-    while grew:
-        grew = False
-        for k, rs in deps.items():
-            if k not in out and rs & out: out.add(k); grew = True
-    return out
+    up = _reach(roots, lambda k: [r for r in deps.get(k, ()) if r not in state_keys])
+    return _reach(up, lambda x: [k for k, rs in deps.items() if x in rs])
 
 def _ancestors(k, deps):
     "All keys that `k` is computed from, raw inputs too."
-    out, todo = set(), [k]
-    while todo:
-        for r in deps.get(todo.pop(), ()):
-            if r not in out: out.add(r); todo.append(r)
-    return out
+    return _reach(deps.get(k, ()), lambda r: deps.get(r, ()))
 
 # %% ../nbs/00_spec.ipynb #c053
 MAX_WORDS = 20
@@ -524,11 +519,7 @@ def _waits(p, allp):
 # %% ../nbs/00_spec.ipynb #c060
 def _all_waits(p, allp, waits):
     "Every gate that block `p` waits for, also through the gates that it waits for."
-    out, todo = set(), list(_waits(p, allp))
-    while todo:
-        g = todo.pop()
-        if g not in out: out.add(g); todo += list(waits.get(g, ()))
-    return out
+    return _reach(_waits(p, allp), lambda g: waits.get(g, ()))
 
 def _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads) -> L:
     errs = L()
