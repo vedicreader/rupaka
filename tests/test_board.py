@@ -429,3 +429,25 @@ def test_a_cell_does_not_wrap(page):
     assert float(page.evaluate("document.getElementById('board-panel').style.getPropertyValue('--fit')")) < 1
     h = page.evaluate("[...document.querySelectorAll('.board-cell')].map(c => [c.getBoundingClientRect().height, parseFloat(getComputedStyle(c).lineHeight)])")
     assert all(a < 2 * l for a, l in h), h
+
+def test_a_blank_shows_at_the_next_step_or_on_a_click(page):
+    "A blank is a dashed box with no value. It shows its value when the next step plays, or when the learner clicks it."
+    s1 = dict(say='Your turn.', strokes=[dict(op='panel', head='Fill it in'), row(['[18, 47]'], {'blank': '56'}), row([{'blank': '[18]'}], {'blank': '47'})])
+    play(page, [s1, dict(say='The answers.', strokes=[])])
+    shown = lambda: page.evaluate("[...document.querySelectorAll('#board-panel .blank')].map(b => b.classList.contains('shown'))")
+    assert shown() == [False, False, False]
+    assert page.evaluate("getComputedStyle(document.querySelector('.board-blank')).color") == 'rgba(0, 0, 0, 0)'
+    page.locator('.board-blank').first.click()
+    assert shown() == [True, False, False]
+    page.evaluate('rupakaBoard.next()'); page.wait_for_function('rupakaBoard.state.done')
+    assert shown() == [True, True, True]
+
+def test_a_card_of_a_wrong_idea_and_three_stages(page):
+    "A card of a wrong idea has the idea on the left and the fact on the right, with the why under both. A panel with stages names each row."
+    play(page, [dict(say='A wrong idea.', strokes=[dict(op='panel', head='A common wrong idea'), dict(op='myth', think='It grows', fact='It gets smaller', why='Each step keeps less.')])])
+    t, f, w = [page.evaluate(f"(() => {{ const b = document.querySelector('{q}').getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }})()") for q in ('.board-myth-think', '.board-myth-fact', '.board-myth-why')]
+    assert t[2] < f[0] and abs(t[1] - f[1]) < 2 and w[1] >= max(t[3], f[3])
+    assert page.evaluate("document.querySelector('.board-myth-think .board-myth-k').textContent") == 'You might think'
+    c = row(['Guess', 'Compare', 'Update'], None, chain=True); c.pop('to')
+    play(page, [dict(say='Stages.', strokes=[dict(op='panel', head='From a case to the symbols', stages=True), row(['1.0'], '1.414'), c, row(['$w$'], '$w - g$')])])
+    assert page.evaluate("[...document.querySelectorAll('.board-stage')].map(s => s.textContent)") == ['A case', 'A picture', 'The symbols']

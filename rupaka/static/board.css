@@ -149,6 +149,26 @@
 .board-flow-line { fill: none; stroke: var(--paper-ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .board-flow-head { fill: var(--paper-ink); transform-box: fill-box; transform-origin: center; }
 .board-flow-label { position: absolute; font-size: calc(14px * var(--fit, 1)); color: var(--paper-mute); white-space: nowrap; }
+/* A blank of a faded worked example: a dashed box with a "?" until it shows its value. */
+.board-panel .blank { position: relative; }
+.board-panel .blank:not(.shown) { border-style: dashed; }
+.board-blank { all: unset; cursor: pointer; }
+.board-panel .blank:not(.shown) .board-blank { color: transparent; }
+.board-panel .blank:not(.shown)::after { content: '?'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--paper-mute); pointer-events: none; }
+.board-blank:focus-visible { outline: 2px solid var(--paper-hot-line); outline-offset: 3px; }
+/* A card of a wrong idea: the idea on the left, the fact on the right, the line of why under both. */
+.board-myth { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.board-myth > * { opacity: 0; }
+.board-myth-think, .board-myth-fact { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border-radius: 6px; border: 1.5px solid var(--paper-cell-line);
+                                      background: var(--paper-cell); font-size: calc(19px * var(--fit, 1)); }
+.board-myth-think > :last-child { text-decoration: line-through; text-decoration-color: var(--paper-mute); }
+.board-myth-fact { border-color: var(--paper-hot-line); background: var(--paper-hot); }
+.board-myth-k { font-size: calc(14px * var(--fit, 1)); color: var(--paper-mute); }
+.board-myth-why { grid-column: 1 / -1; margin: 0; font-size: calc(17px * var(--fit, 1)); color: var(--paper-mute); }
+/* Three stages: the name of each stage over its row, and a thin line between the stages. */
+.board-panel.stages .board-row { row-gap: 2px; }
+.board-panel.stages .board-row + .board-row { border-top: 1px dashed var(--paper-line); padding-top: 12px; }
+.board-stage { flex: 0 0 100%; font-size: calc(14px * var(--fit, 1)); color: var(--paper-mute); }   /* its own line over the row */
 .board-row-n { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid currentColor; font-size: 15px; display: inline-grid; place-items: center; }
 .board-panel-note { margin: 0; font-size: 18px; color: var(--paper-mute); }
 @media print { .board-panel { display: none; } }

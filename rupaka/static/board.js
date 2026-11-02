@@ -87,6 +87,10 @@
 //            the thing that its first row marks.
 //   Before a step draws, the page scrolls its first mark into view when it is off screen or under the strip.
 //   note     {text}: one quiet line of the panel.
+//            A cell (or `to`) {blank: value} is a part for the learner to fill: an empty dashed box that shows its value when the
+//            next step plays, or when the learner clicks it (or presses Enter on it).
+//   panel {stages: true}: its rows are a case, a picture and the symbols, each with its name over it.
+//   myth     {think, fact, why}: a card of a wrong idea: "You might think" and the idea, "In fact" and the fact, then one line of why.
 //   node     {id, text}: one box of a flow diagram in the panel. The boxes go from the top down: a box is one rank under the boxes
 //            that point to it, and the boxes of one rank stand side by side (a branch).
 //   edge     {from, to, text}: an arrow from box `from` to box `to`, with a short label. An arrow to a box above it, or to the same
@@ -334,7 +338,7 @@
   }
 
   // --- marks: `place` reads the page and builds the parts; `paint` sets them for one moment ------------------------------------
-  const PASTEL = ['pink', 'green', 'blue', 'yellow', 'violet', 'peach'], MARKS = ['circle', 'box', 'underline', 'label'], PANEL = ['panel', 'row', 'note', 'node', 'edge'];
+  const PASTEL = ['pink', 'green', 'blue', 'yellow', 'violet', 'peach'], MARKS = ['circle', 'box', 'underline', 'label'], PANEL = ['panel', 'row', 'note', 'node', 'edge', 'myth'];
   // Whether the box `b` of a mark holds a thing to mark: words, a formula part or a picture. A mark on empty space is not drawn.
   const REPLACED = /^(IMG|SVG|CANVAS|VIDEO|INPUT|TEXTAREA|SELECT|BUTTON|IFRAME|PICTURE)$/i;
   const meets = (r, b) => r.width > 0 && r.height > 0 && r.left + scrollX < b.x + b.w && b.x < r.right + scrollX && r.top + scrollY < b.y + b.h && b.y < r.bottom + scrollY;
@@ -513,7 +517,7 @@
   function chains(p) {
     const rs = [...p.querySelectorAll('.board-row')].filter(r => r.dataset.beat === p.dataset.beat), ch = rs.filter(r => r.classList.contains('chain'));
     const parts = r => r.classList.contains('chain') ? r.querySelectorAll('.board-word').length : r.querySelectorAll('.board-cell').length;
-    const n = ch.length && !p.dataset.cols ? Math.max(...rs.map(parts)) : 0, lead = p.classList.contains('numbered') ? 1 : 0;
+    const n = ch.length && !p.dataset.cols && !p.classList.contains('stages') ? Math.max(...rs.map(parts)) : 0, lead = p.classList.contains('numbered') ? 1 : 0;
     p.classList.toggle('chains', n > 1);
     if (n < 2) return p.style.removeProperty('--chain');
     p.style.setProperty('--chain', `${lead ? '24px ' : ''}repeat(${n - 1}, auto 28px) auto`);
@@ -634,12 +638,13 @@
     m.life = 800;
     return true;
   }
+  const STAGES = ['A case', 'A picture', 'The symbols'];   // the rows of a panel with `stages`, from the concrete to the abstract
   const beatOf = m => { const k = st.marks.indexOf(m); return st.marks.slice(0, k + 1).filter(x => x.o.op === 'panel').length; };
   function placePanel(m) {
     const o = m.o, p = panelEl(), beat = String(beatOf(m)), parts = [];
     if (o.op === 'panel') {
       if (p.dataset.beat !== beat) {   // a new beat: its own title, heading and columns, and none of the rows before
-        p.dataset.beat = beat; p.classList.toggle('numbered', !!o.numbered);
+        p.dataset.beat = beat; p.classList.toggle('numbered', !!o.numbered && !o.stages); p.classList.toggle('stages', !!o.stages);
         const [t, h, cs, rs] = p.children;
         richInto(t, o.title || ''); richInto(h, o.head || '');
         cs.replaceChildren(...(o.cols || []).map(c => richInto(el('span', '', null), c)));
@@ -657,14 +662,26 @@
     if (!p.dataset.docked || (b && m === st.marks.find(x => x.o.op === 'row' && x.o.at !== undefined))) { dockPanel(p, b); p.dataset.docked = '1'; }
     if (o.op === 'node' || o.op === 'edge') return placeFlow(m, p, beat);
     if (!m.el || !m.el.isConnected) {
-      m.el = el('div', o.op === 'note' ? 'board-panel-note' : 'board-row' + (o.chain ? ' chain' : ''), null);
+      m.el = el('div', o.op === 'note' ? 'board-panel-note' : o.op === 'myth' ? 'board-myth' : 'board-row' + (o.chain ? ' chain' : ''), null);
       if (o.op === 'note') richInto(m.el, o.text);
+      if (o.op === 'myth') {   // the wrong idea, the fact, and the line of why: each pops in after the one before
+        const side = (cls, k, t) => { const d = el('div', cls, null); d.append(el('span', 'board-myth-k', k), richInto(el('span', '', null), t)); return d; };
+        m.el.append(side('board-myth-think', 'You might think', o.think), side('board-myth-fact', 'In fact', o.fact));
+        if (o.why) m.el.append(richInto(el('p', 'board-myth-why', null), o.why));
+      }
       m.el.dataset.step = m.step; m.el.dataset.beat = beat;
       if (o.op === 'row') {
         const n = [...p.querySelectorAll('.board-row')].length + 1;
         if (p.classList.contains('numbered')) m.el.append(el('span', 'board-row-n', String(n)));
-        o.cells.forEach((c, k) => { if (k && o.chain) m.el.append(el('span', 'board-row-arrow', '→')); m.el.append(richInto(el('span', o.chain ? 'board-word' : 'board-cell', null), c)); });
-        if (o.to != null) m.el.append(el('span', 'board-row-arrow long', '⟶'), richInto(el('span', 'board-cell board-target', null), o.to));
+        if (p.classList.contains('stages')) m.el.append(el('span', 'board-stage', STAGES[n - 1] || ''));
+        const part = (cls, c) => {   // a cell, or a blank: a button that shows its value
+          if (!c || typeof c !== 'object') return richInto(el('span', cls, null), c);
+          const s = el('span', cls + ' blank' + (m.step < st.i ? ' shown' : ''), null), b = el('button', 'board-blank', null);
+          b.type = 'button'; b.setAttribute('aria-label', 'Show the value'); b.addEventListener('click', () => s.classList.add('shown'));
+          s.append(richInto(b, c.blank)); return s;
+        };
+        o.cells.forEach((c, k) => { if (k && o.chain) m.el.append(el('span', 'board-row-arrow', '→')); m.el.append(part(o.chain ? 'board-word' : 'board-cell', c)); });
+        if (o.to != null) m.el.append(el('span', 'board-row-arrow long', '⟶'), part('board-cell board-target', o.to));
         const nc = +p.dataset.cols;
         if (nc && !o.chain) {   // each cell in the column of its head
           const cells = [...m.el.querySelectorAll('.board-cell:not(.board-target)')];
@@ -694,7 +711,7 @@
       else if (!under) land = inkArrow(m, parts, from, to, 120, .8);   // in the page, a curve goes down from the ring, never back up across the text
     } else for (const e of [m.g, m.ring]) if (e) e.style.display = 'none';
     if (o.op === 'note') parts.push({kind: 'node', el: m.el, at: land, dur: 260});
-    else [...m.el.children].forEach((c, k) => parts.push({kind: 'node', el: c, at: land + 80 * k, dur: 260}));   // the row when the curve lands, then each cell
+    else [...m.el.children].forEach((c, k) => parts.push({kind: 'node', el: c, at: land + (o.op === 'myth' ? 400 : 80) * k, dur: 260}));   // the row when the curve lands, then each cell
     m.parts = parts; m.aim = box; m.box = box; m.ok = true;
     m.life = parts.reduce((t, q) => Math.max(t, q.at + (q.dur || 300)), 0) + 500;
     return true;
@@ -1075,6 +1092,7 @@
     i = Math.max(0, Math.min(st.board.steps.length - 1, i));
     const forward = i === st.i + 1, t = performance.now();
     st.i = i; st.stepAt = t; st.lit = -1; st.wait = false;
+    document.querySelectorAll('#board-panel .blank:not(.shown)').forEach(b => { if (+b.closest('[data-step]').dataset.step < i) b.classList.add('shown'); });   // the next step shows the blanks before it
     for (const m of st.marks) if (!(forward && PANEL.includes(m.o.op) && m.step < i)) unmount(m);   // on D next the panel and its rows stay
     if (!forward) panelGone();   // else the panel is built again from the marks of the steps up to this one
     st.video = null;
