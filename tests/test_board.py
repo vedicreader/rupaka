@@ -373,3 +373,81 @@ def test_a_label_covers_no_line_of_what_it_marks(page):
     assert not any(overlap(chip, q) for q in lines_of(page, '[data-guide-id=pass]')), chip
     lead = page.evaluate("document.querySelector('#board-layer .board-lead path').getAttribute('d')")
     assert lead and lead.startswith('M')
+
+def test_the_chains_of_a_panel_line_up(page):
+    "The chains of one panel are one grid: the k-th word of each row has one middle, and so has each arrow, also in a shorter row."
+    rs = [row(['Input', 'Encoder', 'z'], None, chain=True), row(['z', 'Decoder', 'Output words'], None, chain=True), row(['Earlier outputs', 'Decoder'], None, chain=True)]
+    for r in rs: r.pop('to')
+    play(page, [dict(say='The encoder and the decoder.', strokes=[dict(op='panel', head='Symbols to symbols'), *rs])])
+    mid = page.evaluate("""() => [...document.querySelectorAll('.board-row.chain')].map(r => [...r.children].map(c => { const b = c.getBoundingClientRect(); return Math.round(b.left + b.width / 2); }))""")
+    assert [len(m) for m in mid] == [5, 5, 3]
+    for k in range(5): assert len({m[k] for m in mid if k < len(m)}) == 1, (k, mid)
+
+def test_a_part_of_a_formula_marks_its_line(page):
+    "A formula part that is taller than its line (as KaTeX makes it) gets the height of the line, so an underline stays above the next line. A narrow part is at least 28 px wide."
+    page.evaluate("""() => document.querySelector('main').insertAdjacentHTML('beforeend', `<p style="width:300px">Some words <span data-guide-id="f" data-parts='[["x_1","g-9-0"]]'><span id="g-9-0"
+        style="display:inline-block;height:34px;vertical-align:-12px">x</span></span> and more words that go on to the next line of the text.</p>`)""")
+    b = page.evaluate("rupakaBoard.boxOf({a: 'f', tex: 'x_1'})")
+    line = page.evaluate("(() => { const r = document.querySelector('[data-guide-id=f]').getClientRects()[0]; return [r.top + scrollY, r.height]; })()")
+    assert (round(b['y']), round(b['h'])) == (round(line[0]), round(line[1])) and b['w'] >= 28, (b, line)
+
+def test_words_mark_only_whole_words(page):
+    "A mark on words finds them from a word boundary to a word boundary, as the server checks them: part of a word marks nothing."
+    assert page.evaluate("rupakaBoard.boxOf({a: 'out', text: 'arget'})") is None
+    assert page.evaluate("rupakaBoard.boxOf({a: 'out', text: 'target'})")['w'] > 0
+
+E = lambda a, b, text=None: dict(op='edge', **{'from': a, 'to': b}, **({'text': text} if text else {}))
+N = lambda i, text: dict(op='node', id=i, text=text)
+
+def test_a_flow_diagram_grows_with_its_steps(page):
+    "A flow diagram gets its boxes step by step, each a rank under the box that points to it. A branch stands side by side, and a loop back goes around on the right of all boxes."
+    s1 = dict(say='The encoder.', strokes=[dict(op='panel', head='Symbols to symbols'), N('x', 'Input'), N('enc', 'Encoder'), E('x', 'enc')])
+    s2 = dict(say='The decoder.', strokes=[N('dec', 'Decoder'), E('enc', 'dec'), N('y', 'Output'), N('end', 'End'), E('dec', 'y', 'go on'), E('dec', 'end')])
+    s3 = dict(say='Back in.', strokes=[E('y', 'dec', 'earlier outputs')])
+    play(page, [s1, s2, s3])
+    boxes = lambda: page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('.board-node')].filter(b => b.style.display !== 'none').map(b => {
+        const r = b.getBoundingClientRect(); return [b.dataset.id, [r.left, r.top, r.right, r.bottom]]; }))""")
+    assert set(boxes()) == {'x', 'enc'}
+    for _ in range(2): page.evaluate('rupakaBoard.next()'); page.wait_for_function('rupakaBoard.state.done')
+    b = boxes()
+    assert set(b) == {'x', 'enc', 'dec', 'y', 'end'}
+    assert b['x'][1] < b['enc'][1] < b['dec'][1] < b['y'][1] and abs(b['y'][1] - b['end'][1]) < 2 and b['y'][2] <= b['end'][0]   # a branch side by side
+    loop = page.evaluate("""() => { const g = document.querySelector('g.board-flow-edge[data-from=y][data-to=dec] path'), r = g.getBoundingClientRect(); return [r.left, r.right]; }""")
+    assert loop[1] > max(q[2] for q in b.values())   # the loop goes around on the right
+    assert page.evaluate("document.querySelector('.board-flow-label').textContent") == 'go on'
+
+def test_a_pair_in_a_list_puts_its_answer_in_the_last_column(page):
+    "In a panel of chains, a pair of one cell and its answer has the answer under the last word of the chains, and its cell under the first."
+    c = row(['Input', 'Encoder', 'z'], None, chain=True); c.pop('to')
+    play(page, [dict(say='The encoder.', strokes=[dict(op='panel', head='Symbols to symbols'), c, row(['Earlier outputs'], 'Decoder')])])
+    mid = page.evaluate("""() => [...document.querySelectorAll('.board-row')].map(r => [...r.querySelectorAll('.board-word, .board-cell')].map(c => { const b = c.getBoundingClientRect(); return Math.round(b.left + b.width / 2); }))""")
+    assert mid[1][0] == mid[0][0] and mid[1][-1] == mid[0][-1], mid
+
+def test_a_cell_does_not_wrap(page):
+    "A long cell makes the type of the panel smaller, so it stays on one line."
+    play(page, [dict(say='The encoder.', strokes=[dict(op='panel', head='Symbols', cols=['From', 'To']), row(['The input symbols'], 'The output symbols')])])
+    assert float(page.evaluate("document.getElementById('board-panel').style.getPropertyValue('--fit')")) < 1
+    h = page.evaluate("[...document.querySelectorAll('.board-cell')].map(c => [c.getBoundingClientRect().height, parseFloat(getComputedStyle(c).lineHeight)])")
+    assert all(a < 2 * l for a, l in h), h
+
+def test_a_blank_shows_at_the_next_step_or_on_a_click(page):
+    "A blank is a dashed box with no value. It shows its value when the next step plays, or when the learner clicks it."
+    s1 = dict(say='Your turn.', strokes=[dict(op='panel', head='Fill it in'), row(['[18, 47]'], {'blank': '56'}), row([{'blank': '[18]'}], {'blank': '47'})])
+    play(page, [s1, dict(say='The answers.', strokes=[])])
+    shown = lambda: page.evaluate("[...document.querySelectorAll('#board-panel .blank')].map(b => b.classList.contains('shown'))")
+    assert shown() == [False, False, False]
+    assert page.evaluate("getComputedStyle(document.querySelector('.board-blank')).color") == 'rgba(0, 0, 0, 0)'
+    page.locator('.board-blank').first.click()
+    assert shown() == [True, False, False]
+    page.evaluate('rupakaBoard.next()'); page.wait_for_function('rupakaBoard.state.done')
+    assert shown() == [True, True, True]
+
+def test_a_card_of_a_wrong_idea_and_three_stages(page):
+    "A card of a wrong idea has the idea on the left and the fact on the right, with the why under both. A panel with stages names each row."
+    play(page, [dict(say='A wrong idea.', strokes=[dict(op='panel', head='A common wrong idea'), dict(op='myth', think='It grows', fact='It gets smaller', why='Each step keeps less.')])])
+    t, f, w = [page.evaluate(f"(() => {{ const b = document.querySelector('{q}').getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }})()") for q in ('.board-myth-think', '.board-myth-fact', '.board-myth-why')]
+    assert t[2] < f[0] and abs(t[1] - f[1]) < 2 and w[1] >= max(t[3], f[3])
+    assert page.evaluate("document.querySelector('.board-myth-think .board-myth-k').textContent") == 'You might think'
+    c = row(['Guess', 'Compare', 'Update'], None, chain=True); c.pop('to')
+    play(page, [dict(say='Stages.', strokes=[dict(op='panel', head='From a case to the symbols', stages=True), row(['1.0'], '1.414'), c, row(['$w$'], '$w - g$')])])
+    assert page.evaluate("[...document.querySelectorAll('.board-stage')].map(s => s.textContent)") == ['A case', 'A picture', 'The symbols']
