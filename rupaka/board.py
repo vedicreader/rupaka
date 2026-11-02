@@ -36,7 +36,7 @@ FIELDS = dict(step={'say', 'src', 'quote'}, circle={'at'}, box={'at'}, underline
               label={'at', 'text', 'side'}, sketch={'at', 'pts'}, point={'at'}, clear={'n'}, demo_set={'set'}, video_at={'t', 'quote'},
               panel={'title', 'head', 'cols', 'numbered'}, row={'cells', 'to', 'at', 'chain'}, note={'text'})
 LIMITS = dict(steps=6, strokes=6, lines=60, line_bytes=600, pts=64, say=160, text=60, quote_min=40, quote_max=600, set=6,
-              step_bytes=1500, cells=5, cell=24, title=40, head=60, note=90)
+              step_bytes=1500, cells=5, cell=24, title=40, head=60, note=90, rows=6)
 PANEL = ('panel', 'row', 'note')   # the lines of the side panel
 MARKS = ('circle', 'box', 'underline', 'label')   # a mark on a thing: it needs a thing under it, so never a bare point
 META = re.compile(r"\b(?:my (?:earlier|last|first|previous) (?:offer|answer|board|reply|step)|(?:was|is) misleading|i apologi[sz]e|sorry|i was wrong"
@@ -70,6 +70,24 @@ def _num(x) -> bool: return isinstance(x, (int, float)) and not isinstance(x, bo
 # %% ../nbs/06_board.ipynb #g018
 FORMS = ('text', 'tex', 'label', 'box', 'pt')
 
+def _edge(w:str, end:bool) -> str:
+    "A word boundary at the start (or `end`) of `w`, when `w` starts (or ends) with a letter or a digit; else none."
+    c = w[-1] if end else w[0]
+    return '' if not (c.isalnum() or c == '_') else r'(?!\w)' if end else r'(?<!\w)'
+
+def _text_why(v, a) -> str:
+    """Why the words `v` cannot mark the anchor `a`, or ''. They must be in its text once, as whole words, and not inside a
+    formula: the page writes a formula as its TeX between $ signs, and draws it as maths, so the words are not on the page."""
+    if not (isinstance(v, str) and v.strip()): return f"no words {v!r} in {a['id']}"
+    w, t = flat(v), flat(a.get('text'))
+    ms = [m.span() for m in re.finditer(_edge(w, False) + re.escape(w) + _edge(w, True), t)]
+    if not ms: return f"no words {v!r} in {a['id']}"
+    if len(ms) > 1: return f"the words {v!r} are in {a['id']} more than once"
+    s, e = ms[0]
+    if a.get('kind') != 'code' and any(s < f1 and f0 < e for f0, f1 in (m.span() for m in re.finditer(r'\$[^$]+\$', t))):
+        return f"words inside a formula of {a['id']}: mark its part with tex"
+    return ''
+
 def anchor_why(at, ctx) -> str:
     "Why `at` names no anchor of `ctx`, or '' when it does."
     if isinstance(at, str): return '' if at in ctx.by else f'no anchor {at!r}'
@@ -79,7 +97,7 @@ def anchor_why(at, ctx) -> str:
     if len(forms) > 1: return 'an anchor with two forms'
     if not forms: return ''
     f, v = forms[0], at[forms[0]]
-    if f == 'text': return '' if isinstance(v, str) and v.strip() and flat(v) in flat(a.get('text')) else f'no words {v!r} in {at["a"]}'
+    if f == 'text': return _text_why(v, a)
     if f == 'tex': return '' if isinstance(v, str) and norm_tex(v) in {norm_tex(t) for t in a.get('tokens') or ()} else f'no token {v!r} in {at["a"]}'
     if f == 'label': return '' if isinstance(v, str) and v in (a.get('labels') or {}) else f'no label {v!r} in {at["a"]}'
     if f == 'box': return '' if _box(v) else 'a bad box'
@@ -263,6 +281,37 @@ def _pair(out, ctx):
                 at = next((i for i, x in enumerate(t['strokes']) if x['op'] in PANEL), len(t['strokes']))
                 t['strokes'][at:at] = ms
 
+# %% ../nbs/06_board.ipynb #17ef49e6
+def _form(r) -> tuple:
+    "The shape of the row `r`: `('chain', parts)` or `('pair', cells, whether it has an answer)`."
+    return ('chain', len(r['cells'])) if r.get('chain') else ('pair', len(r['cells']), 'to' in r)
+
+def _fit(r, first):
+    "The row `r` in the shape of the `first` row of its panel, or None when it cannot take that shape and lose nothing."
+    f, g = _form(first), _form(r)
+    if f[0] == 'chain':
+        if g[0] == 'chain': return r
+        return {**{k: v for k, v in r.items() if k != 'to'}, 'cells': [*r['cells'], r['to']], 'chain': True} if g[2] else None
+    if g == ('chain', 2): r, g = {**{k: v for k, v in r.items() if k != 'chain'}, 'cells': r['cells'][:1], 'to': r['cells'][1]}, ('pair', 1, True)
+    return r if g == f else None
+
+def _shape(out):
+    "Each panel of the board `out` with the shape of its first row, column names only over the pairs that they fit, and at most 6 rows."
+    panel, first, n = None, None, 0
+    for st in out.steps:
+        keep = []
+        for s in st['strokes']:
+            if s['op'] == 'panel': panel, first, n = s, None, 0
+            if s['op'] != 'row': keep.append(s); continue
+            if first is None:
+                first = s
+                if panel and 'cols' in panel and _form(s) != ('pair', len(panel['cols']) - 1, True):
+                    del panel['cols']; out.dropped.append((-1, 'column names that do not fit the first row'))
+            elif (s := _fit(s, first)) is None: out.dropped.append((-1, 'a row of another shape than the first row of its panel')); continue
+            if n >= LIMITS['rows']: out.dropped.append((-1, f"more than {LIMITS['rows']} rows in a panel")); continue
+            n += 1; keep.append(s)
+        st['strokes'] = keep
+
 # %% ../nbs/06_board.ipynb #g038
 WATCH = 'https://www.youtube.com/watch?v='
 
@@ -358,6 +407,7 @@ def parse_board(text:str, ctx, verbatim=verbatim) -> AttrDict:
             if run >= 2: out.failed = True; break
         else: run = 0
     _pair(out, ctx)
+    _shape(out)
     _counts(out.steps)
     for st in out.steps:   # a row with `at` draws its own circle: a circle line on the same thing goes
         on = [json.dumps(s['at'], sort_keys=True) for s in st['strokes'] if s['op'] == 'row' and 'at' in s]
@@ -487,15 +537,25 @@ def video_cues(cues) -> list:
             if isinstance(c, dict) and _num(c.get('start')) and str(c.get('text') or '').strip()]
 
 # %% ../nbs/06_board.ipynb #gs02
+def _held(steps) -> list:
+    "`steps` with no panel line that has column names and no row yet, and none of its notes: its first row decides whether the names stay."
+    ss = [s for st in steps for s in st['strokes'] if s['op'] in PANEL]
+    wait = set()
+    for k, s in enumerate(ss):
+        if s['op'] != 'panel' or 'cols' not in s: continue
+        beat = list(takewhile(lambda x: x['op'] != 'panel', ss[k + 1:]))
+        if not any(x['op'] == 'row' for x in beat): wait |= {id(s), *map(id, beat)}
+    return [{**st, 'strokes': [s for s in st['strokes'] if id(s) not in wait]} for st in steps] if wait else steps
+
 def stream_board(chunks, ctx, on_step=None, sure:float=SURE, stop=None, verbatim=verbatim) -> AttrDict:
     """`parse_board` of the reply that comes in `chunks`. When the header says `sure` or more, `on_step(step, k)` gets each step as soon as
     its first mark is in, and again each time its strokes change, so the first mark does not wait for the rows of a panel or for the next
-    step. The page adds the strokes that it does not have yet. When the `threading.Event` `stop` is set, it reads no more chunks and closes
+    step. A panel line with column names waits for its first row (see `_shape`). The page adds the strokes that it does not have yet. When the `threading.Event` `stop` is set, it reads no more chunks and closes
     the stream, so the model call ends and lets go of its backend. `verbatim` checks a quote, as in `parse_board`."""
     text, sent, seen = '', {}, -1   # the strokes of each step that went out, as JSON
     def send(b, whole):
         if not on_step or (b.sure or 0) < sure: return
-        for k, s in enumerate(b.steps, 1):
+        for k, s in enumerate(b.steps if whole else _held(b.steps), 1):
             if k == len(b.steps) and not whole and not s['strokes']: break   # the newest step goes out with its first mark
             if sent.get(k) != (j := json.dumps(s['strokes'], sort_keys=True)): sent[k] = j; on_step(s, k)
     it = iter(chunks)
