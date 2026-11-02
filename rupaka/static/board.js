@@ -265,7 +265,12 @@
     lineCache.set(root, {t: now, x: scrollX, y: scrollY, lines: out});
     return out;
   }
-  const blockOf = b => b && b.el ? b.el.closest('[data-guide-id]') || b.el : null;
+  const INLINE_BOX = /^(inline|inline-block|inline-flex|inline-grid|contents|ruby)$/;
+  function blockOf(b) {   // the block of text that holds box `b`: the first parent that is not inline, so a formula in a passage gives the paragraph
+    let e = b && b.el;
+    while (e && e !== document.body && (e.ownerSVGElement || INLINE_BOX.test(getComputedStyle(e).display))) e = e.parentElement;
+    return e || null;
+  }
   const pageOf = e => (e && e.closest('main, article')) || document.body;
   const cuts = (q, x0, y0, x1, y1) => Math.min(x0, x1) < q.x + q.w && q.x < Math.max(x0, x1) && Math.min(y0, y1) < q.y + q.h && q.y < Math.max(y0, y1);
   const area = (q, r) => Math.max(0, Math.min(q.x + q.w, r.x + r.w) - Math.max(q.x, r.x)) * Math.max(0, Math.min(q.y + q.h, r.y + r.h) - Math.max(q.y, r.y));
@@ -572,7 +577,8 @@
     const c = column(b), mx = b.x + b.w / 2 - w / 2, my = b.y + b.h / 2 - h / 2, pan = document.getElementById('board-panel');
     const pb = pan && !pan.classList.contains('inline') ? pageRect(pan.getBoundingClientRect()) : null;
     const spots = sides.map(side => side === 'below' ? [mx, b.y + b.h + gap, side] : side === 'left' ? [b.x - w - gap, my, side] : side === 'right' ? [b.x + b.w + gap, my, side] : [mx, b.y - h - gap, side]);
-    if (c) spots.push([mx, c.top - h - 10, 'above'], [c.r + 16, my, 'right'], [c.l - w - 16, my, 'left'], [mx, c.bottom + 10, 'below']);   // above the block, in a margin, under the block
+    if (c) for (const dx of [0, 90, -90, 180, -180]) spots.push([mx + dx, c.top - h - 10, 'above']);   // above the block, a little to the side when other words are there
+    if (c) spots.push([c.r + 16, my, 'right'], [c.l - w - 16, my, 'left'], [mx, c.bottom + 10, 'below']);   // in a margin, under the block
     let pick = null, best = Infinity;
     spots.forEach(([x, y, side], k) => {   // the least cost: never on the thing or on its own lines, then the least text under it, then the order
       const r = {x: clamp(x, 4, maxX), y: Math.max(4, y), w, h, side};
