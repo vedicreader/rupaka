@@ -451,3 +451,74 @@ def test_a_card_of_a_wrong_idea_and_three_stages(page):
     c = row(['Guess', 'Compare', 'Update'], None, chain=True); c.pop('to')
     play(page, [dict(say='Stages.', strokes=[dict(op='panel', head='From a case to the symbols', stages=True), row(['1.0'], '1.414'), c, row(['$w$'], '$w - g$')])])
     assert page.evaluate("[...document.querySelectorAll('.board-stage')].map(s => s.textContent)") == ['A case', 'A picture', 'The symbols']
+
+KEPT = """() => { const p = document.getElementById('board-panel'), past = p && p.querySelector(':scope > .board-panel-past'), top = e => e ? e.getBoundingClientRect().top : null;
+    const head = p && p.querySelector(':scope > .board-panel-head');
+    return {past: past ? [past.querySelector(':scope > .board-panel-head').textContent, ...[...past.querySelectorAll(':scope > .board-panel-rows > .board-row')].map(r => r.textContent)] : null,
+            head: head ? head.textContent : null, rows: p ? [...p.querySelectorAll(':scope > .board-panel-rows > .board-row')].map(r => r.textContent) : [],
+            below: past && head ? top(head) > top(past) + past.offsetHeight - 2 : null,
+            old: [...document.querySelectorAll('#board-layer g[data-op=circle][data-step="-1"]')].map(g => +g.style.opacity)}; }"""
+
+def test_a_follow_up_builds_on_the_board_before(page):
+    """With `keep`, a follow-up board keeps the board before: its circle stays at 30 %, and its panel stays at the top of the new panel,
+    with the new head and rows under it. A board with no panel still shows the panel before. Without `keep`, the page starts fresh."""
+    first = dict(say='Each line makes one question.', strokes=[dict(op='circle', at=dict(a='out', text='tensor([18])')), dict(op='panel', head='Make a question'), row(['[18]'], '47')])
+    more = dict(say='Another one: 18 and 47 give 56.', strokes=[dict(op='panel', head='One more example'), row(['[18, 47]'], '56')])
+    play(page, [first])
+    play(page, [more], keep=True)
+    k = page.evaluate(KEPT)
+    assert (k['past'], k['head'], k['rows'], k['below']) == (['Make a question', '[18]⟶47'], 'One more example', ['[18, 47]⟶56'], True)
+    assert k['old'] and all(abs(o - .3) < .01 for o in k['old'])
+    play(page, [dict(say='So each row is one question.', strokes=[dict(op='underline', at='out')])], keep=True)
+    k = page.evaluate(KEPT)
+    assert k['past'][:2] == ['One more example', '[18, 47]⟶56'] and page.evaluate("document.querySelectorAll('.board-panel-past .board-panel-past').length") == 1   # the first board too
+    play(page, [STEP('Fresh.', 'out')])
+    k = page.evaluate(KEPT)
+    assert (k['past'], k['old']) == (None, [])
+
+def test_labels_never_cover_each_other(page):
+    "Labels on one thing, in one step and in the next, never cover each other: a label with no free place drops."
+    page.set_viewport_size(dict(width=1440, height=900))
+    page.evaluate(PASSAGE)
+    at = dict(a='pass', text='In Python this is a loop')
+    lab = lambda t, side='above': dict(op='label', at=at, text=t, side=side)
+    play(page, [dict(say='One.', strokes=[lab('a loop that sums'), lab('the products', 'below'), lab('one number at the end')]),
+                dict(say='Two.', strokes=[lab('the m need not equal n'), lab('it repeats'), lab('Python code')])])
+    page.evaluate('rupakaBoard.next()'); page.wait_for_function('rupakaBoard.state.done'); page.wait_for_timeout(300)
+    chips = page.evaluate("""[...document.querySelectorAll('.board-label')].filter(e => e.style.display !== 'none' && !e.hidden)
+        .map(e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; })""")
+    assert len(chips) >= 3
+    assert not any(overlap(a, b) for i, a in enumerate(chips) for b in chips[i + 1:]), chips
+
+def test_a_box_stands_under_the_box_that_points_to_it_in_any_order(page):
+    "The model can name the decoder before z. The boxes still go down the path of the arrows: encoder, z, decoder, and the loop on the decoder."
+    play(page, [dict(say='Encoder, z, decoder.', strokes=[dict(op='panel', head='French to English'), N('enc', 'Encoder'), N('dec', 'Decoder'), N('z', 'z: number lists'),
+                                                          E('enc', 'z', 'represents'), E('z', 'dec', 'context'), E('dec', 'dec', 'earlier words')])])
+    tops = page.evaluate("Object.fromEntries([...document.querySelectorAll('.board-node')].map(b => [b.dataset.id, b.getBoundingClientRect().top]))")
+    assert tops['enc'] < tops['z'] < tops['dec'], tops
+    labels = page.evaluate("[...document.querySelectorAll('.board-flow-label')].map(e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; })")
+    assert not any(overlap(a, b) for i, a in enumerate(labels) for b in labels[i + 1:]), labels
+
+def test_a_table_under_a_kept_panel_keeps_its_columns(page):
+    "A follow-up table under the panel before stands on its column grid: each cell under its head."
+    play(page, [dict(say='Encoder.', strokes=[dict(op='panel', head='Parts'), N('enc', 'Encoder')])])
+    play(page, [dict(say='Input 18 gives 47.', strokes=[dict(op='panel', head='One more', cols=['Given', 'Result']), row(['[18]'], '47'), row(['[18, 47]'], '56')])], keep=True)
+    got = page.evaluate("""() => { const p = document.getElementById('board-panel'), x = e => { const b = e.getBoundingClientRect(); return Math.round(b.left + b.width / 2); };
+        return {cols: p.classList.contains('cols'), display: getComputedStyle(p.querySelector(':scope > .board-panel-rows > .board-row')).display,
+                heads: [...p.querySelectorAll(':scope > .board-panel-cols span')].map(x), to: [...p.querySelectorAll(':scope > .board-panel-rows .board-target')].map(x)}; }""")
+    assert got['cols'] and got['display'] == 'grid', got
+    assert all(abs(t - got['heads'][1]) <= 3 for t in got['to']), got
+
+def test_a_wide_rank_goes_on_two_lines_and_no_label_covers_another(page):
+    "Five roles around one action do not fit in one line: the rank goes on two lines inside the panel, and no arrow label covers a box or a label."
+    roles = [('obj', 'Fruit: object'), ('ins', 'Spoon: instrument'), ('rec', 'Child: recipient'), ('src', 'Pot: source'), ('loc', 'Garden: place')]
+    play(page, [dict(say='Each noun has a job.', strokes=[dict(op='panel', head='Jobs around giving'), N('doer', 'Rama: doer'), N('act', 'Gives'), E('doer', 'act', 'Who gives?')]),
+                dict(say='The other roles.', strokes=[*(N(i, t) for i, t in roles), *(E('act', i, f'{t.split(":")[0]}?') for i, t in roles)])])
+    page.evaluate('rupakaBoard.next()'); page.wait_for_function('rupakaBoard.state.done')
+    got = page.evaluate("""() => { const p = document.getElementById('board-panel').getBoundingClientRect(), r = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+        return {panel: [p.left, p.right], boxes: [...document.querySelectorAll('.board-node')].map(r),
+                labels: [...document.querySelectorAll('.board-flow-label')].filter(e => e.style.visibility !== 'hidden').map(r)}; }""")
+    assert all(got['panel'][0] <= b[0] and b[2] <= got['panel'][1] for b in got['boxes']), got
+    assert len({round(b[1]) for b in got['boxes']}) >= 4   # doer, the action, then the roles on two lines
+    things = got['boxes'] + got['labels']
+    assert not any(overlap(l, t) for l in got['labels'] for t in things if t is not l), got

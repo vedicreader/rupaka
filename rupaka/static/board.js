@@ -16,7 +16,11 @@
 // warm paper at the top right of the window, that the rows of the board fill step by step, each linked to its thing on the page.
 //
 // API (window.rupakaBoard, also window.abhyasaBoard: the old name, so a host that uses it works):
-//   play(board, {labels, fast, quiet, auto, host, who, onVoice, point, voiceAt, notice})   play a checked board; it stops the board that shows now.
+//   play(board, {labels, fast, quiet, auto, host, who, onVoice, point, voiceAt, notice, keep})   play a checked board; it stops the board that shows now.
+//     keep    build on the board that shows now, for a follow-up question: its marks up to its step stay, at 30 %, and its side panel
+//             stays at the top of the new panel, as it shows now, over a thin line. The new panel adds its title, head and rows under it.
+//             An unfinished (streaming) board that `keep` replaces is not kept: what it kept stays. The marks of the board before stay,
+//             and the panels of the two boards before (the first question and the last one), so the page does not fill up. Default false.
 //     labels  {anchorId: {label: [x0, y0, x1, y1]}}, the label boxes of a figure, 0 to 1000 of the anchor. Default {}.
 //     fast    draw each step at once, with no voice and no pointer flight. Default false.
 //     quiet   no voice: the words are timed by their letters. host.speak is not called. Default false.
@@ -452,12 +456,29 @@
     if (!p) {
       p = el('div', 'board-panel', null); p.id = 'board-panel'; p.setAttribute('role', 'region'); p.setAttribute('aria-label', 'The example of the tutor');
       p.append(el('p', 'board-panel-title', ''), el('p', 'board-panel-head', ''), el('div', 'board-panel-cols', null), el('div', 'board-panel-rows', null));
+      if (st && st.past && st.past.panel) p.prepend(st.past.panel);   // the panel of the board before, as it showed: the new rows come under it
       host().append(p);
       room(true);
       requestAnimationFrame(() => st && into(st.marks.filter(m => m.step === st.i && m.drawn).slice(-1)));   // after the layout settles: the newest mark of the step is in view
     }
     return p;
   }
+  // The panel of the board that shows now as one block that does not change, for the board that builds on it (`keep`): its shape classes
+  // and grid with it, its blanks shown, and no ids. The block in it stays, and none in that one: the panels of two boards before show at most.
+  function pastOf(p) {
+    const d = el('div', 'board-panel-past', null);
+    for (const c of ['cols', 'chains', 'numbered', 'stages', 'wrap']) d.classList.toggle(c, p.classList.contains(c));
+    for (const v of ['--grid', '--chain', '--fit']) { const x = p.style.getPropertyValue(v); if (x) d.style.setProperty(v, x); }
+    d.append(...[...p.children].map(c => c.cloneNode(true)));
+    d.querySelectorAll(':scope > .board-panel-past .board-panel-past').forEach(e => e.remove());
+    d.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+    d.querySelectorAll('.blank').forEach(e => e.classList.add('shown'));
+    d.querySelectorAll('button').forEach(e => { e.disabled = true; e.tabIndex = -1; });
+    d.setAttribute('aria-label', 'The example before');
+    return d;
+  }
+  const live = p => [...p.children].filter(e => !e.classList.contains('board-panel-past'));   // title, head, columns, rows
+  const newest = p => { if (p.querySelector(':scope > .board-panel-past')) p.scrollTop = p.scrollHeight; };   // under the block before: the new part is in view
   function panelGone() { const p = document.getElementById('board-panel'); if (p) p.remove(); room(!!document.getElementById('guide-show')); }
   // One place for a picture of an idea (this panel, or the Show card of the guide): while it shows, the body has `has-panel`, and the page
   // column moves left into the free gutter with its width kept, so no line wraps again and no mark moves down. Only when the gutter is
@@ -502,7 +523,7 @@
     p.dataset.cols = n > 1 ? n : '';
     if (n < 2) return p.style.removeProperty('--grid');
     p.style.setProperty('--grid', `${p.classList.contains('numbered') ? '24px ' : ''}repeat(${n - 1}, minmax(0, 1fr)) 40px minmax(0, 1fr)`);
-    [...p.querySelector('.board-panel-cols').children].forEach((h, k) => h.style.gridColumn = colAt(p, k, n));
+    [...p.querySelector(':scope > .board-panel-cols').children].forEach((h, k) => h.style.gridColumn = colAt(p, k, n));
   }
   // The grid column of thing k of a row (a head or a cell; 'arrow' or 'to' for the arrow and the answer): the last one goes in the column of the answer.
   function colAt(p, k, n) {
@@ -515,7 +536,7 @@
   // the words and the arrows of the rows line up. The rows are a subgrid of it, so each column is as wide as its widest word.
   // A pair in a panel of chains (a list) has its cells in the first columns and its answer in the last one, with a long arrow between.
   function chains(p) {
-    const rs = [...p.querySelectorAll('.board-row')].filter(r => r.dataset.beat === p.dataset.beat), ch = rs.filter(r => r.classList.contains('chain'));
+    const rs = [...p.querySelectorAll(':scope > .board-panel-rows > .board-row')].filter(r => r.dataset.beat === p.dataset.beat), ch = rs.filter(r => r.classList.contains('chain'));
     const parts = r => r.classList.contains('chain') ? r.querySelectorAll('.board-word').length : r.querySelectorAll('.board-cell').length;
     const n = ch.length && !p.dataset.cols && !p.classList.contains('stages') ? Math.max(...rs.map(parts)) : 0, lead = p.classList.contains('numbered') ? 1 : 0;
     p.classList.toggle('chains', n > 1);
@@ -531,7 +552,7 @@
   }
   // No cell, word or box wraps: while one does not fit, the type of the panel gets smaller, down to 80 %. Then it may wrap.
   function fit(p) {
-    const rows = p.querySelector('.board-panel-rows'), f = p.querySelector('.board-flow');
+    const rows = p.querySelector(':scope > .board-panel-rows'), f = rows.querySelector(':scope > .board-flow');
     const over = () => (f ? layoutFlow(f) : false) || rows.scrollWidth > rows.clientWidth + 1
       || [...rows.querySelectorAll('.board-cell, .board-word')].some(e => e.scrollWidth > e.clientWidth + 4);   // KaTeX glyphs stand out 1 to 3 px: that is no wrap
     p.classList.remove('wrap');
@@ -544,7 +565,7 @@
   // --- the flow diagram of a panel (node, edge; see the API) ----------------------------------------------------------------
   const FLOW = {gap: 40, side: 16, loop: 14};
   function flowEl(p, beat) {
-    let f = p.querySelector('.board-flow');
+    let f = p.querySelector(':scope > .board-panel-rows > .board-flow');
     if (!f) { f = el('div', 'board-flow', null); f.dataset.beat = beat; f.append(svgEl('svg', 'board-flow-lines')); p.lastElementChild.append(f); }
     return f;
   }
@@ -552,23 +573,33 @@
   function layoutFlow(f) {
     const boxes = [...f.querySelectorAll('.board-node')], ids = boxes.map(b => b.dataset.id), at = id => ids.indexOf(id);
     const gs = [...f.querySelectorAll('g.board-flow-edge')].filter(g => at(g.dataset.from) > -1 && at(g.dataset.to) > -1);
-    const rank = {};
-    ids.forEach((id, k) => {
-      const ins = gs.filter(g => g.dataset.to === id && at(g.dataset.from) < k && g.dataset.from !== id).map(g => rank[g.dataset.from] + 1);
-      rank[id] = ins.length ? Math.max(...ins) : k ? rank[ids[k - 1]] + 1 : 0;
-    });
+    // The rank of a box: the longest path of arrows to it, so a box is under each box that points to it in whatever order the model named
+    // them. An arrow back to a box on its own path (a loop) does not count. A box with no arrow yet goes under the boxes before it.
+    const back = new Set(), seen = {}, outs = id => gs.filter(g => g.dataset.from === id && g.dataset.to !== id);
+    const visit = id => { seen[id] = 1; for (const g of outs(id)) { const t = g.dataset.to; if (seen[t] === 1) back.add(g); else if (!seen[t]) visit(t); } seen[id] = 2; };
+    ids.filter(id => !gs.some(g => g.dataset.to === id && g.dataset.from !== id)).forEach(id => seen[id] || visit(id));
+    ids.forEach(id => seen[id] || visit(id));
+    const rank = Object.fromEntries(ids.map(id => [id, 0])), fwd = gs.filter(g => !back.has(g) && g.dataset.from !== g.dataset.to);
+    for (let n = 0; n < ids.length; n++) for (const g of fwd) rank[g.dataset.to] = Math.max(rank[g.dataset.to], rank[g.dataset.from] + 1);
+    ids.forEach((id, k) => { if (k && !gs.some(g => g.dataset.from === id || g.dataset.to === id)) rank[id] = Math.max(...ids.slice(0, k).map(x => rank[x])) + 1; });
     const up = gs.filter(g => rank[g.dataset.to] < rank[g.dataset.from] || g.dataset.to === g.dataset.from);
     const labels = up.map(g => g.label ? g.label.offsetWidth : 0), W = f.clientWidth;
     const room = up.length ? FLOW.loop + 10 * (up.length - 1) + Math.max(0, ...labels) + 8 : 0, A = Math.max(80, W - room);
     const geo = {}, ranks = [...new Set(ids.map(id => rank[id]))].sort((a, b) => a - b);
     let y = 0, over = false;
-    for (const r of ranks) {
-      const bs = boxes.filter(b => rank[b.dataset.id] === r), ws = bs.map(b => b.offsetWidth), h = Math.max(...bs.map(b => b.offsetHeight));
-      const total = ws.reduce((a, b) => a + b, 0) + FLOW.side * (bs.length - 1);
-      over = over || total > A + 1;
-      let x = Math.max(0, (A - total) / 2);
-      bs.forEach((b, k) => { geo[b.dataset.id] = {x, y: y + (h - b.offsetHeight) / 2, w: ws[k], h: b.offsetHeight}; Object.assign(b.style, {left: x + 'px', top: geo[b.dataset.id].y + 'px'}); x += ws[k] + FLOW.side; });
-      y += h + FLOW.gap;
+    for (const r of ranks) {   // a rank that is wider than the flow goes on more lines, so no box goes out of the panel
+      const lines = [[]];
+      for (const b of boxes.filter(b => rank[b.dataset.id] === r)) {
+        const l = lines[lines.length - 1], w = l.reduce((t, x) => t + x.offsetWidth + FLOW.side, 0) + b.offsetWidth;
+        if (l.length && w > A) lines.push([b]); else l.push(b);
+      }
+      lines.forEach((bs, n) => {
+        const ws = bs.map(b => b.offsetWidth), h = Math.max(...bs.map(b => b.offsetHeight)), total = ws.reduce((a, b) => a + b, 0) + FLOW.side * (bs.length - 1);
+        over = over || total > A + 1;
+        let x = Math.max(0, (A - total) / 2);
+        bs.forEach((b, k) => { geo[b.dataset.id] = {x, y: y + (h - b.offsetHeight) / 2, w: ws[k], h: b.offsetHeight}; Object.assign(b.style, {left: x + 'px', top: geo[b.dataset.id].y + 'px'}); x += ws[k] + FLOW.side; });
+        y += h + (n < lines.length - 1 ? FLOW.side : FLOW.gap);
+      });
     }
     const H = Math.max(0, y - FLOW.gap);
     f.style.height = H + 'px';
@@ -611,6 +642,12 @@
       if (g.label) Object.assign(g.label.style, {left: g.lx + 'px', top: g.ly + 'px'});
     });
     if (low > H) { f.style.height = low + 'px'; svg.setAttribute('height', low); }
+    const taken = Object.values(geo).map(q => [q.x, q.y, q.x + q.w, q.y + q.h]), hit = (a, b) => a[0] < b[2] + 2 && b[0] < a[2] + 2 && a[1] < b[3] + 2 && b[1] < a[3] + 2;
+    for (const g of gs) if (g.label) {   // a label that would cover a box or another label goes: the arrow stays, and a box names its own part
+      const q = [g.lx, g.ly, g.lx + g.label.offsetWidth, g.ly + g.label.offsetHeight], off = taken.some(t => hit(q, t));
+      g.label.style.visibility = off ? 'hidden' : '';
+      if (!off) taken.push(q);
+    }
     return over || right > W + 1;
   }
   function placeFlow(m, p, beat) {
@@ -625,6 +662,7 @@
       }
       m.el.dataset.step = m.step; m.el.dataset.beat = beat;
       fit(p);
+      newest(p);
     }
     m.el.style.display = ''; if (m.lead) m.lead.style.display = '';
     layoutFlow(f);   // a scroll or a resize: the boxes and arrows follow the width of the panel
@@ -645,7 +683,7 @@
     if (o.op === 'panel') {
       if (p.dataset.beat !== beat) {   // a new beat: its own title, heading and columns, and none of the rows before
         p.dataset.beat = beat; p.classList.toggle('numbered', !!o.numbered && !o.stages); p.classList.toggle('stages', !!o.stages);
-        const [t, h, cs, rs] = p.children;
+        const [t, h, cs, rs] = live(p);
         richInto(t, o.title || ''); richInto(h, o.head || '');
         cs.replaceChildren(...(o.cols || []).map(c => richInto(el('span', '', null), c)));
         grid(p, (o.cols || []).length);
@@ -671,7 +709,7 @@
       }
       m.el.dataset.step = m.step; m.el.dataset.beat = beat;
       if (o.op === 'row') {
-        const n = [...p.querySelectorAll('.board-row')].length + 1;
+        const n = [...p.querySelectorAll(':scope > .board-panel-rows > .board-row')].length + 1;
         if (p.classList.contains('numbered')) m.el.append(el('span', 'board-row-n', String(n)));
         if (p.classList.contains('stages')) m.el.append(el('span', 'board-stage', STAGES[n - 1] || ''));
         const part = (cls, c) => {   // a cell, or a blank: a button that shows its value
@@ -693,6 +731,7 @@
       p.lastElementChild.append(m.el);
       if (o.op === 'row') chains(p);
       fit(p);
+      newest(p);
     }
     m.el.style.display = '';
     const box = pageRect(m.el.getBoundingClientRect());
@@ -738,7 +777,7 @@
     m.el.hidden = false;
     const w = m.el.offsetWidth, h = m.el.offsetHeight, gap = 20, pad = 3;
     const sides = [m.o.side || 'above', 'above', 'below', 'right', 'left'].filter((s, i, a) => a.indexOf(s) === i);
-    const others = st.marks.filter(x => x !== m && x.step === m.step && x.o.op === 'label' && x.box).map(x => x.box);
+    const others = st.marks.filter(x => x !== m && x.o.op === 'label' && x.ok && x.box).map(x => x.box);   // each label that shows: of this step, an earlier one, the board before
     const hits = (r, q, p = 0) => r.x < q.x + q.w + p && q.x < r.x + r.w + p && r.y < q.y + q.h + p && q.y < r.y + r.h + p;
     const maxX = Math.max(document.documentElement.scrollWidth, scrollX + innerWidth) - w - 4;
     const c = column(b), mx = b.x + b.w / 2 - w / 2, my = b.y + b.h / 2 - h / 2, pan = document.getElementById('board-panel');
@@ -753,6 +792,7 @@
       const cost = (hits(r, b, pad) ? 1e9 : 0) + (others.some(q => hits(r, q, 4)) ? 1e8 : 0) + (pb && hits(r, pb, 6) ? 1e8 : 0) + (r.x !== x ? 1e7 : 0) + mine * 1e3 + any + k;
       if (cost < best) { best = cost; pick = r; }
     });
+    if (best >= 1e8) { m.box = null; return false; }   // each place is on its thing, on another label or on the panel: no label, never one on another
     m.box = pick;
     m.el.style.left = pick.x + 'px'; m.el.style.top = pick.y + 'px';
     m.el.style.transformOrigin = {above: '50% 100%', below: '50% 0', left: '100% 50%', right: '0 50%'}[pick.side];
@@ -814,6 +854,7 @@
   }
   // Marks of earlier steps step back to 45 %, and a glow goes. A mark of the step before fades; the others are there at once.
   function dim(m, t) {
+    if (m.past) return m.o.op === 'box' ? 0 : .3;   // a mark of the board before (keep): it stays, quiet
     if (!st || m.step >= st.i) return 1;
     const low = m.o.op === 'box' ? 0 : .45;
     return m.fade ? 1 - (1 - low) * smooth(clamp((t - st.stepAt) / (low ? 350 : 300))) : low;
@@ -1092,9 +1133,10 @@
     i = Math.max(0, Math.min(st.board.steps.length - 1, i));
     const forward = i === st.i + 1, t = performance.now();
     st.i = i; st.stepAt = t; st.lit = -1; st.wait = false;
-    document.querySelectorAll('#board-panel .blank:not(.shown)').forEach(b => { if (+b.closest('[data-step]').dataset.step < i) b.classList.add('shown'); });   // the next step shows the blanks before it
+    document.querySelectorAll('#board-panel > .board-panel-rows .blank:not(.shown)').forEach(b => { if (+b.closest('[data-step]').dataset.step < i) b.classList.add('shown'); });   // the next step shows the blanks before it
     for (const m of st.marks) if (!(forward && PANEL.includes(m.o.op) && m.step < i)) unmount(m);   // on D next the panel and its rows stay
     if (!forward) panelGone();   // else the panel is built again from the marks of the steps up to this one
+    if (st.past && st.past.panel && !document.getElementById('board-panel')) panelEl();   // the panel of the board before shows also when this board has none
     st.video = null;
     if (!inPage() && st.marks.some(m => m.step <= i && PANEL.includes(m.o.op))) room(true);   // the column makes room first, so the scroll below is the last one
     into(st.marks.filter(m => m.step === i));
@@ -1270,26 +1312,40 @@
     document.dispatchEvent(new CustomEvent('board:stop', {detail: {by: by === 'learner' ? 'learner' : ''}}));
   }
 
+  // What the board that shows now leaves for a board that builds on it (`keep`): its marks up to its step (after its last clear), as still
+  // marks of step -1, and its panel as it shows now (`pastOf`). An unfinished board leaves what it kept.
+  function kept() {
+    if (!st) return null;
+    if (st.streaming) return st.past || null;
+    const c = Math.max(-1, ...st.marks.filter(m => !m.past && m.o.op === 'clear' && m.step <= st.i).map(m => m.step));
+    const marks = st.marks.filter(m => !m.past && m.step <= st.i && m.step >= c && !PANEL.includes(m.o.op) && !/^(clear|demo_set|video_at)$/.test(m.o.op))
+                          .map(m => ({o: m.o, step: -1, seed: m.seed, parts: [], past: true}));
+    const p = document.getElementById('board-panel');
+    return {marks, panel: p ? pastOf(p) : st.past ? st.past.panel : null};
+  }
   // Play a checked board. See the API at the top of this file.
-  async function play(board, {labels = {}, fast = false, quiet: q = false, auto = true, host: hk = {}, who = null, onVoice = null, point = 'tick', voiceAt = null, notice = null} = {}) {
-    if (st) stop();
+  async function play(board, {labels = {}, fast = false, quiet: q = false, auto = true, host: hk = {}, who = null, onVoice = null, point = 'tick', voiceAt = null, notice = null, keep = false} = {}) {
+    const past = keep ? kept() : null;
+    if (st && !past) stop();
     const h = {...HOST};
     for (const k of ['resolve', 'speak', 'demo']) if (typeof (hk || {})[k] === 'function') h[k] = hk[k];
     if (hk && typeof hk.assets === 'string' && hk.assets) h.assets = hk.assets.endsWith('/') ? hk.assets : hk.assets + '/';
     await libs(h.assets);
+    if (st) stop();   // a kept board goes only now, so the page never shows nothing between the two
     if (!board || !board.steps || !board.steps.length) { note(board && board.failed ? 'The tutor could not draw this board. Ask again.' : 'The tutor did not answer. Try again.'); return; }
     if (board.streaming) board = {...board, steps: [...board.steps]};   // add() grows the steps of its own copy
     st = {board, labels, host: h, fast, quiet: q || fast, auto: auto && !fast, i: 0, gen: 0, lit: -1, timers: [], rate: +(localStorage.getItem('board-rate') || 1), first: null,
           t0: performance.now(), stepAt: 0, ptr: {pos: null, f: null}, streaming: !!board.streaming, wait: false,
           who: who && typeof who === 'object' ? who : null, point: LOOKS.includes(point) ? point : LOOKS[0], onVoice: !fast && typeof onVoice === 'function' ? onVoice : null,
           voiceAt: voiceAt && typeof voiceAt === 'object' ? voiceAt : null, notice: notice && typeof notice === 'object' ? notice : null,
-          marks: board.steps.flatMap((s, k) => marksOf(s.strokes, k))};
+          past, marks: [...(past ? past.marks : []), ...board.steps.flatMap((s, k) => marksOf(s.strokes, k))]};
     // An empty answer box with the focus (a check takes it when it loads) lets go of it, so A, S and D work. A box with your text
     // keeps it: then the keys type, and a click outside the box gives them to the board. Esc gives the focus back.
     const a = document.activeElement;
     if (a && a.matches && a.matches('textarea, input, select, [contenteditable]') && !a.value && !a.textContent) { st.refocus = a; a.blur(); }
     host();
     st.ptr.pos = home();
+    if (past && past.panel) panelEl();
     show(0);
     if (fast) for (let k = 1; k < board.steps.length; k++) show(k);
     clock();

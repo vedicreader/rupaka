@@ -126,20 +126,20 @@
 .board-word { font-size: calc(21px * var(--fit, 1)); white-space: nowrap; }
 /* With column names (.cols), the heads and each row that is not a chain use one grid (board.js sets --grid and the column of each
    cell), so a head stands over the middle of its cells. */
-.board-panel.cols :is(.board-panel-cols, .board-row:not(.chain)) { display: grid; grid-template-columns: var(--grid); column-gap: 8px; align-items: center; justify-items: center; }
-.board-panel.cols .board-panel-cols { text-align: center; }
-.board-panel.cols .board-row:not(.chain) { row-gap: 6px; }
-.board-panel.cols .board-row:not(.chain) > .board-cell { margin: 0; max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
-.board-panel.cols .board-row-arrow.long { justify-self: stretch; min-width: 0; margin: 0 6px; }
+:is(.board-panel, .board-panel-past).cols > .board-panel-cols, :is(.board-panel, .board-panel-past).cols > .board-panel-rows > .board-row:not(.chain) { display: grid; grid-template-columns: var(--grid); column-gap: 8px; align-items: center; justify-items: center; }
+:is(.board-panel, .board-panel-past).cols > .board-panel-cols { text-align: center; }
+:is(.board-panel, .board-panel-past).cols > .board-panel-rows > .board-row:not(.chain) { row-gap: 6px; }
+:is(.board-panel, .board-panel-past).cols > .board-panel-rows > .board-row:not(.chain) > .board-cell { margin: 0; max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+:is(.board-panel, .board-panel-past).cols > .board-panel-rows > .board-row > .board-row-arrow.long { justify-self: stretch; min-width: 0; margin: 0 6px; }
 /* With chains (.chains), the rows are one grid (board.js sets --chain): each row is a subgrid of it, so each word stands under the
    words of the rows above, and each arrow under the arrows. A note goes across the whole panel. */
-.board-panel.chains .board-panel-rows { display: grid; grid-template-columns: var(--chain); row-gap: 12px; }
-.board-panel.chains .board-panel-rows > * { grid-column: 1 / -1; }
-.board-panel.chains .board-row { display: grid; grid-template-columns: subgrid; align-items: center; justify-items: center; }
-.board-panel.chains .board-row > .board-word { max-width: 100%; text-align: center; }
-.board-panel.chains .board-row-arrow.long { justify-self: stretch; min-width: 0; margin: 0 6px; }
-.board-panel.chains .board-row > .board-cell { margin: 0; padding: 0; border: 0; background: none; font: calc(21px * var(--fit, 1))/1.25 var(--hand); }   /* a pair in a list looks as a chain */
-.board-panel.wrap :is(.board-cell, .board-word, .board-node) { white-space: normal; }
+:is(.board-panel, .board-panel-past).chains > .board-panel-rows { display: grid; grid-template-columns: var(--chain); row-gap: 12px; }
+:is(.board-panel, .board-panel-past).chains > .board-panel-rows > * { grid-column: 1 / -1; }
+:is(.board-panel, .board-panel-past).chains > .board-panel-rows > .board-row { display: grid; grid-template-columns: subgrid; align-items: center; justify-items: center; }
+:is(.board-panel, .board-panel-past).chains > .board-panel-rows > .board-row > .board-word { max-width: 100%; text-align: center; }
+:is(.board-panel, .board-panel-past).chains > .board-panel-rows > .board-row > .board-row-arrow.long { justify-self: stretch; min-width: 0; margin: 0 6px; }
+:is(.board-panel, .board-panel-past).chains > .board-panel-rows > .board-row > .board-cell { margin: 0; padding: 0; border: 0; background: none; font: calc(21px * var(--fit, 1))/1.25 var(--hand); }   /* a pair in a list looks as a chain */
+:is(.board-panel, .board-panel-past).wrap > .board-panel-rows :is(.board-cell, .board-word, .board-node) { white-space: normal; }
 /* A flow diagram (board.js layoutFlow): boxes in the hand look of the paper, placed by the script; the arrows and the loops are in
    one SVG under them. */
 .board-flow { position: relative; margin: 4px 0; }
@@ -166,11 +166,14 @@
 .board-myth-k { font-size: calc(14px * var(--fit, 1)); color: var(--paper-mute); }
 .board-myth-why { grid-column: 1 / -1; margin: 0; font-size: calc(17px * var(--fit, 1)); color: var(--paper-mute); }
 /* Three stages: the name of each stage over its row, and a thin line between the stages. */
-.board-panel.stages .board-row { row-gap: 2px; }
-.board-panel.stages .board-row + .board-row { border-top: 1px dashed var(--paper-line); padding-top: 12px; }
+:is(.board-panel, .board-panel-past).stages > .board-panel-rows > .board-row { row-gap: 2px; }
+:is(.board-panel, .board-panel-past).stages > .board-panel-rows > .board-row + .board-row { border-top: 1px dashed var(--paper-line); padding-top: 12px; }
 .board-stage { flex: 0 0 100%; font-size: calc(14px * var(--fit, 1)); color: var(--paper-mute); }   /* its own line over the row */
 .board-row-n { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid currentColor; font-size: 15px; display: inline-grid; place-items: center; }
 .board-panel-note { margin: 0; font-size: 18px; color: var(--paper-mute); }
+/* The panel of the board before (play with keep): as it showed, quiet, over a thin line; the new title, head and rows come under it. */
+.board-panel-past { margin: 0 0 12px; padding: 0 0 12px; border-bottom: 1px solid var(--paper-line); opacity: .75; pointer-events: none; }
+.board-panel-past .board-panel-head { font-size: 19px; }
 @media print { .board-panel { display: none; } }
 /* Maths in the strip and the panel (board.js texInto): KaTeX where the page loaded it, else plain text in italic with <sub> and <sup>. */
 .board-tex.plain { font-style: italic; }
