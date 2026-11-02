@@ -37,7 +37,8 @@ def fn_manifests() -> dict:
     return {p.stem: AttrDict(json.loads(p.read_text())) for p in sorted((PKG/'fns').glob('*.json'))}
 
 # %% ../nbs/00_spec.ipynb #c012
-def _b(type, **kw): return {'type': type, **{k: v for k, v in kw.items() if v is not None}}
+def _drop(d): return {k: v for k, v in d.items() if v is not None}
+def _b(type, **kw): return {'type': type, **_drop(kw)}
 
 def from_(path:str) -> dict:
     "Gate options read from a list in the state, for example `from_('join.alts')`."
@@ -89,7 +90,6 @@ def lookup(table, key, out, by=None): return _drop(dict(fn='lookup', table=table
 def expr(f, out, over=None): return _drop(dict(fn='expr', expr=f, over=over, out=out))
 def field(f, out, n=16, seed=0): return dict(fn='field', expr=f, n=n, seed=seed, out=out)
 def fmt(text, out): return dict(fn='fmt', text=text, out=out)
-def _drop(d): return {k: v for k, v in d.items() if v is not None}
 
 # %% ../nbs/00_spec.ipynb #c020
 _TOK = re.compile(r'\s*(?:(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+)|([A-Za-z_]\w*)|(\*\*|[-+*/^(),×÷−]))')
