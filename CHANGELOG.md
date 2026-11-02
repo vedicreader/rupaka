@@ -2,6 +2,16 @@
 
 <!-- do not remove -->
 
+## 0.0.12
+
+- The panel of the board has six shapes, and each panel has one shape. A table has column names over rows of cells and an answer. A list has the same rows with no names. A flow of boxes (`node`, `edge`) shows a pipeline, a loop or a branch, one box at a time. A faded example hides parts of a row as `{"blank": value}`, and a blank shows at the next step or on a click. A card of a wrong idea (`myth`) shows "You might think" next to "In fact", with one line of why. Three stages (`"stages": true`) go from a case to a picture to the symbols.
+- The board repairs a panel line that is too long: it keeps the line and cuts only its bad part. A panel line that has nothing in it drops, and a panel shows with its first row, so the page never shows an empty card. Bad panel lines do not end the board.
+- A follow-up builds on the board before it. `play(..., {keep: true})` keeps the old marks at 30 % and the old panel at the top, with the new part under it. A thread turn can say what its panel showed (`shown`).
+- Labels on the page never cover each other: a label with no free place drops. Marks on a formula part sit on their line, and they move again when the web fonts load.
+- `plain_why(text)` finds the parts of a text that are not plain English: sentences of more than 20 words, a reading grade over 9, semicolons, vague words and nicknames. `plain_errors(spec)` checks the texts of a demo. `plain(ask, x)` writes a failing text again one time, and keeps the new text only when it is better and keeps the numbers, the maths and the code. `author` repairs a demo that is not plain with its repair prompt. Each spoken line of a board keeps its problems in `hard`, with no model call.
+- The demo agent writes for a human learner of any level. It starts from a concrete case and says why. `demo_prompt` and `author` take an optional `level` line. Three gallery demos start from a concrete case.
+- Less code: one walk of the blocks, one closure for the keys of the think rule, one pattern for the `{path}` slots, and fastcore `Path.read_json`, `Path.mk_write` and `last` in place of hand-written code.
+
 ## 0.0.11
 
 - The panel of the board follows the steps. A panel row moves to the step whose line names it. A row that names nothing on the page drops. `key_terms`, `named` and `page_terms` find the words and maths tokens that a line and a row share.
