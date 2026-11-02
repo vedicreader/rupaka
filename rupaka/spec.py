@@ -13,7 +13,7 @@ __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'MAX_WOR
            'validate', 'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
-import json, math, re
+import math, re
 from copy import deepcopy
 from decimal import Decimal, Context, ROUND_HALF_UP
 from pathlib import Path
@@ -29,15 +29,16 @@ COMMON = ('type', 'after', 'step')
 @functools.cache
 def manifests() -> dict:
     "The block manifests, by name."
-    return {p.parent.name: AttrDict(json.loads(p.read_text())) for p in sorted((PKG/'blocks').glob('*/block.json'))}
+    return {p.parent.name: AttrDict(p.read_json()) for p in sorted((PKG/'blocks').glob('*/block.json'))}
 
 @functools.cache
 def fn_manifests() -> dict:
     "The fn manifests, by name."
-    return {p.stem: AttrDict(json.loads(p.read_text())) for p in sorted((PKG/'fns').glob('*.json'))}
+    return {p.stem: AttrDict(p.read_json()) for p in sorted((PKG/'fns').glob('*.json'))}
 
 # %% ../nbs/00_spec.ipynb #c012
-def _b(type, **kw): return {'type': type, **{k: v for k, v in kw.items() if v is not None}}
+def _drop(d): return {k: v for k, v in d.items() if v is not None}
+def _b(type, **kw): return {'type': type, **_drop(kw)}
 
 def from_(path:str) -> dict:
     "Gate options read from a list in the state, for example `from_('join.alts')`."
@@ -89,7 +90,6 @@ def lookup(table, key, out, by=None): return _drop(dict(fn='lookup', table=table
 def expr(f, out, over=None): return _drop(dict(fn='expr', expr=f, over=over, out=out))
 def field(f, out, n=16, seed=0): return dict(fn='field', expr=f, n=n, seed=seed, out=out)
 def fmt(text, out): return dict(fn='fmt', text=text, out=out)
-def _drop(d): return {k: v for k, v in d.items() if v is not None}
 
 # %% ../nbs/00_spec.ipynb #c020
 _TOK = re.compile(r'\s*(?:(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+)|([A-Za-z_]\w*)|(\*\*|[-+*/^(),×÷−]))')
@@ -215,9 +215,11 @@ def show_value(v, d=None) -> str:
     if isinstance(v, (list, tuple)): return ', '.join('' if x is None else js_str(x) for x in v)
     return js_str(v)
 
+_TPL = re.compile(r'\{([\w.]+)(?::(\d))?\}')
+
 def fmt_text(s, st) -> str:
     "Fill `{path}` and `{path:2}` from the state, as the runtime does."
-    return re.sub(r'\{([\w.]+)(?::(\d))?\}', lambda m: show_value(get(st, m[1]), None if m[2] is None else int(m[2])), str(s or ''))
+    return _TPL.sub(lambda m: show_value(get(st, m[1]), None if m[2] is None else int(m[2])), str(s or ''))
 
 # %% ../nbs/00_spec.ipynb #c033
 def _int32(x): x &= 0xffffffff; return x - (1 << 32) if x >= 1 << 31 else x
@@ -310,10 +312,13 @@ FNS = dict(rules=_rules, rrf=_rrf, softmax=_softmax, lookup=_lookup, expr=_expr,
            fmt=lambda d, st, spec: fmt_text(d['text'], st))
 
 # %% ../nbs/00_spec.ipynb #c039
-def _gates(bs):
-    for b in bs or []:
-        if b.get('type') == 'gate': yield b
-        yield from _gates(b.get('blocks'))
+def _walk(bs, path='blocks', parent=None):
+    for i, b in enumerate(bs or []):
+        p = f'{path}[{i}]'
+        yield p, b, parent
+        if isinstance(b, dict) and isinstance(b.get('blocks'), list): yield from _walk(b['blocks'], f'{p}.blocks', b)
+
+def _gates(bs): return (b for _, b, _ in _walk(bs) if b.get('type') == 'gate')
 
 def run(spec, state:dict=None) -> dict:
     "The state of `spec` after the derive list, from its opening state or from `state`."
@@ -323,7 +328,6 @@ def run(spec, state:dict=None) -> dict:
     return st
 
 # %% ../nbs/00_spec.ipynb #c045
-_TPL = re.compile(r'\{([\w.]+)(?::\d)?\}')
 _SPECIAL = {'gate', 'log', '_'}
 def _root(path): return str(path).split('.')[0]
 
@@ -360,8 +364,8 @@ def _reads(t, v) -> set:
     if t in ('key', 'path'): return {_root(v)}
     if t == 'keys': return {_root(x) for x in v}
     if t == 'numkey': return {v} if isinstance(v, str) else set()
-    if t == 'text': return {_root(m) for m in _TPL.findall(v)}
-    if t == 'texts': return {_root(m) for x in v for m in _TPL.findall(x)}
+    if t == 'text': return {_root(m[1]) for m in _TPL.finditer(v)}
+    if t == 'texts': return {_root(m[1]) for x in v for m in _TPL.finditer(x)}
     if t == 'vec3key': return {_root(x) for x in v if isinstance(x, str)}
     if t == 'options': return {_root(v['from'])} if isinstance(v, dict) else set()
     if t == 'answer': return {_root(v)} if isinstance(v, str) else set()
@@ -400,37 +404,25 @@ def _props(m, x, path, known, tables, err, skip=()):
         if sum(g in x for g in grp) != 1: err(path, f'needs exactly one of {", ".join(grp)}')
     return reads
 
-# %% ../nbs/00_spec.ipynb #c049
-def _walk(bs, path='blocks', parent=None):
-    for i, b in enumerate(bs or []):
-        p = f'{path}[{i}]'
-        yield p, b, parent
-        if isinstance(b, dict) and isinstance(b.get('blocks'), list): yield from _walk(b['blocks'], f'{p}.blocks', b)
-
 # %% ../nbs/00_spec.ipynb #c051
+def _reach(xs, nxt):
+    "`xs` and every key that `nxt` gives from them, again and again."
+    out, todo = set(xs), list(xs)
+    while todo:
+        for r in nxt(todo.pop()):
+            if r not in out: out.add(r); todo.append(r)
+    return out
+
 def _taint(g, deps, state_keys):
     "The keys that give away the answer of gate `g`."
     a = g.get('answer')
     roots = {_root(a)} if isinstance(a, str) else set(g.get('hides') or [])
-    out, todo = set(roots), list(roots)
-    while todo:
-        k = todo.pop()
-        for r in deps.get(k, ()):
-            if r not in state_keys and r not in out: out.add(r); todo.append(r)
-    grew = True
-    while grew:
-        grew = False
-        for k, rs in deps.items():
-            if k not in out and rs & out: out.add(k); grew = True
-    return out
+    up = _reach(roots, lambda k: [r for r in deps.get(k, ()) if r not in state_keys])
+    return _reach(up, lambda x: [k for k, rs in deps.items() if x in rs])
 
 def _ancestors(k, deps):
     "All keys that `k` is computed from, raw inputs too."
-    out, todo = set(), [k]
-    while todo:
-        for r in deps.get(todo.pop(), ()):
-            if r not in out: out.add(r); todo.append(r)
-    return out
+    return _reach(deps.get(k, ()), lambda r: deps.get(r, ()))
 
 # %% ../nbs/00_spec.ipynb #c053
 MAX_WORDS = 20
@@ -528,11 +520,7 @@ def _waits(p, allp):
 # %% ../nbs/00_spec.ipynb #c060
 def _all_waits(p, allp, waits):
     "Every gate that block `p` waits for, also through the gates that it waits for."
-    out, todo = set(), list(_waits(p, allp))
-    while todo:
-        g = todo.pop()
-        if g not in out: out.add(g); todo += list(waits.get(g, ()))
-    return out
+    return _reach(_waits(p, allp), lambda g: waits.get(g, ()))
 
 def _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads) -> L:
     errs = L()
@@ -662,9 +650,9 @@ def upgrade(spec:dict) -> dict:
 # %% ../nbs/00_spec.ipynb #c087
 def examples() -> dict:
     "The example spec of each block, by block name."
-    return {n: json.loads((PKG/'blocks'/n/'example.json').read_text()) for n in manifests()}
+    return {n: (PKG/'blocks'/n/'example.json').read_json() for n in manifests()}
 
 # %% ../nbs/00_spec.ipynb #c090
 def gallery() -> dict:
     "The gallery demos, by id."
-    return {(s := json.loads(p.read_text()))['id']: s for p in sorted((PKG/'demos').glob('*.json'))}
+    return {(s := p.read_json())['id']: s for p in sorted((PKG/'demos').glob('*.json'))}

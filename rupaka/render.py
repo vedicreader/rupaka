@@ -14,7 +14,7 @@ from pathlib import Path
 from fastcore.utils import *
 from fastcore.xml import Div, Script, Link, Safe, to_xml
 from . import __version__
-from .spec import PKG, manifests
+from .spec import PKG, manifests, _walk
 
 # %% ../nbs/01_render.ipynb #c006
 STATIC = PKG/'static'
@@ -62,14 +62,10 @@ def three_js() -> str:
             'const __core=(()=>{%s})();window.RupakaTHREE=(()=>{%s})();})();' % (THREE.version, core, body))
 
 # %% ../nbs/01_render.ipynb #s3d010
-def _types(bs):
-    for b in bs or []:
-        if isinstance(b, dict): yield b.get('type'); yield from _types(b.get('blocks'))
-
 def needs(specs) -> set:
     "The vendored libraries that `specs` need: `three` when a spec has a `scene` block."
     specs = [specs] if isinstance(specs, dict) else listify(specs)
-    return {'three'} if any('scene' in _types(s.get('blocks')) for s in specs if isinstance(s, dict)) else set()
+    return {'three'} if any(isinstance(b, dict) and b.get('type') == 'scene' for s in specs if isinstance(s, dict) for _, b, _ in _walk(s.get('blocks'))) else set()
 
 # %% ../nbs/01_render.ipynb #c012
 def spec_json(spec) -> str:
@@ -118,8 +114,7 @@ def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None) -
 def save(specs, path, fonts:str='link', **kw) -> Path:
     "Write `page(specs)` to `path`; with `fonts='link'`, copy the fonts to `fonts/` beside it."
     p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(page(specs, fonts=fonts, **kw))
+    p.mk_write(page(specs, fonts=fonts, **kw))
     if fonts == 'link': shutil.copytree(STATIC/'fonts', p.parent/'fonts', dirs_exist_ok=True)
     return p
 
@@ -157,5 +152,4 @@ def Assets(prefix:str='/rupaka', v:str=''):
 # %% ../nbs/01_render.ipynb #c033
 def version() -> str:
     "A short hash of the script and the style."
-    import hashlib
     return hashlib.sha1((bundle() + bundle('css')).encode()).hexdigest()[:10]

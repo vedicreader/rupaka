@@ -8,9 +8,8 @@ Docs: https://vedicreader.github.io/rupaka/poll.html.md"""
 __all__ = ['of_gate', 'public']
 
 # %% ../nbs/05_poll.ipynb #22124843
-import re
 from fastcore.utils import *
-from .spec import _walk, _BAD, show_value
+from .spec import _walk, _BAD, _TPL, show_value
 
 # %% ../nbs/05_poll.ipynb #2f11254a
 _NONE = object()
@@ -40,7 +39,7 @@ def of_gate(spec:dict, gate:str) -> dict|None:
     ans = ans['is'] if isinstance(ans, dict) and 'is' in ans else _at(state, ans) if isinstance(ans, str) else _NONE
     if not isinstance(opts, list) or not 2 <= len(opts) <= 6 or ans is _NONE or ans not in opts: return None
     sub = lambda m: m[0] if (v := _at(state, m[1])) is _NONE else show_value(v, None if m[2] is None else int(m[2]))
-    q = re.sub(r'\{([\w.]+)(?::(\d))?\}', sub, g.get('prompt') or '')
+    q = _TPL.sub(sub, g.get('prompt') or '')
     return dict(kind='choice', q=q, options=[show_value(o) for o in opts], answer=opts.index(ans)) if q else None
 
 # %% ../nbs/05_poll.ipynb #4edad35a
