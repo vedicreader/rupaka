@@ -16,7 +16,7 @@ __all__ = ['STATIC', 'LIBS', 'OPS', 'FIELDS', 'LIMITS', 'PANEL', 'PAIRED', 'FILL
 import json, math, re
 from itertools import takewhile
 from fastcore.utils import *
-from .spec import PKG
+from .spec import PKG, plain_why
 
 # %% ../nbs/06_board.ipynb #b007
 STATIC = PKG/'static'
@@ -480,8 +480,8 @@ def _counts(steps):
         if NUMBERS.get(m[1].lower(), int(m[1]) if m[1].isdigit() else 0) != n: s['head'] = _COUNT.sub('', s['head'], 1)
 
 def parse_board(text:str, ctx, verbatim=verbatim) -> AttrDict:
-    "The checked board in the model's reply `text`: `steps`, `dropped` lines with why, `fixed` lines with why (`repair_line`), `sure`, `need` and `failed`. `verbatim` checks a quote."
-    out = AttrDict(steps=[], dropped=[], fixed=[], sure=None, need='none', failed=False)
+    "The checked board in the model's reply `text`: `steps`, `dropped` lines with why, `fixed` lines with why (`repair_line`), `hard` spoken lines with their `plain_why` problems, `sure`, `need` and `failed`. `verbatim` checks a quote."
+    out = AttrDict(steps=[], dropped=[], fixed=[], hard=[], sure=None, need='none', failed=False)
     run, skip = 0, False   # `skip`: the step before was about the board, so its strokes go too
     lines = [l.strip() for l in str(text or '').splitlines() if l.strip() and not l.strip().startswith('```')]
     for k, o in enumerate(_objects(lines[:LIMITS['lines']])):
@@ -499,6 +499,7 @@ def parse_board(text:str, ctx, verbatim=verbatim) -> AttrDict:
                 if len(out.steps) >= LIMITS['steps']: why = 'more than 6 steps'
                 else:
                     s = dict(n=len(out.steps) + 1, say=plain_say(o['say']), strokes=[])
+                    if (hard := plain_why(s['say'])): out.hard.append(dict(n=s['n'], why=hard))   # a hard spoken line stays; the host can tell the next board
                     if (q := _quote(o, ctx, verbatim)): s['quote'] = q
                     elif 'quote' in o: out.dropped.append((k, 'the quote is not word for word in its source'))
                     out.steps.append(s)
