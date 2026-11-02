@@ -373,3 +373,25 @@ def test_a_label_covers_no_line_of_what_it_marks(page):
     assert not any(overlap(chip, q) for q in lines_of(page, '[data-guide-id=pass]')), chip
     lead = page.evaluate("document.querySelector('#board-layer .board-lead path').getAttribute('d')")
     assert lead and lead.startswith('M')
+
+def test_the_chains_of_a_panel_line_up(page):
+    "The chains of one panel are one grid: the k-th word of each row has one middle, and so has each arrow, also in a shorter row."
+    rs = [row(['Input', 'Encoder', 'z'], None, chain=True), row(['z', 'Decoder', 'Output words'], None, chain=True), row(['Earlier outputs', 'Decoder'], None, chain=True)]
+    for r in rs: r.pop('to')
+    play(page, [dict(say='The encoder and the decoder.', strokes=[dict(op='panel', head='Symbols to symbols'), *rs])])
+    mid = page.evaluate("""() => [...document.querySelectorAll('.board-row.chain')].map(r => [...r.children].map(c => { const b = c.getBoundingClientRect(); return Math.round(b.left + b.width / 2); }))""")
+    assert [len(m) for m in mid] == [5, 5, 3]
+    for k in range(5): assert len({m[k] for m in mid if k < len(m)}) == 1, (k, mid)
+
+def test_a_part_of_a_formula_marks_its_line(page):
+    "A formula part that is taller than its line (as KaTeX makes it) gets the height of the line, so an underline stays above the next line. A narrow part is at least 28 px wide."
+    page.evaluate("""() => document.querySelector('main').insertAdjacentHTML('beforeend', `<p style="width:300px">Some words <span data-guide-id="f" data-parts='[["x_1","g-9-0"]]'><span id="g-9-0"
+        style="display:inline-block;height:34px;vertical-align:-12px">x</span></span> and more words that go on to the next line of the text.</p>`)""")
+    b = page.evaluate("rupakaBoard.boxOf({a: 'f', tex: 'x_1'})")
+    line = page.evaluate("(() => { const r = document.querySelector('[data-guide-id=f]').getClientRects()[0]; return [r.top + scrollY, r.height]; })()")
+    assert (round(b['y']), round(b['h'])) == (round(line[0]), round(line[1])) and b['w'] >= 28, (b, line)
+
+def test_words_mark_only_whole_words(page):
+    "A mark on words finds them from a word boundary to a word boundary, as the server checks them: part of a word marks nothing."
+    assert page.evaluate("rupakaBoard.boxOf({a: 'out', text: 'arget'})") is None
+    assert page.evaluate("rupakaBoard.boxOf({a: 'out', text: 'target'})")['w'] > 0

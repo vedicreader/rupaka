@@ -81,7 +81,7 @@
 //            such as w_1x_1, x_i or \sum_i) draws as in the strip: KaTeX where the page loaded it, else <sub> and <sup>. With `at`, the
 //            row draws its own circle on that thing at its word, a hand-drawn curve from it 120 ms later (up into the gap over its line,
 //            along the edge of the column, then into the row from the left, so it crosses no line of text), then the row when the curve lands, each cell 80 ms after the one before (the circle and the
-//            curve hide when the thing is not on the page; the row stays). With `chain`, the cells are words with arrows between.
+//            curve hide when the thing is not on the page; the row stays). With `chain`, the cells are words with arrows between; the chains of one panel line up on one grid.
 //            On D next the panel and its rows stay as they are; only the rows of the new step come. While the panel shows, the
 //            body has the class `has-panel`, and the page column moves left with its width kept. Below 1100 px the panel stands in the page, under
 //            the thing that its first row marks.
@@ -125,7 +125,9 @@
     const nodes = [], tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {acceptNode: n => n.parentElement.closest('.katex-mathml, script, style') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
     let all = '';
     for (let n; (n = tw.nextNode());) { nodes.push([n, all.length]); all += n.data; }
-    const re = new RegExp(flat(words).split(' ').map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'));   // white space made single
+    const w = flat(words), edge = c => /[\p{L}\p{N}_]/u.test(c);   // whole words, as the server checks them: "form" is not in "transform"
+    const re = new RegExp((edge(w[0]) ? '(?<![\\p{L}\\p{N}_])' : '') + w.split(' ').map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+')
+                          + (edge(w[w.length - 1]) ? '(?![\\p{L}\\p{N}_])' : ''), 'u');   // white space made single
     const m = re.exec(all.toLowerCase());
     if (!m) return null;
     const where = k => { let i = nodes.length - 1; while (i > 0 && nodes[i][1] > k) i--; return [nodes[i][0], k - nodes[i][1]]; };
@@ -133,6 +135,18 @@
     r.setStart(a, ao); r.setEnd(b, Math.min(bo, b.data.length));
     const rs = [...r.getClientRects()];
     return rs.length ? {...pageRect(rs[0]), el: a.parentElement, glyphs: true} : null;   // the first line only, so a mark on words that wrap stays on one line
+  }
+
+  // The box of a part of a formula. KaTeX gives a part a box taller than its line, so in a passage a mark under it would land on the
+  // next line: the part of an inline formula gets the height of its line of text. A part such as x_1 is narrow, so the box is at
+  // least PART px wide around its middle, and a mark on it reads as a mark.
+  const PART = 28;
+  function partBox(part, el) {
+    const r = pageRect(part.getBoundingClientRect()), over = q => Math.min(q.y + q.h, r.y + r.h) - Math.max(q.y, r.y);
+    const qs = INLINE_BOX.test(getComputedStyle(el).display) ? [...el.getClientRects()].map(pageRect).filter(q => over(q) > 0) : [];
+    const line = qs.sort((p, q) => over(q) - over(p))[0];   // the line of the formula that the part is on: the most overlap
+    const w = Math.max(r.w, PART), x = r.x + r.w / 2 - w / 2;
+    return line ? {x, w, y: line.y, h: line.h} : {x, w, y: r.y, h: r.h};
   }
 
   // The box of an anchor in page pixels, or null when it is not on the page now. `el` is the element under it.
@@ -144,7 +158,7 @@
       let parts = []; try { parts = JSON.parse(el.dataset.parts || '[]'); } catch (e) {}
       const hit = parts.find(p => normTex(p[0]) === normTex(a.tex)), pid = hit && String(hit[1]);
       const part = pid && (el.querySelector('#' + CSS.escape(pid)) || document.getElementById(pid));
-      return seen(part) ? {...pageRect(part.getBoundingClientRect()), el: part, glyphs: true} : R;   // no part element: the whole formula, so the stroke stays
+      return seen(part) ? {...partBox(part, el), el: part, glyphs: true} : R;   // no part element: the whole formula, so the stroke stays
     }
     if (a.text != null) return textBox(el, a.text);
     const rel = b => ({x: R.x + R.w * b[0] / 1000, y: R.y + R.h * b[1] / 1000, w: R.w * (b[2] - b[0]) / 1000, h: R.h * (b[3] - b[1]) / 1000, el});
@@ -488,6 +502,15 @@
     if (k === 'to' || k === n - 1) return String(lead + n + 1);
     return k < n - 1 ? String(lead + k + 1) : '';
   }
+  // The chains of a panel: one grid for all of them (--chain), with a column for each word and a column for each arrow between, so
+  // the words and the arrows of the rows line up. The rows are a subgrid of it, so each column is as wide as its widest word.
+  function chains(p) {
+    const rs = [...p.querySelectorAll('.board-row.chain')].filter(r => r.dataset.beat === p.dataset.beat);
+    const n = Math.max(0, ...rs.map(r => r.querySelectorAll('.board-word').length));
+    p.classList.toggle('chains', n > 1);
+    if (n < 2) return p.style.removeProperty('--chain');
+    p.style.setProperty('--chain', `${p.classList.contains('numbered') ? '24px ' : ''}repeat(${n - 1}, auto 28px) auto`);
+  }
   const beatOf = m => { const k = st.marks.indexOf(m); return st.marks.slice(0, k + 1).filter(x => x.o.op === 'panel').length; };
   function placePanel(m) {
     const o = m.o, p = panelEl(), beat = String(beatOf(m)), parts = [];
@@ -499,6 +522,7 @@
         cs.replaceChildren(...(o.cols || []).map(c => richInto(el('span', '', null), c)));
         grid(p, (o.cols || []).length);
         [...rs.children].forEach(r => { if (r.dataset.beat !== beat) r.remove(); });
+        chains(p);
       }
       parts.push({kind: 'node', el: p, at: 0, dur: 260});   // also when the board places it again (a scroll, a resize): the pop-in keeps its own clock
       m.parts = parts; m.aim = null; m.ok = true; m.life = 300;
@@ -526,6 +550,7 @@
         }
       }
       p.lastElementChild.append(m.el);
+      if (o.chain) chains(p);
     }
     m.el.style.display = '';
     const r = m.el.getBoundingClientRect(), box = {x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height};
@@ -1134,6 +1159,7 @@
   addEventListener('keydown', onKey, true);
   addEventListener('scroll', follow, {capture: true, passive: true});
   addEventListener('resize', follow);
+  if (document.fonts) document.fonts.addEventListener('loadingdone', follow);   // KaTeX fonts come late and move the parts of a formula
   addEventListener('resize', () => { if (document.body.classList.contains('has-panel')) room(true); });
   if (window.ResizeObserver) new ResizeObserver(follow).observe(document.documentElement);
   // A new page (an htmx swap of the body) takes the layer away: the board stops. A change inside the page moves the marks.
