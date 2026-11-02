@@ -6,10 +6,11 @@ Docs: https://vedicreader.github.io/rupaka/board.html.md"""
 
 # %% auto #0
 __all__ = ['STATIC', 'LIBS', 'OPS', 'FIELDS', 'LIMITS', 'PANEL', 'PAIRED', 'NODE_ID', 'MARKS', 'META', 'META_WHY', 'SIDES',
-           'SURE', 'NEEDS', 'VERSION', 'FORMS', 'UNSAFE', 'SMALL', 'FLOW', 'WATCH', 'NUMBERS', 'KINDS', 'ANCHOR_ID',
-           'MOST', 'TRY', 'FOCUS', 'SHOWN', 'THREAD', 'TIERS', 'assets', 'bundle', 'norm_tex', 'flat', 'anchor_why',
-           'by_id', 'cue_at', 'cue_quote', 'plain_say', 'check_line', 'key_terms', 'named', 'page_terms', 'yt_link',
-           'verbatim', 'parse_board', 'PageContext', 'clean_context', 'video_id', 'video_cues', 'stream_board']
+           'SURE', 'NEEDS', 'VERSION', 'FORMS', 'UNSAFE', 'SMALL', 'FLOW', 'BODY', 'KIND', 'WHAT', 'WATCH', 'NUMBERS',
+           'KINDS', 'ANCHOR_ID', 'MOST', 'TRY', 'FOCUS', 'SHOWN', 'THREAD', 'TIERS', 'assets', 'bundle', 'norm_tex',
+           'flat', 'anchor_why', 'by_id', 'cue_at', 'cue_quote', 'plain_say', 'check_line', 'key_terms', 'named',
+           'page_terms', 'yt_link', 'verbatim', 'parse_board', 'PageContext', 'clean_context', 'video_id', 'video_cues',
+           'stream_board']
 
 # %% ../nbs/06_board.ipynb #b005
 import json, math, re
@@ -31,15 +32,15 @@ def bundle(kind:str='js') -> str:
     return '\n'.join(f'/* rupaka/{p.relative_to(PKG).as_posix()} */\n{p.read_text()}' for p in assets()[kind])
 
 # %% ../nbs/06_board.ipynb #g008
-OPS = ('step', 'circle', 'box', 'underline', 'arrow', 'label', 'sketch', 'point', 'clear', 'demo_set', 'video_at', 'panel', 'row', 'note', 'node', 'edge')
+OPS = ('step', 'circle', 'box', 'underline', 'arrow', 'label', 'sketch', 'point', 'clear', 'demo_set', 'video_at', 'panel', 'row', 'note', 'node', 'edge', 'myth')
 FIELDS = dict(step={'say', 'src', 'quote'}, circle={'at'}, box={'at'}, underline={'at'}, arrow={'from', 'to'},
               label={'at', 'text', 'side'}, sketch={'at', 'pts'}, point={'at'}, clear={'n'}, demo_set={'set'}, video_at={'t', 'quote'},
-              panel={'title', 'head', 'cols', 'numbered'}, row={'cells', 'to', 'at', 'chain'}, note={'text'},
-              node={'id', 'text'}, edge={'from', 'to', 'text'})
+              panel={'title', 'head', 'cols', 'numbered', 'stages'}, row={'cells', 'to', 'at', 'chain'}, note={'text'},
+              node={'id', 'text'}, edge={'from', 'to', 'text'}, myth={'think', 'fact', 'why'})
 LIMITS = dict(steps=6, strokes=6, lines=60, line_bytes=600, pts=64, say=160, text=60, quote_min=40, quote_max=600, set=6,
-              step_bytes=1500, cells=5, cell=24, title=40, head=60, note=90, rows=6, word=16, nodes=6, edges=8, edge=16)
-PANEL = ('panel', 'row', 'note', 'node', 'edge')   # the lines of the side panel
-PAIRED = ('row', 'note', 'node')   # the panel lines that go with the step whose line names them
+              step_bytes=1500, cells=5, cell=24, title=40, head=60, note=90, rows=6, word=16, nodes=6, edges=8, edge=16, myth=60, myths=2, stages=3)
+PANEL = ('panel', 'row', 'note', 'node', 'edge', 'myth')   # the lines of the side panel
+PAIRED = ('row', 'note', 'node', 'myth')   # the panel lines that go with the step whose line names them
 NODE_ID = re.compile(r'[A-Za-z][A-Za-z0-9_]{0,11}')
 MARKS = ('circle', 'box', 'underline', 'label')   # a mark on a thing: it needs a thing under it, so never a bare point
 META = re.compile(r"\b(?:my (?:earlier|last|first|previous) (?:offer|answer|board|reply|step)|(?:was|is) misleading|i apologi[sz]e|sorry|i was wrong"
@@ -171,13 +172,16 @@ def plain_say(say:str) -> str:
     "The spoken line `say` with no semicolon: each part is a sentence of its own."
     return re.sub(r'\s*;\s*(\w?)', lambda m: '. ' + m[1].upper(), ' '.join(say.split())).strip()
 
-def _cell(c, n:int) -> bool:
-    "Whether `c` is a number or a short text. The `$` signs around maths do not count."
+def _val(c): return c['blank'] if isinstance(c, dict) else c
+
+def _cell(c, n:int, blank=True) -> bool:
+    "Whether `c` is a number or a short text, or (with `blank`) `{\"blank\": value}` for a part that the learner fills. The `$` signs around maths do not count."
+    if blank and isinstance(c, dict): return set(c) == {'blank'} and _cell(c['blank'], n, False)
     return (_num(c) and not isinstance(c, bool)) or (isinstance(c, str) and _short_ok(c, n + c.count('$')))
 
 def _wide(c) -> bool:
     "Whether the text `c` has a word of more than 16 letters out of its maths: such a word does not fit in a cell, and a cell does not wrap."
-    return any(len(w) > LIMITS['word'] for w in re.sub(r'\$[^$]*\$', ' ', str(c)).split())
+    return any(len(w) > LIMITS['word'] for w in re.sub(r'\$[^$]*\$', ' ', str(_val(c))).split())
 
 def _panel_why(o, ctx) -> str:
     "Why the side-panel line `o` (`panel`, `row` or `note`) drops, or ''."
@@ -186,11 +190,14 @@ def _panel_why(o, ctx) -> str:
             if k in o and not _short_ok(o[k], LIMITS[k]): return f'a bad {k}'
         cs = o.get('cols', [])
         if not (isinstance(cs, list) and len(cs) <= 2 and all(_short_ok(c, LIMITS['cell'] + 8) for c in cs)): return 'bad column names'
-        return '' if isinstance(o.get('numbered', False), bool) else 'a bad numbered'
+        return '' if all(isinstance(o.get(k, False), bool) for k in ('numbered', 'stages')) else 'a bad numbered or stages'
     if o['op'] == 'note': return '' if _short_ok(o.get('text'), LIMITS['note']) else 'a bad note'
+    if o['op'] == 'myth':
+        if not all(_short_ok(o.get(k), LIMITS['myth']) for k in ('think', 'fact')): return 'a bad wrong idea'
+        return '' if 'why' not in o or _short_ok(o['why'], LIMITS['note']) else 'a bad why'
     if o['op'] == 'node':
         if not (isinstance(o.get('id'), str) and NODE_ID.fullmatch(o['id'])): return 'a bad box id'
-        if not _cell(o.get('text'), LIMITS['cell']): return 'a bad box text'
+        if not _cell(o.get('text'), LIMITS['cell'], False): return 'a bad box text'
         return 'a word of more than 16 letters in a box' if _wide(o['text']) else ''
     if o['op'] == 'edge':
         if not all(isinstance(o.get(k), str) and NODE_ID.fullmatch(o[k]) for k in ('from', 'to')): return 'a bad edge'
@@ -259,7 +266,7 @@ def _same(a:str, b:str) -> bool:
     if a == b: return True
     return a.isalpha() and b.isalpha() and len(a) > 1 and len(b) > 1 and (a.startswith(b) or b.startswith(a))
 
-def _line_terms(o) -> set: return key_terms(' '.join(str(x) for x in [*o.get('cells', ()), o.get('to', ''), o.get('text', '')]))
+def _line_terms(o) -> set: return key_terms(' '.join(str(_val(x)) for x in [*o.get('cells', ()), o.get('to', ''), *(o.get(k, '') for k in ('text', 'think', 'fact', 'why'))]))
 def _shares(ts, us) -> bool: return any(_same(t, u) for t in ts for u in us)
 
 def named(o, say:str) -> bool:
@@ -280,7 +287,7 @@ def _pair(out, ctx):
     where it is: the stream sent it already, and the row draws its own circle."""
     page = page_terms(ctx)
     for st in out.steps:
-        if page: st['strokes'] = [s for s in st['strokes'] if s['op'] not in ('row', 'node') or _shares(_line_terms(s), page) or out.dropped.append((-1, 'a row that names nothing on the page'))]
+        if page: st['strokes'] = [s for s in st['strokes'] if s['op'] not in ('row', 'node', 'myth') or _shares(_line_terms(s), page) or out.dropped.append((-1, 'a row that names nothing on the page'))]
     for k, st in enumerate(out.steps):
         keep, moves = [], {}
         beat = list(takewhile(lambda t: not any(x['op'] == 'panel' for x in t['strokes']), out.steps[k + 1:]))
@@ -308,13 +315,22 @@ def _table(r, n):
     if r.get('chain') and len(r['cells']) == 2: r = {**{k: v for k, v in r.items() if k != 'chain'}, 'cells': r['cells'][:1], 'to': r['cells'][1]}
     return r if _form(r) == ('pair', n, True) else None
 
+BODY = ('row', 'node', 'edge', 'myth')   # the lines that make the body of a panel
+KIND = dict(row='rows', node='a flow diagram', edge='a flow diagram', myth='wrong ideas')
+WHAT = dict(row='a row', node='a box', edge='an arrow', myth='a wrong idea')
+
 def _beats(out) -> list:
-    "The panel line (or None) and the rows, boxes and arrows of each beat of the board `out`."
+    "The panel line (or None) and the rows, boxes, arrows and wrong ideas of each beat of the board `out`."
     beats = []
     for s in (s for st in out.steps for s in st['strokes']):
         if s['op'] == 'panel': beats.append((s, []))
-        elif s['op'] in ('row', *FLOW): (beats or beats.append((None, [])) or beats)[-1][1].append(s)
+        elif s['op'] in BODY: (beats or beats.append((None, [])) or beats)[-1][1].append(s)
     return beats
+
+def _shown(r) -> dict:
+    "The row `r` with each blank filled: the first row of a faded example is the worked one."
+    if not any(isinstance(c, dict) for c in [*r['cells'], r.get('to')]): return r
+    return {**r, 'cells': [_val(c) for c in r['cells']], **({'to': _val(r['to'])} if 'to' in r else {})}
 
 def _edges(out):
     "Each arrow right after the later of its two boxes, so both boxes are on the page when it draws. An arrow never moves back."
@@ -331,21 +347,25 @@ def _edges(out):
         st['strokes'] = [y for x in st['strokes'] if id(x) not in moved for y in (x, *({k: v for k, v in e.items() if k != 'w'} for e in after.get(id(x), ())))]
 
 def _shape(out):
-    "Each panel of the board `out` as a flow diagram, a table or a list (see above), with at most 6 rows, 6 boxes and 8 arrows."
+    """Each panel of the board `out` as a flow diagram, a card of wrong ideas, a table, a list or three stages (see above), with at
+    most 6 rows (3 with `stages`), 6 boxes, 8 arrows and 2 wrong ideas. The first row of a panel shows its blanks."""
     drop, swap = set(), {}
     for panel, ls in _beats(out):
-        flow = bool(ls) and ls[0]['op'] == 'node'
-        if panel and 'cols' in panel and (flow or not all(_table(r, len(panel['cols']) - 1) for r in [s for s in ls if s['op'] == 'row'][:2])):
+        kind, stages = next((s['op'] for s in ls if s['op'] != 'edge'), 'row'), bool((panel or {}).get('stages'))
+        flow = kind == 'node'
+        if panel and 'cols' in panel and (kind != 'row' or stages or not all(_table(r, len(panel['cols']) - 1) for r in [s for s in ls if s['op'] == 'row'][:2])):
             del panel['cols']; out.dropped.append((-1, 'column names that do not fit the rows'))
-        n, ids, edges, rows = len((panel or {}).get('cols', ())) - 1, [], set(), 0
+        n, ids, edges, rows, most = len((panel or {}).get('cols', ())) - 1, [], set(), 0, LIMITS['stages' if stages else 'rows']
         for s in ls:
             why = ''
-            if s['op'] == 'row':
-                if flow: why = 'a row in a flow diagram'
-                elif n > 0 and (t := _table(s, n)) is None: why = 'a row that does not fit the column names'
-                elif rows >= LIMITS['rows']: why = f"more than {LIMITS['rows']} rows in a panel"
-                else: rows += 1; swap[id(s)] = t if n > 0 else s
-            elif not flow: why = 'a box or an arrow in a panel of rows'
+            if KIND[s['op']] != KIND[kind]: why = f"{WHAT[s['op']]} in a panel of {KIND[kind]}"
+            elif s['op'] == 'myth':
+                if rows >= LIMITS['myths']: why = f"more than {LIMITS['myths']} wrong ideas in a panel"
+                else: rows += 1
+            elif s['op'] == 'row':
+                if n > 0 and (t := _table(s, n)) is None: why = 'a row that does not fit the column names'
+                elif rows >= most: why = f"more than {most} rows in a panel"
+                else: swap[id(s)] = _shown(t if n > 0 else s) if not rows else t if n > 0 else s; rows += 1
             elif s['op'] == 'node':
                 if s['id'] in ids: why = 'a box with the id of another box'
                 elif len(ids) >= LIMITS['nodes']: why = f"more than {LIMITS['nodes']} boxes in a panel"
@@ -386,9 +406,9 @@ def _stroke(o, ctx) -> dict:
     "The checked stroke line `o` as the page gets it."
     if o['op'] == 'video_at': return _video_mark(o, ctx)
     if o['op'] == 'row':
-        cs, to = [str(c) for c in o['cells']], o.get('to')
+        cs, to = [{'blank': str(c['blank'])} if isinstance(c, dict) else str(c) for c in o['cells']], o.get('to')
         if to is None and not o.get('chain') and len(cs) >= 2: cs, to = cs[:-1], cs[-1]   # the answer in a last cell: it goes after the arrow
-        return {**{k: v for k, v in o.items() if k not in ('n', 'to')}, 'cells': cs, **({'to': str(to)} if to is not None else {})}
+        return {**{k: v for k, v in o.items() if k not in ('n', 'to')}, 'cells': cs, **({'to': {'blank': str(to['blank'])} if isinstance(to, dict) else str(to)} if to is not None else {})}
     return {k: v for k, v in o.items() if k != 'n' or o['op'] == 'clear'}
 
 def _has_strokes(o) -> bool:
