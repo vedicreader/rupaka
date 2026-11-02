@@ -314,3 +314,62 @@ def test_a_formula_part_gets_its_id(page):
     "texparts.js wraps each part of a formula with a letter in an id, and gives the parts as [tex, id]."
     marked, parts = page.evaluate(r"rupakaTex.texParts('\\bar\\alpha_t x', 1)")
     assert r'\htmlId{g-1-' in marked and [p[0] for p in parts] == [r'\bar\alpha_t', 'x'] and page.evaluate("rupakaTex.trust({command: '\\\\htmlId', id: 'g-1-0'})")
+
+# --- the panel and its marks keep off the passage --------------------------------------------------------------------------
+PASSAGE = """() => { const m = document.querySelector('main'); const p = document.createElement('p'); p.dataset.guideId = 'pass';
+  p.textContent = 'A neuron takes numbers x1 to xn, multiplies each by a weight wi, adds a bias b, and outputs z = w1x1 + w2x2 + b. '
+    + 'In Python this is a loop that sums the products, then adds one number. The output of one neuron is the input of the next one. '
+    + 'Learning means a small change to each weight and to the bias.'; m.append(p); }"""
+LINES = """root => { const out = [], r = document.createRange(), tw = document.createTreeWalker(document.querySelector(root), NodeFilter.SHOW_TEXT);
+  for (let n; (n = tw.nextNode());) { if (!n.data.trim() || n.parentElement.closest('#board-panel, #board-host, #guide-strip')) continue; r.selectNodeContents(n);
+    for (const q of r.getClientRects()) out.push([q.left + scrollX, q.top + scrollY, q.right + scrollX, q.bottom + scrollY]); }
+  return out; }"""
+
+def lines_of(pg, root='main'): return pg.evaluate(LINES, root)
+def inside(p, q, m=1): return q[0] + m < p[0] < q[2] - m and q[1] + m < p[1] < q[3] - m
+def overlap(a, b): return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+def test_a_cell_with_maths_draws_maths(page):
+    "A cell, a head and a note with `$…$` or a bare maths token draw their maths: no raw `_` shows. With no KaTeX, a script is a <sub>."
+    play(page, [dict(say='Multiply each input by its weight.', strokes=[dict(op='panel', head='Inside $z$', cols=['Step', 'Result']),
+        row(['Multiply each x_i by w_i'], '$w_1x_1, …, w_nx_n$'), dict(op='note', text='Sum with \\sum_i w_ix_i.')])])
+    got = page.evaluate("""() => [...document.querySelectorAll('#board-panel .board-cell, #board-panel .board-panel-note, #board-panel .board-panel-head')]
+        .map(e => ({text: e.textContent, tex: e.querySelectorAll('.board-tex').length, sub: e.querySelectorAll('sub').length}))""")
+    assert len(got) == 4 and all(g['tex'] and '_' not in g['text'] and '$' not in g['text'] for g in got[1:]), got
+    assert got[0]['tex'] == 1 and got[2]['sub'] >= 4 and '∑' in got[3]['text'], got   # the head, the answer cell and the note
+
+def test_a_code_name_stays_text(page):
+    "alpha_bar and x_train are code names, not maths: they stay as they are."
+    play(page, [dict(say='Look.', strokes=[dict(op='panel', head='h'), row(['alpha_bar'], 'x_train')])])
+    assert page.evaluate("[...document.querySelectorAll('#board-panel .board-cell')].map(e => [e.textContent, e.querySelectorAll('.board-tex').length])") == [['alpha_bar', 0], ['x_train', 0]]
+
+def test_the_curve_to_the_panel_goes_around_the_text(page):
+    "At 1440 px, the curve from a mark on line 2 of the passage to its row crosses no line of text after its start: it leaves through the gap above its line and goes along the edge of the column."
+    page.set_viewport_size(dict(width=1440, height=900))
+    page.evaluate(PASSAGE)
+    play(page, [dict(say='It multiplies each input by its weight.', strokes=[dict(op='panel', head='Inside one neuron'), dict(op='row', cells=['Multiply x by w'], to='w1x1', at=dict(a='pass', text='w1x1'))])])
+    page.wait_for_timeout(300)
+    pts = page.evaluate("""() => { const p = document.querySelector('#board-layer g[data-op=link] path'), L = p.getTotalLength(), out = [];
+        for (let s = 0; s <= L; s += 3) { const q = p.getPointAtLength(s); out.push([q.x, q.y, s]); } return out; }""")
+    mark, text = page.evaluate("rupakaBoard.boxOf({a: 'pass', text: 'w1x1'})"), lines_of(page)
+    assert len(pts) > 20
+    bad = [p for p in pts if p[2] > 14 and any(inside(p, q) for q in text)]
+    assert not bad, bad[:5]
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    assert min(ys) < mark['y'] and max(xs) > max(q[2] for q in text)   # it goes up and out to the gutter, then to the panel
+
+def test_a_label_covers_no_line_of_what_it_marks(page):
+    "A label on words in the middle of the passage sits where it covers neither those words nor a line of the passage, with a leader to them."
+    page.set_viewport_size(dict(width=1440, height=900))
+    page.evaluate(PASSAGE)
+    at = dict(a='pass', text='In Python this is a loop')
+    play(page, [dict(say='In Python this is a loop.', strokes=[dict(op='label', at=at, text='a loop that sums', side='below')])])
+    page.wait_for_timeout(300)
+    rows = sorted({round(q[1]) for q in lines_of(page, '[data-guide-id=pass]')})
+    assert len(rows) >= 4 and rows[0] < page.evaluate('a => rupakaBoard.boxOf(a).y', at) < rows[-2]   # the words are in a middle line: text is above and below them
+    chip = page.evaluate("(() => { const b = document.querySelector('.board-label').getBoundingClientRect(); return [b.left + scrollX, b.top + scrollY, b.right + scrollX, b.bottom + scrollY]; })()")
+    b = page.evaluate('a => rupakaBoard.boxOf(a)', at)
+    assert not overlap(chip, [b['x'], b['y'], b['x'] + b['w'], b['y'] + b['h']])
+    assert not any(overlap(chip, q) for q in lines_of(page, '[data-guide-id=pass]')), chip
+    lead = page.evaluate("document.querySelector('#board-layer .board-lead path').getAttribute('d')")
+    assert lead and lead.startswith('M')

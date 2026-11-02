@@ -8,7 +8,8 @@
 // (response 0.4, damping 0.6). A box is a soft glow that blooms and settles. A circle on a formula part or on words adds a
 // marker under the glyphs (multiply on a light surface, screen on a dark one). Rings, underlines and sketches are
 // perfect-freehand strokes with pressure, drawn on as a pen does. Arrows are one light Rough.js stroke with a filled head.
-// Labels are pastel chips with a coloured bar and a thin leader line; a chip never covers its target. Marks of earlier steps
+// Labels are pastel chips with a coloured bar and a thin leader line; a chip never covers its target, and it covers no line of the
+// block that it marks when the page has a free place: above the block or in a margin. Marks of earlier steps
 // fade to 45 %. A point is always weaker than a circle, so the circle stays the main mark of a step: see `point` in the API.
 // The words of the spoken line light up as they are said. With prefers-reduced-motion, the pointer jumps, and
 // marks and chips fade in for 150 ms. A sketch marks a part of a figure only. A picture of an idea is the side panel: a card on
@@ -76,8 +77,10 @@
 //   panel    {title, head, cols, numbered}: starts the side panel, fixed at the top right of the window (#board-panel). The panel
 //            is the place of the tutor's small concrete example. A new panel line starts a new beat: its rows replace the rows before.
 //   row      {cells, to, at, chain}: one row of the panel that shows with its step and stays for the next steps. Each cell is a box;
-//            `to` comes after an arrow, in the accent. With `at`, the row draws its own circle on that thing at its word, a hand-drawn
-//            curve from it 120 ms later, then the row when the curve lands, each cell 80 ms after the one before (the circle and the
+//            `to` comes after an arrow, in the accent. Maths in a cell, a head, a title, a column name or a note (`$…$`, or a bare token
+//            such as w_1x_1, x_i or \sum_i) draws as in the strip: KaTeX where the page loaded it, else <sub> and <sup>. With `at`, the
+//            row draws its own circle on that thing at its word, a hand-drawn curve from it 120 ms later (up into the gap over its line,
+//            along the edge of the column, then into the row from the left, so it crosses no line of text), then the row when the curve lands, each cell 80 ms after the one before (the circle and the
 //            curve hide when the thing is not on the page; the row stays). With `chain`, the cells are words with arrows between.
 //            On D next the panel and its rows stay as they are; only the rows of the new step come. While the panel shows, the
 //            body has the class `has-panel`, and the page column moves left with its width kept. Below 1100 px the panel stands in the page, under
@@ -238,6 +241,74 @@
     return tries.find(ok) || tries[0];
   }
 
+  // --- around the text: a curve from a mark to its row leaves the mark through the gap next to its line, then goes along the edge of
+  // the column, so it never crosses the lines of the passage. A chip goes where it covers no line of the thing that it marks.
+  const NOT_TEXT = '.katex-mathml, script, style, #board-host, #board-panel, #guide-strip, #guide-show';
+  const lineCache = new Map();
+  function textLines(root) {   // the lines of text in `root`, in page px: one box for each line, from the boxes of its text nodes
+    const c = lineCache.get(root), now = performance.now();
+    if (c && now - c.t < 150 && c.x === scrollX && c.y === scrollY) return c.lines;
+    const out = [], r = document.createRange();
+    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode: n => n.parentElement && n.parentElement.closest(NOT_TEXT) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+    for (let n, k = 0; (n = tw.nextNode()) && k < 3000; k++) {
+      if (!n.data.trim()) continue;
+      r.selectNodeContents(n);
+      for (const q of r.getClientRects()) {
+        if (q.width < 1 || q.height < 1) continue;
+        const b = pageRect(q), line = out.find(l => Math.min(b.y + b.h, l.y + l.h) - Math.max(b.y, l.y) > Math.min(b.h, l.h) / 2);
+        if (!line) { out.push(b); continue; }
+        const x1 = Math.max(line.x + line.w, b.x + b.w), y1 = Math.max(line.y + line.h, b.y + b.h);
+        line.x = Math.min(line.x, b.x); line.y = Math.min(line.y, b.y); line.w = x1 - line.x; line.h = y1 - line.y;
+      }
+    }
+    out.sort((a, b) => a.y - b.y);
+    lineCache.set(root, {t: now, x: scrollX, y: scrollY, lines: out});
+    return out;
+  }
+  const blockOf = b => b && b.el ? b.el.closest('[data-guide-id]') || b.el : null;
+  const pageOf = e => (e && e.closest('main, article')) || document.body;
+  const cuts = (q, x0, y0, x1, y1) => Math.min(x0, x1) < q.x + q.w && q.x < Math.max(x0, x1) && Math.min(y0, y1) < q.y + q.h && q.y < Math.max(y0, y1);
+  const area = (q, r) => Math.max(0, Math.min(q.x + q.w, r.x + r.w) - Math.max(q.x, r.x)) * Math.max(0, Math.min(q.y + q.h, r.y + r.h) - Math.max(q.y, r.y));
+  // The column of the thing in box `b`: the lines of its block, their left and right edges, and the middle of the gap above and below the line of `b`.
+  function column(b) {
+    const root = blockOf(b), lines = root ? textLines(root) : [];
+    if (!lines.length) return null;
+    const cy = b.y + b.h / 2, mine = lines.filter(q => q.y <= cy && cy <= q.y + q.h);
+    const top = mine.length ? Math.min(...mine.map(q => q.y)) : b.y, bot = mine.length ? Math.max(...mine.map(q => q.y + q.h)) : b.y + b.h;
+    const over = lines.filter(q => q.y + q.h <= top + 1), under = lines.filter(q => q.y >= bot - 1);
+    return {lines, page: textLines(pageOf(root)), l: Math.min(...lines.map(q => q.x)), r: Math.max(...lines.map(q => q.x + q.w)),
+            top: lines[0].y, bottom: Math.max(...lines.map(q => q.y + q.h)),
+            up: over.length ? (Math.max(...over.map(q => q.y + q.h)) + top) / 2 : top - 7, down: under.length ? (Math.min(...under.map(q => q.y)) + bot) / 2 : bot + 7};
+  }
+  // The points of a path from the mark in box `b` to the point `to` that crosses no line of text after its start: straight when it can,
+  // else out through the gap next to the line of `b`, along the gap to the edge of the column on the side of `to`, along that edge, then
+  // to `to`. Null when `b` is in no block of text.
+  function around(b, to) {
+    const c = column(b);
+    if (!c) return null;
+    const sx = b.x + b.w / 2, up = to[1] < b.y + b.h / 2, sy = up ? b.y - 1 : b.y + b.h + 1, gy = up ? c.up : c.down;
+    const free = pts => pts.every((p, k) => !k || !c.page.some(q => cuts({x: q.x + 1, y: q.y + 1, w: q.w - 2, h: q.h - 2}, pts[k - 1][0], pts[k - 1][1], p[0], p[1]) && !(k === 1 && q.y <= sy && sy <= q.y + q.h)));
+    const straight = [[sx, sy], [sx, to[1]], to];
+    if (free(straight)) return straight;
+    const right = to[0] > c.r || (to[0] >= c.l && c.r - sx < sx - c.l), lo = Math.min(gy, to[1]), hi = Math.max(gy, to[1]);
+    const side = c.page.filter(q => q.y < hi && lo < q.y + q.h);   // the lines beside the way along the edge
+    let ex = right ? Math.max(c.r, ...side.map(q => q.x + q.w)) + 12 : Math.min(c.l, ...side.map(q => q.x)) - 12;
+    if (right && to[0] > c.r) ex = Math.min(ex, to[0] - 6); else if (!right && to[0] < c.l) ex = Math.max(ex, to[0] + 6);   // it stops before a thing outside the column
+    return [[sx, sy], [sx, gy], [ex, gy], [ex, to[1]], to];
+  }
+  // An SVG path through `pts` with each corner rounded.
+  function rounded(pts, r = 12) {
+    let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let k = 1; k < pts.length - 1; k++) {
+      const [a, b, c] = [pts[k - 1], pts[k], pts[k + 1]], la = Math.hypot(b[0] - a[0], b[1] - a[1]), lc = Math.hypot(c[0] - b[0], c[1] - b[1]);
+      if (la < .5 || lc < .5) continue;
+      const q = Math.min(r, la / 2, lc / 2), p0 = [b[0] + (a[0] - b[0]) * q / la, b[1] + (a[1] - b[1]) * q / la], p1 = [b[0] + (c[0] - b[0]) * q / lc, b[1] + (c[1] - b[1]) * q / lc];
+      d += ` L${p0[0].toFixed(1)} ${p0[1].toFixed(1)} Q${b[0].toFixed(1)} ${b[1].toFixed(1)} ${p1[0].toFixed(1)} ${p1[1].toFixed(1)}`;
+    }
+    const e = pts[pts.length - 1];
+    return d + ` L${e[0].toFixed(1)} ${e[1].toFixed(1)}`;
+  }
+
   // --- marks: `place` reads the page and builds the parts; `paint` sets them for one moment ------------------------------------
   const PASTEL = ['pink', 'green', 'blue', 'yellow', 'violet', 'peach'], MARKS = ['circle', 'box', 'underline', 'label'], PANEL = ['panel', 'row', 'note'];
   // Whether the box `b` of a mark holds a thing to mark: words, a formula part or a picture. A mark on empty space is not drawn.
@@ -259,10 +330,12 @@
     return false;
   }
   // One light Rough.js stroke from `from` to `to` in the group of mark `m`, then a filled head that springs in. `w` scales its weight. It adds its parts and gives when it ends.
-  function inkArrow(m, parts, from, to, at = 0, w = 1, cls = 'board-fill') {
+  // With `way` (points from `around`), the shaft follows that way, with round corners and less wobble, so it stays off the text.
+  function inkArrow(m, parts, from, to, at = 0, w = 1, cls = 'board-fill', way = null) {
     const rc = rough.svg(layer()), ink = css('--board-ink') || '#b5551c';
-    const c = [(from[0] + to[0]) / 2 + (to[1] - from[1]) * .18, (from[1] + to[1]) / 2 - (to[0] - from[0]) * .18];
-    const shaft = rc.curve([from, c, to], {stroke: ink, strokeWidth: 1.8 * w, roughness: .7, bowing: .6, disableMultiStroke: true, preserveVertices: true, seed: m.seed});
+    const c = way ? way[way.length - 2] : [(from[0] + to[0]) / 2 + (to[1] - from[1]) * .18, (from[1] + to[1]) / 2 - (to[0] - from[0]) * .18];
+    const pen = {stroke: ink, strokeWidth: 1.8 * w, disableMultiStroke: true, preserveVertices: true, seed: m.seed};
+    const shaft = way ? rc.path(rounded(way), {...pen, roughness: .25, bowing: .2}) : rc.curve([from, c, to], {...pen, roughness: .7, bowing: .6});
     m.g.append(shaft);
     const line = shaft.querySelector('path'), L = line ? line.getTotalLength() : 0, dur = clamp(L * 1.4, 380, 640);
     if (line) { line.setAttribute('stroke-linecap', 'round'); parts.push({kind: 'dash', el: line, L, at, dur}); }
@@ -417,8 +490,8 @@
       if (p.dataset.beat !== beat) {   // a new beat: its own title, heading and columns, and none of the rows before
         p.dataset.beat = beat; p.classList.toggle('numbered', !!o.numbered);
         const [t, h, cs, rs] = p.children;
-        t.textContent = o.title || ''; h.textContent = o.head || '';
-        cs.replaceChildren(...(o.cols || []).map(c => el('span', '', c)));
+        richInto(t, o.title || ''); richInto(h, o.head || '');
+        cs.replaceChildren(...(o.cols || []).map(c => richInto(el('span', '', null), c)));
         grid(p, (o.cols || []).length);
         [...rs.children].forEach(r => { if (r.dataset.beat !== beat) r.remove(); });
       }
@@ -431,13 +504,14 @@
     const b = o.at !== undefined ? locate(o.at) : null;
     if (!p.dataset.docked || (b && m === st.marks.find(x => x.o.op === 'row' && x.o.at !== undefined))) { dockPanel(p, b); p.dataset.docked = '1'; }
     if (!m.el || !m.el.isConnected) {
-      m.el = el('div', o.op === 'note' ? 'board-panel-note' : 'board-row' + (o.chain ? ' chain' : ''), o.op === 'note' ? o.text : null);
+      m.el = el('div', o.op === 'note' ? 'board-panel-note' : 'board-row' + (o.chain ? ' chain' : ''), null);
+      if (o.op === 'note') richInto(m.el, o.text);
       m.el.dataset.step = m.step; m.el.dataset.beat = beat;
       if (o.op === 'row') {
         const n = [...p.querySelectorAll('.board-row')].length + 1;
         if (p.classList.contains('numbered')) m.el.append(el('span', 'board-row-n', String(n)));
-        o.cells.forEach((c, k) => { if (k && o.chain) m.el.append(el('span', 'board-row-arrow', '→')); m.el.append(el('span', o.chain ? 'board-word' : 'board-cell', c)); });
-        if (o.to != null) m.el.append(el('span', 'board-row-arrow long', '⟶'), el('span', 'board-cell board-target', o.to));
+        o.cells.forEach((c, k) => { if (k && o.chain) m.el.append(el('span', 'board-row-arrow', '→')); m.el.append(richInto(el('span', o.chain ? 'board-word' : 'board-cell', null), c)); });
+        if (o.to != null) m.el.append(el('span', 'board-row-arrow long', '⟶'), richInto(el('span', 'board-cell board-target', null), o.to));
         const nc = +p.dataset.cols;
         if (nc && !o.chain) {   // each cell in the column of its head
           const cells = [...m.el.querySelectorAll('.board-cell:not(.board-target)')];
@@ -460,7 +534,9 @@
       const c0 = (m.el.querySelector('.board-cell, .board-word') || m.el).getBoundingClientRect();
       const inline = p.classList.contains('inline'), x0 = c0.left + scrollX, under = inline && x0 < b.x + b.w && b.x < c0.right + scrollX;
       const to = [x0 + Math.min(18, c0.width / 2), c0.top + scrollY - 3], from = inline ? [b.x + b.w / 2, b.y + b.h + 8] : [b.x + b.w + 10, b.y + b.h / 2];
-      if (!under) land = inkArrow(m, parts, from, to, 120, .8);   // in the page, a curve goes down from the ring, never back up across the text
+      const side = [m.el.getBoundingClientRect().left + scrollX - 4, c0.top + scrollY + c0.height / 2], way = !inline && x0 > b.x + b.w ? around(b, side) : null;   // to the left edge of the row, around the text
+      if (way) land = inkArrow(m, parts, way[0], side, 120, .8, 'board-fill', way);
+      else if (!under) land = inkArrow(m, parts, from, to, 120, .8);   // in the page, a curve goes down from the ring, never back up across the text
     } else for (const e of [m.g, m.ring]) if (e) e.style.display = 'none';
     if (o.op === 'note') parts.push({kind: 'node', el: m.el, at: land, dur: 260});
     else [...m.el.children].forEach((c, k) => parts.push({kind: 'node', el: c, at: land + 80 * k, dur: 260}));   // the row when the curve lands, then each cell
@@ -493,16 +569,17 @@
     const others = st.marks.filter(x => x !== m && x.step === m.step && x.o.op === 'label' && x.box).map(x => x.box);
     const hits = (r, q, p = 0) => r.x < q.x + q.w + p && q.x < r.x + r.w + p && r.y < q.y + q.h + p && q.y < r.y + r.h + p;
     const maxX = Math.max(document.documentElement.scrollWidth, scrollX + innerWidth) - w - 4;
-    let pick = null;
-    for (const side of sides) {
-      let x = b.x + b.w / 2 - w / 2, y = b.y - h - gap;
-      if (side === 'below') y = b.y + b.h + gap;
-      if (side === 'left') { x = b.x - w - gap; y = b.y + b.h / 2 - h / 2; }
-      if (side === 'right') { x = b.x + b.w + gap; y = b.y + b.h / 2 - h / 2; }
+    const c = column(b), mx = b.x + b.w / 2 - w / 2, my = b.y + b.h / 2 - h / 2, pan = document.getElementById('board-panel');
+    const pb = pan && !pan.classList.contains('inline') ? pageRect(pan.getBoundingClientRect()) : null;
+    const spots = sides.map(side => side === 'below' ? [mx, b.y + b.h + gap, side] : side === 'left' ? [b.x - w - gap, my, side] : side === 'right' ? [b.x + b.w + gap, my, side] : [mx, b.y - h - gap, side]);
+    if (c) spots.push([mx, c.top - h - 10, 'above'], [c.r + 16, my, 'right'], [c.l - w - 16, my, 'left'], [mx, c.bottom + 10, 'below']);   // above the block, in a margin, under the block
+    let pick = null, best = Infinity;
+    spots.forEach(([x, y, side], k) => {   // the least cost: never on the thing or on its own lines, then the least text under it, then the order
       const r = {x: clamp(x, 4, maxX), y: Math.max(4, y), w, h, side};
-      if (!hits(r, b, pad) && !others.some(q => hits(r, q, 4))) { pick = r; break; }
-      pick = pick || r;
-    }
+      const mine = c ? c.lines.reduce((s, q) => s + area(q, r), 0) : 0, any = c ? c.page.reduce((s, q) => s + area(q, r), 0) : 0;
+      const cost = (hits(r, b, pad) ? 1e9 : 0) + (others.some(q => hits(r, q, 4)) ? 1e8 : 0) + (pb && hits(r, pb, 6) ? 1e8 : 0) + (r.x !== x ? 1e7 : 0) + mine * 1e3 + any + k;
+      if (cost < best) { best = cost; pick = r; }
+    });
     m.box = pick;
     m.el.style.left = pick.x + 'px'; m.el.style.top = pick.y + 'px';
     m.el.style.transformOrigin = {above: '50% 100%', below: '50% 0', left: '100% 50%', right: '0 50%'}[pick.side];
@@ -731,29 +808,54 @@
   }
   // The words of a step, with its maths: `$…$` is one part, and a bare W_Q or d_{k} (one letter with a short subscript) is maths too.
   // A part with maths is drawn by KaTeX where the page loaded it (trust off), else as text with <sub> elements. Model text never goes in as HTML.
+  // A longer bare token is maths too when it is made only of maths atoms (w_1x_1, x_i^2, \sum_i) with a script or a command in it,
+  // and has no two bare letters in a row: alpha_bar and x_train are code names, not maths.
   const BARE = /^([A-Za-z])_(\{[^{}\s]{1,12}\}|[A-Za-z0-9]{1,3})([.,;:!?)]*)$/;
+  const SCRIPT = String.raw`[_^](?:\{[^{}\s]{1,12}\}|[A-Za-z0-9]{1,2})`;
+  const ATOM = new RegExp(String.raw`\\[A-Za-z]+(?:${SCRIPT})*|[A-Za-z0-9](?:${SCRIPT})+|[A-Za-z]|\d+(?:\.\d+)?|[+\-=*/(),']`, 'y');
+  function mathy(t) {
+    let k = 0, bare = false, mark = false;
+    for (ATOM.lastIndex = 0; k < t.length;) {
+      const m = ATOM.exec(t);
+      if (!m) return false;
+      const b = /^[A-Za-z]$/.test(m[0]);
+      if (b && bare) return false;
+      bare = b; mark = mark || /[_^\\]/.test(m[0]); k = ATOM.lastIndex;
+    }
+    return mark;
+  }
   function sayParts(text) {
     const out = [];
     for (const m of String(text || '').matchAll(/\$([^$]+)\$([.,;:!?)]*)|(\S+)/g)) {
       if (m[1] != null) { out.push({tex: m[1], after: m[2]}); continue; }
-      const b = m[3].match(BARE);
-      out.push(b ? {tex: `${b[1]}_${b[2]}`, after: b[3]} : m[3]);
+      const b = m[3].match(BARE), t = m[3].match(/^(.*?)([.,;:!?)]*)$/);
+      out.push(b ? {tex: `${b[1]}_${b[2]}`, after: b[3]} : t[1] && mathy(t[1]) ? {tex: t[1], after: t[2]} : m[3]);
     }
     return out;
   }
+  const SIGNS = {sum: '∑', prod: '∏', cdot: '·', times: '×', ldots: '…', cdots: '⋯', dots: '…', to: '→', le: '≤', ge: '≥', ne: '≠', approx: '≈',
+                 infty: '∞', partial: '∂', nabla: '∇', sqrt: '√', alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', theta: 'θ', lambda: 'λ',
+                 mu: 'μ', pi: 'π', sigma: 'σ', tau: 'τ', phi: 'φ', omega: 'ω', Sigma: 'Σ', Delta: 'Δ'};
   function texInto(span, w) {
     if (typeof w === 'string') { span.textContent = w; return span; }
     const m = el('span', 'board-tex', null);
     try { if (!window.katex) throw 0; katex.render(w.tex, m, {throwOnError: false, trust: false, strict: false}); }
-    catch (e) {   // no KaTeX: each _x or _{xy} is a <sub> with its text
-      m.replaceChildren();
+    catch (e) {   // no KaTeX: each _x or _{xy} is a <sub>, each ^x a <sup>, and a command its sign (\sum is ∑), in italic as maths is
+      m.replaceChildren(); m.classList.add('plain');
+      const sign = t => t.replace(/\\([A-Za-z]+)\s*/g, (_, c) => SIGNS[c] ?? c);
       let at = 0;
-      for (const s of w.tex.matchAll(/_(\{([^{}]*)\}|(.))/g)) { m.append(w.tex.slice(at, s.index)); m.append(el('sub', '', s[2] ?? s[3])); at = s.index + s[0].length; }
-      m.append(w.tex.slice(at));
+      for (const s of w.tex.matchAll(/([_^])(\{([^{}]*)\}|(.))/g)) { m.append(sign(w.tex.slice(at, s.index))); m.append(el(s[1] === '_' ? 'sub' : 'sup', '', sign(s[3] ?? s[4]))); at = s.index + s[0].length; }
+      m.append(sign(w.tex.slice(at)));
     }
     span.append(m);
     if (w.after) span.append(w.after);
     return span;
+  }
+  // Model text into `node`, with its maths drawn as the strip draws it: a panel cell, head, title, column name or note.
+  function richInto(node, text) {
+    node.replaceChildren();
+    sayParts(text).forEach((w, k) => { if (k) node.append(' '); if (typeof w === 'string') node.append(w); else texInto(node, w); });
+    return node;
   }
   function light(k) {
     if (!st || k <= st.lit) return;

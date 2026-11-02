@@ -134,3 +134,7 @@
 .board-row-n { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid currentColor; font-size: 15px; display: inline-grid; place-items: center; }
 .board-panel-note { margin: 0; font-size: 18px; color: var(--paper-mute); }
 @media print { .board-panel { display: none; } }
+/* Maths in the strip and the panel (board.js texInto): KaTeX where the page loaded it, else plain text in italic with <sub> and <sup>. */
+.board-tex.plain { font-style: italic; }
+.board-tex.plain :is(sub, sup) { font-size: .75em; }
+.board-panel .board-tex .katex { font-size: 1.05em; }
