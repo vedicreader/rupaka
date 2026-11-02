@@ -40,6 +40,8 @@ Who this is for:
 - A human learner, of any level. The demo is there to make the idea felt, not to repeat the statement.
 - Start from one concrete case with real, small numbers or words. Let the learner see the rule work on it. Name the general rule only after that.
 - Never only restate the definition. Show what changes when an input changes, and why.
+- The "ask" sets the scene with the concrete case, in everyday words. It does not open with the formal definition.
+- The caption says why the result came out this way. Give the reason in plain words, or a short analogy and where it stops being true.
 - When the prompt gives the learner's level, fit the case and the words to it: a new learner gets a familiar everyday case and no jargon; an expert gets a harder edge case and the exact terms.
 Rules:
 - One concept. At least one gate. The learner predicts before the demo shows any result.
@@ -90,7 +92,7 @@ def repair_prompt(spec, errors) -> str:
     "The prompt that asks the model to fix only `errors` in `spec`."
     s = spec if isinstance(spec, str) else json.dumps(spec, ensure_ascii=False)
     return (f"This demo spec has errors.\n\nSpec:\n{s}\n\nErrors:\n" + '\n'.join(f'- {e}' for e in errors)
-            + '\n\nFix only these errors. Keep the rest. Return the whole spec as JSON only.')
+            + '\n\nFix only these errors. Keep the rest, and keep the concrete case and the plain words of the text. Return the whole spec as JSON only.')
 
 # %% ../nbs/03_agent.ipynb #c019
 def parse_json(s:str) -> dict:

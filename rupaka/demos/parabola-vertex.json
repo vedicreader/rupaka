@@ -22,6 +22,6 @@
       {"type": "slider", "bind": "b", "label": "b", "min": -4, "max": 4, "step": 0.5, "lock": "move"},
       {"type": "slider", "bind": "a", "label": "a", "min": 0.25, "max": 3, "step": 0.25, "lock": "move"}
     ]},
-    {"type": "caption", "after": "move", "text": "The lowest point is at x = −b / 2a = **{vx:2}**. Set b to −2. Then make a larger. What does a do to the lowest point?"}
+    {"type": "caption", "after": "move", "text": "The lowest point is at x = −b / 2a = **{vx:2}**. The b·x part lifts the right side and drops the left side. So the low point slides left and down. Set b to −2. Then make a larger. What does a do to the lowest point?"}
   ]
 }
