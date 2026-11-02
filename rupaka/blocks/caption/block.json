@@ -1,7 +1,7 @@
 {
   "name": "caption",
   "since": "0.0.1",
-  "purpose": "The explain text after a reveal. End it with one new question that the learner can answer only by using the controls.",
+  "purpose": "The explain text after a reveal. Say in plain words why the result came out this way; do not only repeat the rule. End it with one new question that the learner can answer only by using the controls.",
   "binds": "none",
   "keys": "none",
   "props": {
