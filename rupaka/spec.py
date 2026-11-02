@@ -427,9 +427,10 @@ def _ancestors(k, deps):
 
 # %% ../nbs/00_spec.ipynb #c053
 MAX_WORDS = 20
+_TOKEN = r"[\w’'{}.:-]+"   # a word, as `long_sentences` counts it
 def long_sentences(s:str) -> list:
     "The sentences of `s` that have more than `MAX_WORDS` words."
-    return [x for x in re.split(r'(?<=[.?!])\s+', str(s)) if len(re.findall(r"[\w’'{}.:-]+", x)) > MAX_WORDS]
+    return [x for x in re.split(r'(?<=[.?!])\s+', str(s)) if len(re.findall(_TOKEN, x)) > MAX_WORDS]
 
 # %% ../nbs/00_spec.ipynb #83a9fac6
 MAX_GRADE = 9
@@ -469,7 +470,7 @@ def plain_why(text:str, terms=()) -> list:
     t = str(text or '')
     s, out = _bare(t, terms), []
     for x in (y for line in s.split('\n') for y in long_sentences(line)):
-        out.append(f'a sentence has {len(_WORD.findall(x))} words, more than {MAX_WORDS}: "{" ".join(x.split()[:6])} ..."')
+        out.append(f'a sentence has {len(re.findall(_TOKEN, x))} words, more than {MAX_WORDS}: "{" ".join(x.split()[:6])} ..."')
     if len(_WORD.findall(s)) >= 12 and (g := grade(t, terms)) > MAX_GRADE: out.append(f'the reading grade is {g:.0f}, more than {MAX_GRADE}: use shorter words and shorter sentences')
     if ';' in s: out.append('a semicolon joins two sentences: write two sentences')
     low = _CUT.sub(' ', t).lower()

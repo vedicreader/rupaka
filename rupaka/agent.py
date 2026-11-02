@@ -162,7 +162,7 @@ def keeps(old:str, new:str, keep=()) -> bool:
 def _better(old:str, new, terms=(), keep=()) -> bool:
     "Whether the text `new` is a plainer `old` that keeps its maths, code, numbers and `keep` texts."
     if not isinstance(new, str) or not (new := new.strip()) or (new[0] in '{[' and old.strip()[:1] not in '{['): return False
-    if not len(old) / 3 <= len(new) <= 2 * len(old) + 40: return False
+    if not len(old) / 3 <= len(new) <= 3 * len(old) + 80: return False   # a plain text can be longer: it says the setup
     return keeps(old, new, keep) and len(plain_why(new, terms)) < len(plain_why(old, terms))
 
 def plain(ask, x, terms=(), keep=()):
