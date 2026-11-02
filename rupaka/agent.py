@@ -36,6 +36,11 @@ SHAPE = '''{"rupaka": 1, "id": "short-slug", "title": str, "ask": str,
 def demo_sp() -> str:
     "The system prompt of the demo agent."
     return f"""You design one interactive demo that makes the learner think. You write a JSON spec. You never write code.
+Who this is for:
+- A human learner, of any level. The demo is there to make the idea felt, not to repeat the statement.
+- Start from one concrete case with real, small numbers or words. Let the learner see the rule work on it. Name the general rule only after that.
+- Never only restate the definition. Show what changes when an input changes, and why.
+- When the prompt gives the learner's level, fit the case and the words to it: a new learner gets a familiar everyday case and no jargon; an expert gets a harder edge case and the exact terms.
 Rules:
 - One concept. At least one gate. The learner predicts before the demo shows any result.
 - Every block that shows a value the gate's answer depends on has "after": the gate id. Inputs can show before the gate; results cannot.
@@ -67,13 +72,14 @@ def _brief(spec):
     return {**spec, 'tables': {k: v[:3] for k, v in spec['tables'].items()}} if spec.get('tables') else spec
 
 # %% ../nbs/03_agent.ipynb #c014
-def demo_prompt(concept, first_error:str='', examples=()) -> str:
+def demo_prompt(concept, first_error:str='', examples=(), level:str='') -> str:
     "The prompt that asks for a demo on `concept`, a dict with name, statement, subject and misconceptions."
     mis = '; '.join(concept.get('misconceptions') or []) or 'none known'
     ex = '\n\n'.join(json.dumps(_brief(e), ensure_ascii=False) for e in examples)
     return (f"Concept: {concept['name']} (subject: {concept.get('subject') or 'general'})\n"
             f"Statement: {concept.get('statement') or '(none given)'}\nMisconceptions seen: {mis}\n"
             + (f"The learner's first error: {first_error}\n" if first_error else '')
+            + (f"The learner's level: {level}. Fit the first case and the words to this level.\n" if level else '')
             + "\nDesign one demo that makes the learner predict, then see, then change the inputs."
             + (" Aim the gate at the first error and the misconceptions." if first_error or concept.get('misconceptions') else '')
             + (f"\n\nExamples of good demos (tables cut short):\n{ex}" if ex else '')
@@ -102,12 +108,12 @@ def parse_json(s:str) -> dict:
 # %% ../nbs/03_agent.ipynb #c022
 def _slug(s): return re.sub(r'[^a-z0-9]+', '-', str(s).lower()).strip('-') or 'demo'
 
-def author(concept, ask, first_error:str='', examples=None, check=True, repairs:int=2, log:list=None) -> dict|None:
+def author(concept, ask, first_error:str='', examples=None, check=True, repairs:int=2, log:list=None, level:str='') -> dict|None:
     "A checked demo spec on `concept` from the model `ask`, or None after `repairs` failed repairs."
     c = concept if isinstance(concept, dict) else dict(name=str(concept))
     slug = c.get('slug') or _slug(c['name'])
     if check is True: from rupaka.check import check
-    prompt, sp = demo_prompt(c, first_error, near(c) if examples is None else examples), demo_sp()
+    prompt, sp = demo_prompt(c, first_error, near(c) if examples is None else examples, level), demo_sp()
     log = [] if log is None else log
     for i in range(repairs + 1):
         try: reply = ask(prompt, sp)
