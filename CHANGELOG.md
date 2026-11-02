@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.11
+
+- The panel of the board follows the steps. A panel row moves to the step whose line names it. A row that names nothing on the page drops. `key_terms`, `named` and `page_terms` find the words and maths tokens that a line and a row share.
+- A cell of the panel can hold maths. A `$` sign does not count toward the length of a cell.
+- The curve from a row to its line goes around the text, and a label stays off the lines that it marks.
+- A mark on a part of a formula finds the block of that part. A label tries more places above the block before it gives up.
+
 ## 0.0.10
 
 - A new module, `rupaka.board`, has the board of the screen guide, from abhyasa 0.0.16: the board language (`OPS`, `FIELDS`, `LIMITS`), `check_line`, `parse_board`, `clean_context`, `norm_tex`, the video cues (`cue_at`, `cue_quote`, `video_id`, `video_cues`) and `stream_board`. It needs only fastcore. `parse_board` and `stream_board` take `verbatim`, the check of a quote, so an app can give its own rules for sources.
