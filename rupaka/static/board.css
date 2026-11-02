@@ -117,13 +117,13 @@
 .board-panel-rows { display: flex; flex-direction: column; gap: 12px; }
 .board-row > *, .board-panel-note { opacity: 0; }
 .board-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.board-cell { padding: 6px 14px; border-radius: 4px; border: 1.5px solid var(--paper-cell-line); background: var(--paper-cell); font: 500 15px/1.3 var(--paper-mono); }
+.board-cell { padding: 6px 14px; border-radius: 4px; border: 1.5px solid var(--paper-cell-line); background: var(--paper-cell); font: 500 calc(15px * var(--fit, 1))/1.3 var(--paper-mono); white-space: nowrap; }
 .board-cell.board-target { margin-left: auto; border-color: var(--paper-hot-line); background: var(--paper-hot); }
 .board-row-arrow { opacity: .8; }
 .board-row-arrow.long { flex: 1; min-width: 32px; margin: 0 14px; height: 0; position: relative; font-size: 0; color: transparent; border-top: 1.5px solid var(--paper-ink); }
 .board-row-arrow.long::after { content: ''; position: absolute; right: -1px; top: -5.5px; width: 8px; height: 8px; border: solid var(--paper-ink); border-width: 1.5px 1.5px 0 0; transform: rotate(45deg); }
 .board-row.chain { gap: 10px; }
-.board-word { font-size: 21px; }
+.board-word { font-size: calc(21px * var(--fit, 1)); white-space: nowrap; }
 /* With column names (.cols), the heads and each row that is not a chain use one grid (board.js sets --grid and the column of each
    cell), so a head stands over the middle of its cells. */
 .board-panel.cols :is(.board-panel-cols, .board-row:not(.chain)) { display: grid; grid-template-columns: var(--grid); column-gap: 8px; align-items: center; justify-items: center; }
@@ -135,8 +135,20 @@
    words of the rows above, and each arrow under the arrows. A note goes across the whole panel. */
 .board-panel.chains .board-panel-rows { display: grid; grid-template-columns: var(--chain); row-gap: 12px; }
 .board-panel.chains .board-panel-rows > * { grid-column: 1 / -1; }
-.board-panel.chains .board-row.chain { display: grid; grid-template-columns: subgrid; align-items: center; justify-items: center; }
-.board-panel.chains .board-row.chain > .board-word { max-width: 100%; text-align: center; overflow-wrap: break-word; }
+.board-panel.chains .board-row { display: grid; grid-template-columns: subgrid; align-items: center; justify-items: center; }
+.board-panel.chains .board-row > .board-word { max-width: 100%; text-align: center; }
+.board-panel.chains .board-row-arrow.long { justify-self: stretch; min-width: 0; margin: 0 6px; }
+.board-panel.chains .board-row > .board-cell { margin: 0; padding: 0; border: 0; background: none; font: calc(21px * var(--fit, 1))/1.25 var(--hand); }   /* a pair in a list looks as a chain */
+.board-panel.wrap :is(.board-cell, .board-word, .board-node) { white-space: normal; }
+/* A flow diagram (board.js layoutFlow): boxes in the hand look of the paper, placed by the script; the arrows and the loops are in
+   one SVG under them. */
+.board-flow { position: relative; margin: 4px 0; }
+.board-flow-lines { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.board-node { position: absolute; padding: 6px 14px; border-radius: 10px; border: 1.5px solid var(--paper-cell-line); background: var(--paper-cell);
+              font-size: calc(19px * var(--fit, 1)); line-height: 1.25; white-space: nowrap; transition: left .25s, top .25s; }
+.board-flow-line { fill: none; stroke: var(--paper-ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.board-flow-head { fill: var(--paper-ink); transform-box: fill-box; transform-origin: center; }
+.board-flow-label { position: absolute; font-size: calc(14px * var(--fit, 1)); color: var(--paper-mute); white-space: nowrap; }
 .board-row-n { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid currentColor; font-size: 15px; display: inline-grid; place-items: center; }
 .board-panel-note { margin: 0; font-size: 18px; color: var(--paper-mute); }
 @media print { .board-panel { display: none; } }

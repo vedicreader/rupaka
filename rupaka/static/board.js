@@ -87,6 +87,11 @@
 //            the thing that its first row marks.
 //   Before a step draws, the page scrolls its first mark into view when it is off screen or under the strip.
 //   note     {text}: one quiet line of the panel.
+//   node     {id, text}: one box of a flow diagram in the panel. The boxes go from the top down: a box is one rank under the boxes
+//            that point to it, and the boxes of one rank stand side by side (a branch).
+//   edge     {from, to, text}: an arrow from box `from` to box `to`, with a short label. An arrow to a box above it, or to the same
+//            box, is a loop: it goes around on the right side. Each new box or arrow lays out the diagram again, and the arrows move
+//            with their boxes. A cell, a word or a box does not wrap: the panel makes its type smaller, to 80 %, before it lets one wrap.
 //   A circle, box, underline or label needs a thing under it: on a bare point, on a box of no size, or on a part of its anchor
 //   with no text and no picture in it, it is not drawn (it would be an empty mark). The server drops a bare point too.
 // Events on document: board:first (the first mark shows), board:stop (detail.by is 'learner' after Esc or Stop, else '').
@@ -329,7 +334,7 @@
   }
 
   // --- marks: `place` reads the page and builds the parts; `paint` sets them for one moment ------------------------------------
-  const PASTEL = ['pink', 'green', 'blue', 'yellow', 'violet', 'peach'], MARKS = ['circle', 'box', 'underline', 'label'], PANEL = ['panel', 'row', 'note'];
+  const PASTEL = ['pink', 'green', 'blue', 'yellow', 'violet', 'peach'], MARKS = ['circle', 'box', 'underline', 'label'], PANEL = ['panel', 'row', 'note', 'node', 'edge'];
   // Whether the box `b` of a mark holds a thing to mark: words, a formula part or a picture. A mark on empty space is not drawn.
   const REPLACED = /^(IMG|SVG|CANVAS|VIDEO|INPUT|TEXTAREA|SELECT|BUTTON|IFRAME|PICTURE)$/i;
   const meets = (r, b) => r.width > 0 && r.height > 0 && r.left + scrollX < b.x + b.w && b.x < r.right + scrollX && r.top + scrollY < b.y + b.h && b.y < r.bottom + scrollY;
@@ -504,12 +509,130 @@
   }
   // The chains of a panel: one grid for all of them (--chain), with a column for each word and a column for each arrow between, so
   // the words and the arrows of the rows line up. The rows are a subgrid of it, so each column is as wide as its widest word.
+  // A pair in a panel of chains (a list) has its cells in the first columns and its answer in the last one, with a long arrow between.
   function chains(p) {
-    const rs = [...p.querySelectorAll('.board-row.chain')].filter(r => r.dataset.beat === p.dataset.beat);
-    const n = Math.max(0, ...rs.map(r => r.querySelectorAll('.board-word').length));
+    const rs = [...p.querySelectorAll('.board-row')].filter(r => r.dataset.beat === p.dataset.beat), ch = rs.filter(r => r.classList.contains('chain'));
+    const parts = r => r.classList.contains('chain') ? r.querySelectorAll('.board-word').length : r.querySelectorAll('.board-cell').length;
+    const n = ch.length && !p.dataset.cols ? Math.max(...rs.map(parts)) : 0, lead = p.classList.contains('numbered') ? 1 : 0;
     p.classList.toggle('chains', n > 1);
     if (n < 2) return p.style.removeProperty('--chain');
-    p.style.setProperty('--chain', `${p.classList.contains('numbered') ? '24px ' : ''}repeat(${n - 1}, auto 28px) auto`);
+    p.style.setProperty('--chain', `${lead ? '24px ' : ''}repeat(${n - 1}, auto 28px) auto`);
+    for (const r of rs) {
+      if (r.classList.contains('chain')) continue;
+      const cells = [...r.querySelectorAll('.board-cell:not(.board-target)')], arrow = r.querySelector('.board-row-arrow.long'), to = r.querySelector('.board-target');
+      cells.forEach((c, k) => c.style.gridColumn = String(lead + 2 * k + 1));
+      if (arrow) arrow.style.gridColumn = `${lead + 2 * cells.length} / ${lead + 2 * n - 1}`;
+      if (to) to.style.gridColumn = String(lead + 2 * n - 1);
+    }
+  }
+  // No cell, word or box wraps: while one does not fit, the type of the panel gets smaller, down to 80 %. Then it may wrap.
+  function fit(p) {
+    const rows = p.querySelector('.board-panel-rows'), f = p.querySelector('.board-flow');
+    const over = () => (f ? layoutFlow(f) : false) || rows.scrollWidth > rows.clientWidth + 1
+      || [...rows.querySelectorAll('.board-cell, .board-word')].some(e => e.scrollWidth > e.clientWidth + 4);   // KaTeX glyphs stand out 1 to 3 px: that is no wrap
+    p.classList.remove('wrap');
+    let k = 1;
+    p.style.setProperty('--fit', '1');
+    while (over() && k > .8) { k = Math.round((k - .05) * 100) / 100; p.style.setProperty('--fit', String(k)); }
+    if (k <= .8 && over()) { p.classList.add('wrap'); if (f) layoutFlow(f); }
+  }
+
+  // --- the flow diagram of a panel (node, edge; see the API) ----------------------------------------------------------------
+  const FLOW = {gap: 40, side: 16, loop: 14};
+  function flowEl(p, beat) {
+    let f = p.querySelector('.board-flow');
+    if (!f) { f = el('div', 'board-flow', null); f.dataset.beat = beat; f.append(svgEl('svg', 'board-flow-lines')); p.lastElementChild.append(f); }
+    return f;
+  }
+  // The places of the boxes and the paths of the arrows of flow `f`, from what is in it now. True when a rank is wider than the flow.
+  function layoutFlow(f) {
+    const boxes = [...f.querySelectorAll('.board-node')], ids = boxes.map(b => b.dataset.id), at = id => ids.indexOf(id);
+    const gs = [...f.querySelectorAll('g.board-flow-edge')].filter(g => at(g.dataset.from) > -1 && at(g.dataset.to) > -1);
+    const rank = {};
+    ids.forEach((id, k) => {
+      const ins = gs.filter(g => g.dataset.to === id && at(g.dataset.from) < k && g.dataset.from !== id).map(g => rank[g.dataset.from] + 1);
+      rank[id] = ins.length ? Math.max(...ins) : k ? rank[ids[k - 1]] + 1 : 0;
+    });
+    const up = gs.filter(g => rank[g.dataset.to] < rank[g.dataset.from] || g.dataset.to === g.dataset.from);
+    const labels = up.map(g => g.label ? g.label.offsetWidth : 0), W = f.clientWidth;
+    const room = up.length ? FLOW.loop + 10 * (up.length - 1) + Math.max(0, ...labels) + 8 : 0, A = Math.max(80, W - room);
+    const geo = {}, ranks = [...new Set(ids.map(id => rank[id]))].sort((a, b) => a - b);
+    let y = 0, over = false;
+    for (const r of ranks) {
+      const bs = boxes.filter(b => rank[b.dataset.id] === r), ws = bs.map(b => b.offsetWidth), h = Math.max(...bs.map(b => b.offsetHeight));
+      const total = ws.reduce((a, b) => a + b, 0) + FLOW.side * (bs.length - 1);
+      over = over || total > A + 1;
+      let x = Math.max(0, (A - total) / 2);
+      bs.forEach((b, k) => { geo[b.dataset.id] = {x, y: y + (h - b.offsetHeight) / 2, w: ws[k], h: b.offsetHeight}; Object.assign(b.style, {left: x + 'px', top: geo[b.dataset.id].y + 'px'}); x += ws[k] + FLOW.side; });
+      y += h + FLOW.gap;
+    }
+    const H = Math.max(0, y - FLOW.gap);
+    f.style.height = H + 'px';
+    const svg = f.querySelector('svg'); svg.setAttribute('width', W); svg.setAttribute('height', H);
+    const right = Math.max(0, ...Object.values(geo).map(q => q.x + q.w));
+    let low = H;   // a loop under the last boxes needs room under them
+    gs.forEach(g => {
+      const a = geo[g.dataset.from], b = geo[g.dataset.to], j = up.indexOf(g);
+      let pts, d;
+      if (g.dataset.from === g.dataset.to) {   // a loop on one box
+        const x = a.x + a.w, cy = a.y + a.h / 2, k = FLOW.loop + 18;
+        d = `M${x} ${cy - 6} C${x + k} ${cy - 26} ${x + k} ${cy + 26} ${x + 3} ${cy + 6}`; pts = [[x + k, cy + 26], [x + 3, cy + 6]];
+        g.lx = x + k + 4; g.ly = cy - 9;
+      } else if (j > -1) {   // a loop back up: out on the right, up, and in from the right
+        const lx = Math.max(right, a.x + a.w, b.x + b.w) + FLOW.loop + 10 * j, ay = a.y + a.h / 2, by = b.y + b.h / 2;
+        const last = !Object.values(geo).some(q => q !== a && Math.abs(q.y + q.h / 2 - ay) < 2 && q.x > a.x);   // a box on its right: go out under it
+        pts = last ? [[a.x + a.w, ay], [lx, ay], [lx, by], [b.x + b.w + 3, by]]
+                   : [[a.x + a.w / 2, a.y + a.h], [a.x + a.w / 2, a.y + a.h + 12], [lx, a.y + a.h + 12], [lx, by], [b.x + b.w + 3, by]];
+        d = rounded(pts, 10); if (!last) low = Math.max(low, a.y + a.h + 16);
+        g.lx = lx + 6; g.ly = (ay + by) / 2 - 9;
+      } else if (rank[g.dataset.to] === rank[g.dataset.from]) {   // side by side
+        const l = a.x < b.x, y0 = a.y + a.h / 2, y1 = b.y + b.h / 2;
+        pts = [[l ? a.x + a.w : a.x, y0], [l ? b.x - 3 : b.x + b.w + 3, y1]]; d = rounded(pts);
+        g.lx = (pts[0][0] + pts[1][0]) / 2 - 20; g.ly = Math.min(y0, y1) - 18;
+      } else if (rank[g.dataset.to] - rank[g.dataset.from] > 1) {   // past a rank: around on the left, so it crosses no box
+        const lx = Math.max(4, Math.min(a.x, b.x, ...Object.values(geo).filter(q => q.y > a.y && q.y < b.y).map(q => q.x)) - FLOW.loop), ay = a.y + a.h / 2, by = b.y + b.h / 2;
+        pts = [[a.x, ay], [lx, ay], [lx, by], [b.x - 3, by]]; d = rounded(pts, 10);
+        g.lx = lx + 6; g.ly = (ay + by) / 2 - 9;
+      } else {   // down to the next rank
+        const outs = gs.filter(e => e.dataset.from === g.dataset.from && rank[e.dataset.to] === rank[g.dataset.from] + 1), k = outs.indexOf(g);
+        const x0 = a.x + a.w * (k + 1) / (outs.length + 1), y0 = a.y + a.h, x1 = b.x + b.w / 2, y1 = b.y - 3, m = (y1 - y0) / 2;   // a branch leaves from its own place
+        d = `M${x0} ${y0} C${x0} ${y0 + m} ${x1} ${y1 - m} ${x1} ${y1}`; pts = [[x1, y1 - m], [x1, y1]];
+        const lw = g.label ? g.label.offsetWidth : 0;   // the label on the outer side of the curve
+        const mx = (x0 + x1) / 2;   // over the middle of the curve, on its outer side: the curve is on the inner side there
+        g.lx = Math.abs(x1 - x0) < 2 ? x0 + 8 : x1 < x0 ? mx - 4 - lw : mx + 4; g.ly = y0 + m - 17;
+      }
+      const [line, head] = g.children, [[px, py], [ex, ey]] = pts.slice(-2), an = Math.atan2(ey - py, ex - px), c = Math.cos(an), si = Math.sin(an);
+      line.setAttribute('d', d);
+      head.setAttribute('d', `M${ex + c * 2} ${ey + si * 2} L${ex - 10 * c + 5 * si} ${ey - 10 * si - 5 * c} L${ex - 10 * c - 5 * si} ${ey - 10 * si + 5 * c} Z`);
+      if (g.label) Object.assign(g.label.style, {left: g.lx + 'px', top: g.ly + 'px'});
+    });
+    if (low > H) { f.style.height = low + 'px'; svg.setAttribute('height', low); }
+    return over || right > W + 1;
+  }
+  function placeFlow(m, p, beat) {
+    const o = m.o, f = flowEl(p, beat), parts = [];
+    if (!m.el || !m.el.isConnected) {
+      if (o.op === 'node') { m.el = richInto(el('div', 'board-node', null), o.text); m.el.dataset.id = o.id; f.append(m.el); }
+      else {
+        m.el = svgEl('g', 'board-flow-edge'); m.el.dataset.from = o.from; m.el.dataset.to = o.to;
+        m.el.append(Object.assign(svgEl('path', 'board-flow-line'), {}), svgEl('path', 'board-flow-head')); m.el.firstChild.setAttribute('pathLength', '1');
+        f.querySelector('svg').append(m.el);
+        if (o.text) { m.lead = el('div', 'board-flow-label', o.text); f.append(m.lead); m.el.label = m.lead; }
+      }
+      m.el.dataset.step = m.step; m.el.dataset.beat = beat;
+      fit(p);
+    }
+    m.el.style.display = ''; if (m.lead) m.lead.style.display = '';
+    layoutFlow(f);   // a scroll or a resize: the boxes and arrows follow the width of the panel
+    if (o.op === 'node') parts.push({kind: 'node', el: m.el, at: 0, dur: 260});
+    else {
+      parts.push({kind: 'dash', el: m.el.firstChild, L: 1, at: 0, dur: 460}, {kind: 'node', el: m.el.lastChild, at: 420, dur: 200});
+      if (m.lead) parts.push({kind: 'node', el: m.lead, at: 300, dur: 260});
+    }
+    const r = m.el.getBoundingClientRect(), box = {x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height};
+    m.parts = parts; m.aim = box; m.box = box; m.ok = true;
+    m.life = 800;
+    return true;
   }
   const beatOf = m => { const k = st.marks.indexOf(m); return st.marks.slice(0, k + 1).filter(x => x.o.op === 'panel').length; };
   function placePanel(m) {
@@ -532,6 +655,7 @@
     if (p.dataset.beat !== beat) return hide(m);   // a row of an older beat
     const b = o.at !== undefined ? locate(o.at) : null;
     if (!p.dataset.docked || (b && m === st.marks.find(x => x.o.op === 'row' && x.o.at !== undefined))) { dockPanel(p, b); p.dataset.docked = '1'; }
+    if (o.op === 'node' || o.op === 'edge') return placeFlow(m, p, beat);
     if (!m.el || !m.el.isConnected) {
       m.el = el('div', o.op === 'note' ? 'board-panel-note' : 'board-row' + (o.chain ? ' chain' : ''), null);
       if (o.op === 'note') richInto(m.el, o.text);
@@ -550,7 +674,8 @@
         }
       }
       p.lastElementChild.append(m.el);
-      if (o.chain) chains(p);
+      if (o.op === 'row') chains(p);
+      fit(p);
     }
     m.el.style.display = '';
     const r = m.el.getBoundingClientRect(), box = {x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height};

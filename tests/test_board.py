@@ -395,3 +395,37 @@ def test_words_mark_only_whole_words(page):
     "A mark on words finds them from a word boundary to a word boundary, as the server checks them: part of a word marks nothing."
     assert page.evaluate("rupakaBoard.boxOf({a: 'out', text: 'arget'})") is None
     assert page.evaluate("rupakaBoard.boxOf({a: 'out', text: 'target'})")['w'] > 0
+
+E = lambda a, b, text=None: dict(op='edge', **{'from': a, 'to': b}, **({'text': text} if text else {}))
+N = lambda i, text: dict(op='node', id=i, text=text)
+
+def test_a_flow_diagram_grows_with_its_steps(page):
+    "A flow diagram gets its boxes step by step, each a rank under the box that points to it. A branch stands side by side, and a loop back goes around on the right of all boxes."
+    s1 = dict(say='The encoder.', strokes=[dict(op='panel', head='Symbols to symbols'), N('x', 'Input'), N('enc', 'Encoder'), E('x', 'enc')])
+    s2 = dict(say='The decoder.', strokes=[N('dec', 'Decoder'), E('enc', 'dec'), N('y', 'Output'), N('end', 'End'), E('dec', 'y', 'go on'), E('dec', 'end')])
+    s3 = dict(say='Back in.', strokes=[E('y', 'dec', 'earlier outputs')])
+    play(page, [s1, s2, s3])
+    boxes = lambda: page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('.board-node')].filter(b => b.style.display !== 'none').map(b => {
+        const r = b.getBoundingClientRect(); return [b.dataset.id, [r.left, r.top, r.right, r.bottom]]; }))""")
+    assert set(boxes()) == {'x', 'enc'}
+    for _ in range(2): page.evaluate('rupakaBoard.next()'); page.wait_for_function('rupakaBoard.state.done')
+    b = boxes()
+    assert set(b) == {'x', 'enc', 'dec', 'y', 'end'}
+    assert b['x'][1] < b['enc'][1] < b['dec'][1] < b['y'][1] and abs(b['y'][1] - b['end'][1]) < 2 and b['y'][2] <= b['end'][0]   # a branch side by side
+    loop = page.evaluate("""() => { const g = document.querySelector('g.board-flow-edge[data-from=y][data-to=dec] path'), r = g.getBoundingClientRect(); return [r.left, r.right]; }""")
+    assert loop[1] > max(q[2] for q in b.values())   # the loop goes around on the right
+    assert page.evaluate("document.querySelector('.board-flow-label').textContent") == 'go on'
+
+def test_a_pair_in_a_list_puts_its_answer_in_the_last_column(page):
+    "In a panel of chains, a pair of one cell and its answer has the answer under the last word of the chains, and its cell under the first."
+    c = row(['Input', 'Encoder', 'z'], None, chain=True); c.pop('to')
+    play(page, [dict(say='The encoder.', strokes=[dict(op='panel', head='Symbols to symbols'), c, row(['Earlier outputs'], 'Decoder')])])
+    mid = page.evaluate("""() => [...document.querySelectorAll('.board-row')].map(r => [...r.querySelectorAll('.board-word, .board-cell')].map(c => { const b = c.getBoundingClientRect(); return Math.round(b.left + b.width / 2); }))""")
+    assert mid[1][0] == mid[0][0] and mid[1][-1] == mid[0][-1], mid
+
+def test_a_cell_does_not_wrap(page):
+    "A long cell makes the type of the panel smaller, so it stays on one line."
+    play(page, [dict(say='The encoder.', strokes=[dict(op='panel', head='Symbols', cols=['From', 'To']), row(['The input symbols'], 'The output symbols')])])
+    assert float(page.evaluate("document.getElementById('board-panel').style.getPropertyValue('--fit')")) < 1
+    h = page.evaluate("[...document.querySelectorAll('.board-cell')].map(c => [c.getBoundingClientRect().height, parseFloat(getComputedStyle(c).lineHeight)])")
+    assert all(a < 2 * l for a, l in h), h
