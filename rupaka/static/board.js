@@ -182,14 +182,14 @@
       h = Object.assign(document.createElement('div'), {id: 'board-host'});
       h.setAttribute('aria-hidden', 'true');
       const glows = Object.assign(document.createElement('div'), {className: 'board-glows'});
-      const svg = document.createElementNS(NS, 'svg'); svg.id = 'board-layer';
+      const svg = svgEl('svg'); svg.id = 'board-layer';
       const ptr = Object.assign(document.createElement('div'), {id: 'board-pointer'});
-      const tri = document.createElementNS(NS, 'svg'); tri.setAttribute('viewBox', '-8 -8 16 16');
-      const p = document.createElementNS(NS, 'path'); p.setAttribute('d', 'M0 -9.24 L8 4.62 L-8 4.62 Z'); tri.append(p); ptr.append(tri);
+      const tri = svgEl('svg'); tri.setAttribute('viewBox', '-8 -8 16 16');
+      const p = svgEl('path'); p.setAttribute('d', 'M0 -9.24 L8 4.62 L-8 4.62 Z'); tri.append(p); ptr.append(tri);
       h.append(glows, svg, ptr);
       document.body.append(h);
       for (const blend of ['multiply', 'screen']) {
-        const s = document.createElementNS(NS, 'svg'); s.classList.add('board-hl'); s.dataset.blend = blend; s.setAttribute('aria-hidden', 'true');
+        const s = svgEl('svg', 'board-hl'); s.dataset.blend = blend; s.setAttribute('aria-hidden', 'true');
         document.body.append(s);
       }
     }
@@ -528,7 +528,7 @@
       p.lastElementChild.append(m.el);
     }
     m.el.style.display = '';
-    const r = m.el.getBoundingClientRect(), box = {x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height};
+    const box = pageRect(m.el.getBoundingClientRect());
     for (const e of [m.g, m.ring]) if (e) { e.replaceChildren(); e.style.display = ''; }
     let land = 0;
     const twin = b && st.marks.some(x => x !== m && x.step === m.step && x.o.op === 'circle' && JSON.stringify(x.o.at) === JSON.stringify(o.at));
@@ -970,12 +970,12 @@
     if (y >= high && y + Math.min(b.h, low - high) <= low) return;
     scrollTo({top: Math.max(0, b.y - high - Math.max(0, (low - high - b.h) / 2)), behavior: reduced() || st.fast ? 'auto' : 'smooth'});
   }
-  function marksOf(s, k) { return s.strokes.map((o, n) => ({o, step: k, seed: 1 + k * 10 + n, parts: []})); }
+  function marksOf(os, k, from = 0) { return os.map((o, n) => ({o, step: k, seed: 1 + k * 10 + from + n, parts: []})); }
   function add(step) {   // see the API at the top of this file
     if (!st || !st.streaming || !step || typeof step.say !== 'string' || !Array.isArray(step.strokes)) return false;
     if (step.n >= 1 && step.n <= st.board.steps.length) return grow(step.n - 1, step);   // a step that is here: it has more strokes now
     const k = st.board.steps.length;
-    st.board.steps.push(step); st.marks.push(...marksOf(step, k));
+    st.board.steps.push(step); st.marks.push(...marksOf(step.strokes, k));
     if ((st.fast || st.wait) && st.i === k - 1) show(k); else caption();
     return true;
   }
@@ -985,7 +985,7 @@
     const have = st.board.steps[k];
     if (have.say !== step.say) return false;
     const old = new Set(have.strokes.map(o => JSON.stringify(o))), more = step.strokes.filter(o => !old.has(JSON.stringify(o)));
-    const ms = more.map((o, j) => ({o, step: k, seed: 1 + k * 10 + have.strokes.length + j, parts: []}));
+    const ms = marksOf(more, k, have.strokes.length);
     have.strokes.push(...more); st.marks.push(...ms);
     if (st.i === k && st.run) for (const m of ms) ((m.o.w ?? 0) <= st.lit ? late(m) : st.later.push(m));
     return true;
@@ -1006,14 +1006,14 @@
   // caption, bars, pixels or plot block that shows, n from 1 in the depth-first order of the spec. The blocks are built in the
   // order of the spec, so the n-th block is the n-th [data-rk-type]. An id of more than 40 characters is dropped, never cut.
   const cut = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
+  const allBlocks = bs => (bs || []).flatMap(b => [b, ...allBlocks(b.blocks)]);   // depth first, as the spec builds them
+  const gatesDone = s => allBlocks(s.spec.blocks).every(b => b.type !== 'gate' || (s.st.gate && s.st.gate[b.id] === 'done'));
   function demoAnchors(host) {
     const s = host && host.rupaka, spec = s && s.spec;
     if (!spec) return null;
-    const flat = [], walk = bs => (bs || []).forEach(b => { flat.push(b); walk(b.blocks); });
-    walk(spec.blocks);
     const nodes = [...host.querySelectorAll('[data-rk-type]')], inputs = {}, anchors = [], readouts = [];
     const mark = (node, id, a) => { if (id.length <= 40) { node.dataset.guideId = id; anchors.push({id, ...a}); } };
-    flat.forEach((b, n) => {
+    allBlocks(spec.blocks).forEach((b, n) => {
       const node = nodes[n];
       if (b.bind && Object.hasOwn(spec.state || {}, b.bind)) {
         inputs[b.bind] = {value: s.st[b.bind], label: b.label || b.bind, ...(b.min != null && {min: b.min}), ...(b.max != null && {max: b.max}), ...(b.step != null && {step: b.step})};
@@ -1024,19 +1024,16 @@
         mark(node, id, {kind: 'readout', text: cut(node.textContent, 200) || b.label || b.type});
       }
     });
-    const gates = flat.filter(b => b.type === 'gate').map(b => b.id);
     host.dataset.guideId = 'demo';
     anchors.unshift({id: 'demo', kind: 'demo', text: cut((spec.title || '') + '. ' + (spec.ask || ''), 300)});
-    return {anchors, demo: {slug: spec.id || '', inputs, readouts, open: gates.every(g => s.st.gate && s.st.gate[g] === 'done')}};
+    return {anchors, demo: {slug: spec.id || '', inputs, readouts, open: gatesDone(s)}};
   }
   function demo(set) { try { hooks().demo(set); } catch (e) { console.warn('board: demo', e); } }
   function rupaka(set) {   // the default demo: Rupaka.set, only when each gate is done
     const h = anchorEl('demo');
     if (!h || !window.Rupaka || !h.rupaka) return;
-    const s = h.rupaka, gates = [];
-    const walk = bs => (bs || []).forEach(b => { if (b.type === 'gate') gates.push(b.id); walk(b.blocks); });
-    walk(s.spec.blocks);
-    if (!gates.every(g => s.st.gate && s.st.gate[g] === 'done')) return;   // the gate is still closed: never show the result first
+    const s = h.rupaka;
+    if (!gatesDone(s)) return;   // the gate is still closed: never show the result first
     const fit = fitDemo(s.spec, set);
     if (Object.keys(fit).length) Rupaka.set(h, fit);
   }
@@ -1045,9 +1042,8 @@
   // that is not true or false, a number input with no number, and a key that no input binds are dropped.
   const SLIDER = {min: 0, max: 100, step: 1};
   function fitDemo(spec, set) {
-    const by = {}, walk = bs => (bs || []).forEach(b => { for (const k of [b.bind, b.x, b.y, b.angle]) if (typeof k === 'string' && !(k in by)) by[k] = b; walk(b.blocks); });
-    walk(spec && spec.blocks);
-    const out = {};
+    const by = {}, out = {};
+    for (const b of allBlocks(spec && spec.blocks)) for (const k of [b.bind, b.x, b.y, b.angle]) if (typeof k === 'string' && !(k in by)) by[k] = b;
     for (const [k, v] of Object.entries(set || {})) {
       const b = by[k];
       if (!b) continue;
@@ -1119,7 +1115,7 @@
           t0: performance.now(), stepAt: 0, ptr: {pos: null, f: null}, streaming: !!board.streaming, wait: false,
           who: who && typeof who === 'object' ? who : null, point: LOOKS.includes(point) ? point : LOOKS[0], onVoice: !fast && typeof onVoice === 'function' ? onVoice : null,
           voiceAt: voiceAt && typeof voiceAt === 'object' ? voiceAt : null, notice: notice && typeof notice === 'object' ? notice : null,
-          marks: board.steps.flatMap(marksOf)};
+          marks: board.steps.flatMap((s, k) => marksOf(s.strokes, k))};
     // An empty answer box with the focus (a check takes it when it loads) lets go of it, so A, S and D work. A box with your text
     // keeps it: then the keys type, and a click outside the box gives them to the board. Esc gives the focus back.
     const a = document.activeElement;
