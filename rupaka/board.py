@@ -106,11 +106,7 @@ def _strings(o):
 # %% ../nbs/06_board.ipynb #g027
 def cue_at(cues, t:float):
     "The cue `(start, text)` that plays at `t`: the last one that starts at or before `t`. None when there is none."
-    out = None
-    for c in cues or ():
-        if c[0] <= t: out = c
-        else: break
-    return out
+    return last(takewhile(lambda c: c[0] <= t, cues or ()))
 
 def cue_quote(cues, t:float, quote:str):
     "`(start, words)` when `quote` (3 words or more) is word for word in the cue at `t` with the cue before and after it: the start of the cue where it begins, and the quote as the transcript says it. Else None."
@@ -152,7 +148,7 @@ def plain_say(say:str) -> str:
 
 def _cell(c, n:int) -> bool:
     "Whether `c` is a number or a short text. The `$` signs around maths do not count."
-    return (_num(c) and not isinstance(c, bool)) or (isinstance(c, str) and _short_ok(c, n + c.count('$')))
+    return _num(c) or (isinstance(c, str) and _short_ok(c, n + c.count('$')))
 
 def _panel_why(o, ctx) -> str:
     "Why the side-panel line `o` (`panel`, `row` or `note`) drops, or ''."
@@ -178,7 +174,7 @@ def check_line(o, ctx) -> str:
     if 'w' in o and not (isinstance(o['w'], int) and not isinstance(o['w'], bool) and 0 <= o['w'] < 100): return 'a bad word mark'
     if op == 'step':
         say = o.get('say')
-        if not (isinstance(say, str) and say.strip() and len(say) <= LIMITS['say'] and say.isprintable()): return 'a bad say'
+        if not _short_ok(say, LIMITS['say']): return 'a bad say'
         return META_WHY if META.search(say) else ''
     if op in PANEL: return _panel_why(o, ctx)
     if op in MARKS and isinstance(o.get('at'), dict) and 'pt' in o['at']: return 'a mark on a bare point, with no thing under it'
@@ -187,8 +183,7 @@ def check_line(o, ctx) -> str:
     if op == 'sketch' and _kind(o['at'], ctx) != 'figure': return 'a sketch that is not on a figure'
     if op == 'arrow': return anchor_why(o.get('from'), ctx) or anchor_why(o.get('to'), ctx)
     if op == 'label':
-        t = o.get('text')
-        if not (isinstance(t, str) and t.strip() and len(t) <= LIMITS['text'] and t.isprintable()): return 'a bad label text'
+        if not _short_ok(o.get('text'), LIMITS['text']): return 'a bad label text'
         if o.get('side', 'above') not in SIDES: return 'a bad side'
     if op == 'sketch':
         p = o.get('pts')
@@ -309,7 +304,7 @@ def _objects(lines):
         try: o = json.loads(line) if n <= LIMITS['step_bytes'] else None
         except ValueError: o = None
         if n > LIMITS['line_bytes'] and not _has_strokes(o): o = None
-        if isinstance(o, dict) and o.get('op') == 'step' and isinstance(o.get('strokes'), list):
+        if _has_strokes(o):
             ss = o.pop('strokes')
             yield o
             yield from (s if isinstance(s, dict) else None for s in ss[:LIMITS['strokes'] + 1])
