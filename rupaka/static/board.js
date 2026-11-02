@@ -661,7 +661,7 @@
         m.el = svgEl('g', 'board-flow-edge'); m.el.dataset.from = o.from; m.el.dataset.to = o.to;
         m.el.append(Object.assign(svgEl('path', 'board-flow-line'), {}), svgEl('path', 'board-flow-head')); m.el.firstChild.setAttribute('pathLength', '1');
         f.querySelector('svg').append(m.el);
-        if (o.text) { m.lead = el('div', 'board-flow-label', o.text); f.append(m.lead); m.el.label = m.lead; }
+        if (o.text) { m.lead = richInto(el('div', 'board-flow-label', null), o.text); f.append(m.lead); m.el.label = m.lead; }   // its maths too, as a box draws it
       }
       m.el.dataset.step = m.step; m.el.dataset.beat = beat;
       fit(p);

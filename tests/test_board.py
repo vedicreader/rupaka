@@ -532,3 +532,9 @@ def test_an_arrow_past_a_rank_does_not_cross_the_box_at_its_left(page):
                 path: q(document.querySelector('g.board-flow-edge[data-from=e][data-to=dec] path'))}; }""")   # the places of the layout, in the flow, with no pop-in
     assert abs(got['x'][1] - got['e'][1]) < 2 and got['x'][2] <= got['e'][0], got   # side by side
     assert got['path'][0] >= got['x'][2], got   # the arrow stays right of the left box
+
+def test_an_arrow_label_draws_its_maths(page):
+    "An arrow label of a flow draws its `$…$` as a box does, so the label shows i + i → ī, not the raw `$i+i\\to ī$`."
+    play(page, [dict(say='Like vowels join.', strokes=[dict(op='panel', head='Vowels join'), N('a', 'Check the pair'), N('b', 'One long vowel'), E('a', 'b', '$i+i\\to ī$')])])
+    got = page.evaluate("() => { const l = document.querySelector('.board-flow-label'); return [l.textContent, !!l.querySelector('.board-tex')]; }")
+    assert '$' not in got[0] and got[1], got
