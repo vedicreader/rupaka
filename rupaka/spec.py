@@ -13,7 +13,7 @@ __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'MAX_WOR
            'validate', 'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
-import json, math, re
+import math, re
 from copy import deepcopy
 from decimal import Decimal, Context, ROUND_HALF_UP
 from pathlib import Path
@@ -29,12 +29,12 @@ COMMON = ('type', 'after', 'step')
 @functools.cache
 def manifests() -> dict:
     "The block manifests, by name."
-    return {p.parent.name: AttrDict(json.loads(p.read_text())) for p in sorted((PKG/'blocks').glob('*/block.json'))}
+    return {p.parent.name: AttrDict(p.read_json()) for p in sorted((PKG/'blocks').glob('*/block.json'))}
 
 @functools.cache
 def fn_manifests() -> dict:
     "The fn manifests, by name."
-    return {p.stem: AttrDict(json.loads(p.read_text())) for p in sorted((PKG/'fns').glob('*.json'))}
+    return {p.stem: AttrDict(p.read_json()) for p in sorted((PKG/'fns').glob('*.json'))}
 
 # %% ../nbs/00_spec.ipynb #c012
 def _drop(d): return {k: v for k, v in d.items() if v is not None}
@@ -649,9 +649,9 @@ def upgrade(spec:dict) -> dict:
 # %% ../nbs/00_spec.ipynb #c087
 def examples() -> dict:
     "The example spec of each block, by block name."
-    return {n: json.loads((PKG/'blocks'/n/'example.json').read_text()) for n in manifests()}
+    return {n: (PKG/'blocks'/n/'example.json').read_json() for n in manifests()}
 
 # %% ../nbs/00_spec.ipynb #c090
 def gallery() -> dict:
     "The gallery demos, by id."
-    return {(s := json.loads(p.read_text()))['id']: s for p in sorted((PKG/'demos').glob('*.json'))}
+    return {(s := p.read_json())['id']: s for p in sorted((PKG/'demos').glob('*.json'))}

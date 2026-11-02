@@ -114,8 +114,7 @@ def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None) -
 def save(specs, path, fonts:str='link', **kw) -> Path:
     "Write `page(specs)` to `path`; with `fonts='link'`, copy the fonts to `fonts/` beside it."
     p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(page(specs, fonts=fonts, **kw))
+    p.mk_write(page(specs, fonts=fonts, **kw))
     if fonts == 'link': shutil.copytree(STATIC/'fonts', p.parent/'fonts', dirs_exist_ok=True)
     return p
 
@@ -153,5 +152,4 @@ def Assets(prefix:str='/rupaka', v:str=''):
 # %% ../nbs/01_render.ipynb #c033
 def version() -> str:
     "A short hash of the script and the style."
-    import hashlib
     return hashlib.sha1((bundle() + bundle('css')).encode()).hexdigest()[:10]
