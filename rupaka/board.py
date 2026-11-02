@@ -8,8 +8,8 @@ Docs: https://vedicreader.github.io/rupaka/board.html.md"""
 __all__ = ['STATIC', 'LIBS', 'OPS', 'FIELDS', 'LIMITS', 'PANEL', 'MARKS', 'META', 'META_WHY', 'SIDES', 'SURE', 'NEEDS', 'VERSION',
            'FORMS', 'UNSAFE', 'SMALL', 'WATCH', 'NUMBERS', 'KINDS', 'ANCHOR_ID', 'MOST', 'TRY', 'FOCUS', 'SHOWN',
            'THREAD', 'TIERS', 'assets', 'bundle', 'norm_tex', 'flat', 'anchor_why', 'by_id', 'cue_at', 'cue_quote',
-           'plain_say', 'check_line', 'key_terms', 'named', 'yt_link', 'verbatim', 'parse_board', 'PageContext',
-           'clean_context', 'video_id', 'video_cues', 'stream_board']
+           'plain_say', 'check_line', 'key_terms', 'named', 'page_terms', 'yt_link', 'verbatim', 'parse_board',
+           'PageContext', 'clean_context', 'video_id', 'video_cues', 'stream_board']
 
 # %% ../nbs/06_board.ipynb #b005
 import json, math, re
@@ -226,16 +226,28 @@ def _same(a:str, b:str) -> bool:
     if a == b: return True
     return a.isalpha() and b.isalpha() and len(a) > 1 and len(b) > 1 and (a.startswith(b) or b.startswith(a))
 
+def _line_terms(o) -> set: return key_terms(' '.join(str(x) for x in [*o.get('cells', ()), o.get('to', ''), o.get('text', '')]))
+def _shares(ts, us) -> bool: return any(_same(t, u) for t in ts for u in us)
+
 def named(o, say:str) -> bool:
     "Whether the spoken line `say` names the panel line `o` (a row or a note): they share a key word or a symbol."
-    ts = key_terms(' '.join(str(x) for x in [*o.get('cells', ()), o.get('to', ''), o.get('text', '')]))
-    ss = key_terms(say)
-    return any(_same(t, s) for t in ts for s in ss)
+    return _shares(_line_terms(o), key_terms(say))
 
-def _pair(out):
-    """Each row and note goes with the step whose spoken line names it. A row that its own step does not name moves to the next step of
+def page_terms(ctx) -> set:
+    "The key terms of what the page shows: the text, tokens and labels of each anchor, the sources, and the demo."
+    d = ctx.get('demo') or {}
+    parts = [x for a in ctx.get('anchors') or () for x in (a.get('text', ''), *(a.get('tokens') or ()), *(a.get('labels') or ()))]
+    parts += [s.get('text') or '' for s in ctx.get('sources') or ()] + list(d.get('readouts') or ()) + [str(v.get('label', '')) for v in (d.get('inputs') or {}).values()]
+    return key_terms(' '.join(map(str, parts)))
+
+def _pair(out, ctx):
+    """A row that names nothing on the page drops: the panel is an example made from the page, not from a later idea.
+    Then each row and note goes with the step whose spoken line names it. A row that its own step does not name moves to the next step of
     its beat that names it; else it drops. It never moves back, so a stream sends it once, with its step. A circle line on its thing stays
     where it is: the stream sent it already, and the row draws its own circle."""
+    page = page_terms(ctx)
+    for st in out.steps:
+        if page: st['strokes'] = [s for s in st['strokes'] if s['op'] != 'row' or _shares(_line_terms(s), page) or out.dropped.append((-1, 'a row that names nothing on the page'))]
     for k, st in enumerate(out.steps):
         keep, moves = [], {}
         beat = list(takewhile(lambda t: not any(x['op'] == 'panel' for x in t['strokes']), out.steps[k + 1:]))
@@ -345,7 +357,7 @@ def parse_board(text:str, ctx, verbatim=verbatim) -> AttrDict:
             out.dropped.append((k, why)); run += 1
             if run >= 2: out.failed = True; break
         else: run = 0
-    _pair(out)
+    _pair(out, ctx)
     _counts(out.steps)
     for st in out.steps:   # a row with `at` draws its own circle: a circle line on the same thing goes
         on = [json.dumps(s['at'], sort_keys=True) for s in st['strokes'] if s['op'] == 'row' and 'at' in s]
