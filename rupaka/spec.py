@@ -310,10 +310,13 @@ FNS = dict(rules=_rules, rrf=_rrf, softmax=_softmax, lookup=_lookup, expr=_expr,
            fmt=lambda d, st, spec: fmt_text(d['text'], st))
 
 # %% ../nbs/00_spec.ipynb #c039
-def _gates(bs):
-    for b in bs or []:
-        if b.get('type') == 'gate': yield b
-        yield from _gates(b.get('blocks'))
+def _walk(bs, path='blocks', parent=None):
+    for i, b in enumerate(bs or []):
+        p = f'{path}[{i}]'
+        yield p, b, parent
+        if isinstance(b, dict) and isinstance(b.get('blocks'), list): yield from _walk(b['blocks'], f'{p}.blocks', b)
+
+def _gates(bs): return (b for _, b, _ in _walk(bs) if b.get('type') == 'gate')
 
 def run(spec, state:dict=None) -> dict:
     "The state of `spec` after the derive list, from its opening state or from `state`."
@@ -399,13 +402,6 @@ def _props(m, x, path, known, tables, err, skip=()):
     for grp in m.get('one_of', []):
         if sum(g in x for g in grp) != 1: err(path, f'needs exactly one of {", ".join(grp)}')
     return reads
-
-# %% ../nbs/00_spec.ipynb #c049
-def _walk(bs, path='blocks', parent=None):
-    for i, b in enumerate(bs or []):
-        p = f'{path}[{i}]'
-        yield p, b, parent
-        if isinstance(b, dict) and isinstance(b.get('blocks'), list): yield from _walk(b['blocks'], f'{p}.blocks', b)
 
 # %% ../nbs/00_spec.ipynb #c051
 def _taint(g, deps, state_keys):
