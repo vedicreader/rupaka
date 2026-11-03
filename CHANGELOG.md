@@ -5,6 +5,7 @@
 ## 0.0.13
 
 - The ask, a gate prompt and a gate context showed **bold** with its stars. Now these texts and the caption show bold in a `strong` element through one helper, `Rupaka.rich`, and `validate` refuses **bold** in the other texts.
+- The README is short, with examples that run as tests, screenshots and animations, and its images show on PyPI. `docs/decisions.md` keeps the decisions that a maintainer needs.
 
 ## 0.0.12
 
