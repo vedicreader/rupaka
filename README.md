@@ -8,7 +8,7 @@ rupaka (रूपक) means a form, a play that the audience sees, and the figur
 A rupaka demo is one interactive figure that teaches one idea. You write it as a JSON spec of small blocks: sliders, plots, 3D scenes, flows, and a gate that asks the learner to predict first.
 Python checks the spec ([`validate`](https://vedicreader.github.io/rupaka/spec.html#validate)), and a small runtime draws it in the browser with no network. A model can write a spec for you ([`author`](https://vedicreader.github.io/rupaka/agent.html#author)), because a spec cannot run code.
 
-![A learner predicts where the lowest point moves, then moves the slider](media/parabola.gif)
+![A learner predicts where the lowest point moves, then moves the slider](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/parabola.gif)
 
 ## Install
 
@@ -52,7 +52,7 @@ assert any('wait' in e or 'after' in e for e in validate(bad))
 
 | before the prediction | after the prediction |
 |----|----|
-| ![The sum demo before the prediction](media/sum-before.png) | ![The sum demo after the prediction](media/sum-after.png) |
+| ![The sum demo before the prediction](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/sum-before.png) | ![The sum demo after the prediction](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/sum-after.png) |
 
 The page functions are in `rupaka.render`:
 
@@ -95,7 +95,7 @@ s = demo('lift', 'Twice the weight', state=dict(step=1, cam='wide', w=4), derive
 assert validate(s) == []
 ```
 
-<img src="media/scene.png" width="480" alt="A box with a lift arrow after the prediction" />
+<img src="https://raw.githubusercontent.com/vedicreader/rupaka/main/media/scene.png" width="480" alt="A box with a lift arrow after the prediction" />
 
 ### A worked example and a flow
 
@@ -109,7 +109,7 @@ panel = demo('targets', 'Make a question and its answer', mode='learn', state=di
 assert validate(panel) == []
 ```
 
-<img src="media/panel.png" width="540" alt="Two rows of a worked example and a flow of three boxes, on paper" />
+<img src="https://raw.githubusercontent.com/vedicreader/rupaka/main/media/panel.png" width="540" alt="Two rows of a worked example and a flow of three boxes, on paper" />
 
 ### A board with a side panel
 
@@ -152,7 +152,7 @@ assert len(board.steps) == 3 and not board.dropped
 
 The page draws it with `rupakaBoard.play(board)`, from the script `rupaka.board.bundle('js')` and the style `bundle('css')`:
 
-![The board marks the passage and draws a flow in the side panel](media/board.gif)
+![The board marks the passage and draws a flow in the side panel](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/board.gif)
 
 A panel can also be a table, a list, a faded example with blanks, a card of a wrong idea, or three stages (see the [board docs](https://vedicreader.github.io/rupaka/board.html)).
 
@@ -236,11 +236,11 @@ Each block has a manifest (`rupaka/blocks/<name>/block.json`) and an example. [`
 
 | softmax and temperature | nakṣatra and pāda | reciprocal rank fusion |
 |----|----|----|
-| ![Softmax and temperature](media/gallery-softmax-temperature.png) | ![Nakṣatra and pāda](media/gallery-nakshatra-pada.png) | ![Reciprocal rank fusion](media/gallery-reciprocal-rank-fusion.png) |
+| ![Softmax and temperature](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/gallery-softmax-temperature.png) | ![Nakṣatra and pāda](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/gallery-nakshatra-pada.png) | ![Reciprocal rank fusion](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/gallery-reciprocal-rank-fusion.png) |
 
 | vowel sandhi | diffusion noise |
 |----|----|
-| ![Vowel sandhi](media/gallery-vowel-sandhi.png) | ![Diffusion noise](media/gallery-diffusion-noise.png) |
+| ![Vowel sandhi](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/gallery-vowel-sandhi.png) | ![Diffusion noise](https://raw.githubusercontent.com/vedicreader/rupaka/main/media/gallery-diffusion-noise.png) |
 
 ## More
 
