@@ -34,6 +34,7 @@
 [data-rk-theme="paper"] .rk .rk-title { font-size: 26px; }
 .rk-title { font: 400 22px/1.3 var(--rk-head); margin: 0 0 var(--rk-s1); color: var(--rk-fg); }
 .rk-ask { color: var(--rk-ink2); margin: 0; }
+.rk strong { color: var(--rk-fg); font-weight: 600; }   /* the **bold** of a rich text (Rupaka.rich) */
 .rk-mode { font: 500 var(--rk-t-lbl)/1.4 var(--rk-serif); letter-spacing: .14em; text-transform: uppercase; color: var(--rk-mute); margin: 0 0 var(--rk-s1); }
 .rk-b { margin: var(--rk-s4) 0; }
 .rk-title + .rk-b, .rk-ask + .rk-b { margin-top: var(--rk-s5); }

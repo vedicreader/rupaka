@@ -10,7 +10,7 @@ __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'MAX_WOR
            'readout', 'caption', 'row', 'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel', 'ranklist',
            'bars', 'axis', 'point', 'plot', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d', 'shot', 'rules',
            'rrf', 'softmax', 'lookup', 'expr', 'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text',
-           'noise', 'run', 'long_sentences', 'syllables', 'grade', 'plain_why', 'plain_errors', 'validate',
+           'noise', 'run', 'long_sentences', 'syllables', 'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate',
            'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
@@ -500,6 +500,11 @@ def plain_errors(spec, terms=()) -> L:
 TOP = ('rupaka', 'id', 'mode', 'concept', 'title', 'ask', 'state', 'derive', 'blocks', 'tables')
 MODES = ('predict', 'learn')   #: the default mode first
 _TEXT_TYPES = ('str', 'text')
+_BOLD = re.compile(r'\*\*[^*\n]+\*\*')
+
+def has_bold(s) -> bool:
+    "True when `s` has a **bold** pair outside maths and code, as `Rupaka.rich` draws it."
+    return bool(_BOLD.search(_CUT.sub(' ', str(s or ''))))
 
 def validate(spec) -> L:
     "The errors of `spec`, each as `path: sentence`. An empty list means the spec is good."
@@ -518,6 +523,7 @@ def validate(spec) -> L:
     for k in ('ask', 'title'):
         for s in long_sentences(spec.get(k, '')): err(k, f'this sentence has more than {MAX_WORDS} words: "{s}"')
         if _TPL.search(str(spec.get(k, ''))): err(k, 'is plain text, so {path} shows as it is; write the value, or put it in a readout')
+    if has_bold(spec.get('title')): err('title', 'is plain text, so **bold** shows as it is; remove the stars')
     known, deps, fms = set(st), {}, fn_manifests()
     for i, d in enumerate(spec.get('derive') or []):
         p = f'derive[{i}]'
@@ -555,6 +561,8 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
             for x in (b[k] if t == 'texts' else [b[k]] if t in _TEXT_TYPES else []):
                 for s in long_sentences(x): err(f'{p}.{k}', f'this sentence has more than {MAX_WORDS} words: "{s}"')
             if t == 'str' and _TPL.search(str(b[k])): err(f'{p}.{k}', 'is plain text, so {path} shows as it is; use a text prop such as a caption')
+            if not m.props[k].get('rich') and any(has_bold(x) for x in (b[k] if t == 'texts' else [b[k]] if t in _TEXT_TYPES else [])):
+                err(f'{p}.{k}', 'is plain text, so **bold** shows as it is; remove the stars, or put the text in a caption')
         if b['type'] == 'gate':
             if b['id'] in gates: err(f'{p}.id', f'the gate id "{b["id"]}" is used twice')
             gates[b['id']] = (p, b)

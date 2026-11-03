@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.13
+
+- The ask, a gate prompt and a gate context showed **bold** with its stars. Now these texts and the caption show bold in a `strong` element through one helper, `Rupaka.rich`, and `validate` refuses **bold** in the other texts.
+
 ## 0.0.12
 
 - The panel of the board has six shapes, and each panel has one shape. A table has column names over rows of cells and an answer. A list has the same rows with no names. A flow of boxes (`node`, `edge`) shows a pipeline, a loop or a branch, one box at a time. A faded example hides parts of a row as `{"blank": value}`, and a blank shows at the next step or on a click. A card of a wrong idea (`myth`) shows "You might think" next to "In fact", with one line of why. Three stages (`"stages": true`) go from a case to a picture to the symbols.

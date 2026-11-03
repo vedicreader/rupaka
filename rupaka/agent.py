@@ -52,7 +52,7 @@ Rules:
 - When a control can change the answer after the reveal, the gate has "context" that names the inputs, for example "For {{a}} + {{b}}:".
 - After the reveal, the controls are live. The last caption asks one new question that the learner can answer only by using the controls.
 - Wrong options in a gate each match one named misconception. Use "rules" with "alts" when the concept is a rule system.
-- Text uses {{path}} for state values, and **bold** in captions. No HTML.
+- Text uses {{path}} for state values, and **bold** in the ask, the captions and the gate prompts and contexts. No HTML.
 - Fit in 640 x 720 pixels. At most 8 blocks. Write text in ASD-STE100 Simplified Technical English, US grade 9: short sentences of at most 20 words, active voice, simple words.
 - Facts must be correct. Use only facts that you are sure of.
 The shape of a spec:

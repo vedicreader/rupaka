@@ -89,8 +89,23 @@ def test_caption_escapes_html(draw):
     spec = dict(id='c', state=dict(x='<img src=x onerror=alert(1)>'), blocks=[dict(type='caption', text='**Bold** {x} <b>raw</b>')])
     d = draw(spec)
     c = d.pg.locator('.rk-caption')
-    assert c.locator('img').count() == 0 and c.locator('b').count() == 1
+    assert c.locator('img').count() == 0 and c.locator('strong').count() == 1
     assert c.inner_text() == 'Bold <img src=x onerror=alert(1)> <b>raw</b>'
+
+def test_bold_in_each_rich_text(draw):
+    "The ask, a caption, a gate prompt and a gate context show **bold** as a strong element, with {path} and $maths$ kept."
+    spec = dict(id='r', ask='You ask a shop for something **sweet**. Look at $x^2$.', state=dict(n=2),
+                blocks=[dict(type='gate', id='g', prompt='Is **{n}** even?', options=['yes', 'no'], answer={'is': 'yes'},
+                             context='For **n = {n}** and $a**b$:'),
+                        dict(type='caption', after='g', text='So **{n}** is even, and $x^2$ stays. A lone ** stays too.')])
+    d = draw(spec)
+    strong = lambda css: d.pg.locator(f'{css} strong').all_inner_texts()
+    assert strong('.rk-ask') == ['sweet'] and d.pg.locator('.rk-ask').inner_text() == 'You ask a shop for something sweet. Look at $x^2$.'
+    assert strong('.rk-gate .q') == ['2'] and d.pg.locator('.rk-gate .q').inner_text() == 'Is 2 even?'
+    d.lock(1)
+    assert strong('.rk-gate .verdict') == ['n = 2'] and d.pg.locator('.rk-gate .verdict').inner_text().startswith('For n = 2 and $a**b$: You said')
+    assert strong('.rk-caption') == ['2'] and d.pg.locator('.rk-caption').inner_text() == 'So 2 is even, and $x^2$ stays. A lone ** stays too.'
+    assert '**' not in d.pg.locator('.rk-ask').inner_text() and d.errors == []
 
 # slider, toggle, choice
 

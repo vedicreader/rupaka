@@ -6,11 +6,11 @@
   "keys": "1-9 pick, ←/→ or A/D move, ⌘↩ lock in",
   "props": {
     "id": {"type": "str", "req": true, "doc": "the gate id; other blocks name it in after or lock"},
-    "prompt": {"type": "text", "req": true, "doc": "the question; {path} takes a state value"},
+    "prompt": {"type": "text", "req": true, "rich": true, "doc": "the question; **bold** and {path} are allowed"},
     "options": {"type": "options", "req": true, "doc": "a list of answers, or {\"from\": path} for a list in the state (for example rules alts)"},
     "answer": {"type": "answer", "req": true, "doc": "a state path that holds the right answer, or {\"is\": value} for a fixed answer"},
     "why": {"type": "str", "doc": "a placeholder that asks the learner to say why in one line"},
-    "context": {"type": "text", "doc": "names the inputs the verdict is for, for example \"For {a} + {b}:\"; needed when a live control feeds the answer"},
+    "context": {"type": "text", "rich": true, "doc": "names the inputs the verdict is for, for example \"For {a} + {b}:\"; **bold** is allowed; needed when a live control feeds the answer"},
     "again": {"type": "bool", "default": false, "doc": "let the learner predict again for new inputs"},
     "hides": {"type": "keys", "doc": "with a fixed answer: the keys that would give the answer away; blocks that show them must wait"}
   }

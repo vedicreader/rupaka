@@ -7,7 +7,7 @@
    With no answer at all, the gate reveals with no verdict. Rupaka.options(host, id) reads the options as opts() gives them.
    Rupaka.open(host, id) opens a closed gate again with reopen(), as Try another does, but it does not move the focus. */
 Rupaka.block('gate', (b, ctx) => {
-  const {el, fmt, show} = Rupaka, s = ctx.s, id = b.id;
+  const {el, fmt, rich, show} = Rupaka, s = ctx.s, id = b.id;
   s.st.gate[id] = 'open';
   let picked = null, said = '', seen = '';
   const opts = () => Array.isArray(b.options) ? b.options : (s.get(b.options.from) || []);
@@ -35,7 +35,7 @@ Rupaka.block('gate', (b, ctx) => {
   }
   const tell = (c, ok, a) => {
     said = c; say('');
-    verdict.replaceChildren(said ? `${said} ` : '', 'You said ', el('b', {class: ok ? 'ok' : 'no', text: show(picked)}), '. ',
+    verdict.replaceChildren(...(said ? [...rich(said), ' '] : []), 'You said ', el('b', {class: ok ? 'ok' : 'no', text: show(picked)}), '. ',
       ok ? el('span', {class: 'ok', text: 'That is right.'}) : el('span', {}, 'It is ', el('b', {class: 'ok', text: show(a)}), '.'), stale);
   };
   function commit() {
@@ -86,7 +86,7 @@ Rupaka.block('gate', (b, ctx) => {
     if (e.target.closest('.opts')) box.children[j].focus();
   });
   s.on(() => {
-    q.textContent = fmt(b.prompt, s.st);
+    q.replaceChildren(...rich(b.prompt, s.st));
     if (!Array.isArray(b.options) && open() && !opts().some(o => o === picked)) picked = null;
     paint();
   });

@@ -22,9 +22,21 @@
   const show = (v, d) => v == null ? '' : typeof v === 'number' ? String(+v.toFixed(d ?? 4)).replace('-', '−') : Array.isArray(v) ? v.join(', ') : String(v);
   // `{path}` or `{path:2}` (two digits) take a value from the state. Text goes in with textContent, never as HTML.
   const fmt = (s, st) => String(s ?? '').replace(/\{([\w.]+)(?::(\d))?\}/g, (_, p, d) => show(get(st, p), d == null ? null : +d));
+  // A rich text: **bold** goes in a <strong>, and `st` fills {path} in each part. A ** inside $maths$, or with no pair, stays as it is.
+  const rich = (s, st) => {
+    const ps = String(s ?? '').split(/(\$\$[\s\S]*?\$\$|\$[^$\n]+\$|\*\*)/), out = [], f = t => st ? fmt(t, st) : t;
+    let buf = '', at = -1;
+    ps.forEach((t, i) => {
+      if (t !== '**') { buf += t; return; }
+      if (at < 0) { if (ps.slice(i + 1).includes('**')) { if (buf) out.push(f(buf)); buf = ''; at = i; } else buf += t; return; }
+      out.push(el('strong', {text: f(buf)})); buf = ''; at = -1;
+    });
+    if (buf) out.push(f(buf));
+    return out;
+  };
   const hide = (n, h) => { if (n instanceof SVGElement) n.style.display = h ? 'none' : ''; else n.hidden = h; };
 
-  Object.assign(R, {el, sv, get, fmt, show, hide, block: (name, f) => { R.blocks[name] = f; }, fn: (name, f) => { R.fns[name] = f; }});
+  Object.assign(R, {el, sv, get, fmt, rich, show, hide, block: (name, f) => { R.blocks[name] = f; }, fn: (name, f) => { R.fns[name] = f; }});
   R.label = (b, ...more) => b.label ? el('span', {class: 'rk-lbl', text: b.label}, ...more) : null;
 
   // The [r, g, b] (0 to 255) of a CSS colour or a --rk-* var, as it is in effect on `node`. A 1 x 1 canvas reads any colour syntax.
@@ -123,7 +135,7 @@
     ctx.put = (b, k, val) => { if (!ctx.live(b.lock)) return false; s.set(k, val); return true; };   // a locked control refuses
     if (spec.mode === 'learn') { root.dataset.rkMode = 'learn'; root.append(el('p', {class: 'rk-mode', text: 'Explainer'})); }   // no gate, so no prediction step
     if (spec.title) root.append(el('h3', {class: 'rk-title', text: spec.title}));
-    if (spec.ask) root.append(el('p', {class: 'rk-ask', text: spec.ask}));
+    if (spec.ask) root.append(el('p', {class: 'rk-ask'}, rich(spec.ask)));
     root.append(...(spec.blocks || []).map(ctx.build));
     root.addEventListener('keydown', e => {   // ⌘↩ anywhere in the demo locks in the first open gate
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && ctx.commit) { e.preventDefault(); ctx.commit(); }
