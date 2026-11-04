@@ -497,7 +497,7 @@ def plain_errors(spec, terms=()) -> L:
     return errs
 
 # %% ../nbs/00_spec.ipynb #c056
-TOP = ('rupaka', 'id', 'mode', 'concept', 'title', 'ask', 'state', 'derive', 'blocks', 'tables')
+TOP = ('rupaka', 'id', 'mode', 'concept', 'title', 'ask', 'askable', 'state', 'derive', 'blocks', 'tables')
 MODES = ('predict', 'learn')   #: the default mode first
 _TEXT_TYPES = ('str', 'text')
 _BOLD = re.compile(r'\*\*[^*\n]+\*\*')
@@ -515,6 +515,7 @@ def validate(spec) -> L:
     for k in spec:
         if k not in TOP: err(k, f'is not a top-level key; use one of: {", ".join(TOP)}')
     if spec.get('mode', MODES[0]) not in MODES: err('mode', f'"{spec["mode"]}" is not a mode; use predict or learn')
+    if not isinstance(spec.get('askable', True), bool): err('askable', 'is true or false; false hides the Ask about this control')
     if not isinstance(spec.get('id'), str) or not spec.get('id'): err('id', 'needs a short id string')
     st, tables = spec.get('state') or {}, spec.get('tables') or {}
     if not isinstance(st, dict): err('state', 'must be an object'); st = {}
