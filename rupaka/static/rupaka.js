@@ -137,6 +137,7 @@
     if (spec.title) root.append(el('h3', {class: 'rk-title', text: spec.title}));
     if (spec.ask) root.append(el('p', {class: 'rk-ask'}, rich(spec.ask)));
     root.append(...(spec.blocks || []).map(ctx.build));
+    if (askable(host, spec, opts)) root.append(ctx.asker = asker(ctx));
     root.addEventListener('keydown', e => {   // ⌘↩ anywhere in the demo locks in the first open gate
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && ctx.commit) { e.preventDefault(); ctx.commit(); }
     });
@@ -167,7 +168,7 @@
     const b = structuredClone(block), list = box.blocks ||= [], path = `${into ? into + '.' : ''}blocks.${list.length}`;
     ctx.tag(b, path);
     const node = ctx.build(b);
-    list.push(b); at.append(node); s.emit('*');
+    list.push(b); at.insertBefore(node, into ? null : ctx.asker ?? null); s.emit('*');
     return path;
   };
   // The element of a block or of a part at `path` (its data-rk-id), or null. A host draws a curve from a mark on its page to this element.
@@ -202,6 +203,46 @@
 
   // The gate tells the page about each prediction; the event crosses a shadow root. It gives false when a listener called preventDefault.
   R.predict = (ctx, detail) => ctx.root.dispatchEvent(new CustomEvent('rk-predict', {bubbles: true, composed: true, cancelable: true, detail: {demo: ctx.spec.id, ...detail}}));
+
+  // An ask carries only what the demo has now: the input keys (clipped), the step or the first open gate, and the learner's words.
+  // It never carries DOM or HTML. As with rk-predict, a host that takes the ask calls preventDefault.
+  const CLIP = {text: 500, str: 200, items: 50, depth: 3};
+  const clip = (v, d = 0) => typeof v === 'string' ? v.slice(0, CLIP.str) : typeof v === 'number' ? (Number.isFinite(v) ? v : null)
+    : typeof v === 'boolean' ? v : v == null || d >= CLIP.depth || typeof v !== 'object' ? null
+    : Array.isArray(v) ? v.slice(0, CLIP.items).map(x => clip(x, d + 1))
+    : Object.fromEntries(Object.entries(v).slice(0, CLIP.items).map(([k, x]) => [k.slice(0, CLIP.str), clip(x, d + 1)]));
+  const asked = (ctx, text) => {
+    const st = ctx.s.st, g = (ctx.gates || []).find(g => !g.done());
+    return {demo: clip(ctx.spec.id ?? null), text: String(text ?? '').trim().slice(0, CLIP.text),
+            state: Object.fromEntries(inputs(ctx.spec).slice(0, CLIP.items).map(k => [k, clip(st[k], 1)])),
+            step: st.step != null ? clip(st.step, 1) : g ? g.id : null};
+  };
+  R.ask = (host, text) => {
+    const ctx = CTX.get(mounted(host));
+    return ctx.root.dispatchEvent(new CustomEvent('rk-ask', {bubbles: true, composed: true, cancelable: true, detail: asked(ctx, text)}));
+  };
+  // The host switch (opts.askable, or data-rk-askable="true" or "false" on the host) comes first, then the spec, then on.
+  const askable = (host, spec, opts) => opts?.askable ?? {true: true, false: false}[host.dataset?.rkAskable] ?? spec.askable !== false;
+  function asker(ctx) {
+    const field = el('input', {type: 'text', maxlength: CLIP.text, 'aria-label': 'Your question', placeholder: 'What do you want to know? You can leave this empty.'});
+    const said = el('p', {class: 'rk-note', 'aria-live': 'polite', hidden: true});
+    const form = el('form', {hidden: true}, field, el('button', {type: 'submit', text: 'Ask'}));
+    const open = el('button', {type: 'button', class: 'rk-askopen', text: 'Ask about this', 'aria-expanded': 'false'});
+    const toggle = o => { form.hidden = !o; open.setAttribute('aria-expanded', String(o)); if (o) { said.hidden = true; field.focus(); } };
+    open.onclick = () => toggle(form.hidden);
+    form.onsubmit = e => {
+      e.preventDefault();
+      const took = !R.ask(ctx.root.parentNode, field.value);
+      field.value = ''; toggle(false); open.focus();
+      said.textContent = took ? 'Sent to the tutor.' : 'No tutor is on this page.'; said.hidden = false;
+    };
+    field.addEventListener('keydown', e => {
+      e.stopPropagation();   // ⌘↩ in the field sends the ask; it does not lock in a gate
+      if (e.key === 'Escape') { toggle(false); open.focus(); }
+      else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); form.requestSubmit(); }
+    });
+    return el('div', {class: 'rk-asker'}, open, form, said);
+  }
 
   R.boot = (scope = document) => scope.querySelectorAll('[data-rupaka]:not([data-rk-ready])').forEach(n => {
     const src = n.querySelector('script[type="application/json"]');

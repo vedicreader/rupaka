@@ -67,3 +67,13 @@
 }
 .rk button:focus-visible { outline: 2px solid var(--rk-acc); outline-offset: 2px; }
 .rk [hidden] { display: none !important; }
+/* Ask about this: a quiet link-like control at the end of a demo (Rupaka.ask) */
+.rk-asker { margin-top: var(--rk-s4); }
+.rk .rk-asker .rk-askopen { border: 0; background: none; padding: 2px 0; color: var(--rk-mute); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--rk-mute) 45%, transparent); }
+.rk .rk-asker .rk-askopen:hover { background: none; color: var(--rk-fg); }
+.rk-asker form { display: flex; gap: var(--rk-s2); align-items: center; margin-top: var(--rk-s2); }
+.rk-asker form[hidden] { display: none; }
+.rk-asker input { flex: 1; min-width: 0; font: 16px/1.5 var(--rk-serif); color: var(--rk-fg); background: transparent; border: 0;
+                  border-bottom: 1px solid color-mix(in srgb, var(--rk-fg) 22%, transparent); padding: 4px 2px; }
+.rk-asker input:focus { outline: none; border-bottom-color: var(--rk-acc); }
+.rk-asker input::placeholder { color: var(--rk-mute); font-style: italic; opacity: 1; }
