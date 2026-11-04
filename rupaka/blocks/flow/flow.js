@@ -1,11 +1,20 @@
-/* flow: a few nodes and the arrows between them, left to right (row) or as a loop (cycle), for example guess → compare → adjust. */
+/* flow: a few nodes and the arrows between them, left to right (row) or as a loop (cycle), for example guess → compare → adjust.
+   A row where each arrow goes to the next node is HTML: each box grows to fit its words, each arrow has its own gap, and the row
+   wraps, or turns into a list from the top down in a narrow column. A row with skips or steps back, and a cycle, are SVG. */
 Rupaka.block('flow', (b, ctx) => {
   const {el, sv} = Rupaka, ns = b.nodes || [], n = ns.length, cyc = b.layout === 'cycle', W = 600, LH = 19;
   const at = Object.fromEntries(ns.map((x, i) => [x.id, i]));
   const es = b.edges ?? ns.slice(cyc ? 0 : 1).map((x, i) => ({from: ns[i].id, to: ns[(i + 1) % n].id}));   // no edges: each node points to the next
-  // The words of a node in at most two lines that fit `w`, at about 8 px a letter.
+  const by = new Map(es.map((e, j) => [at[e.from], [e, j]]));
+  if (!cyc && es.every(e => at[e.to] - at[e.from] === 1) && by.size === es.length) {
+    const arrow = ([e, j]) => el('div', {class: 'edge', style: `--i: ${n + j}`, 'data-rk-id': ctx.id(b, `edges.${j}`)},
+      e.text ? el('span', {class: 'et', text: e.text}) : null, el('span', {class: 'ln'}), el('span', {class: 'sk'}));
+    return el('div', {}, Rupaka.label(b), el('div', {class: 'chain'}, el('div', {class: 'line'}, ns.map((x, i) => el('div', {class: 'step'},
+      i && by.has(i - 1) ? arrow(by.get(i - 1)) : null, el('div', {class: 'node', style: `--i: ${i}`, 'data-rk-id': ctx.id(b, `nodes.${i}`), text: x.text}))))));
+  }
+  // The words of a node in lines that fit `w`, at about 8 px a letter.
   const wrap = (t, w) => { const per = Math.max(4, Math.floor((w - 20) / 8)), out = [''];
-    for (const wd of String(t).split(/\s+/)) { const l = out.length - 1; if (out[l] && (out[l] + ' ' + wd).length > per && out.length < 2) out.push(wd); else out[l] = out[l] ? `${out[l]} ${wd}` : wd; }
+    for (const wd of String(t).split(/\s+/)) { const l = out.length - 1; if (out[l] && (out[l] + ' ' + wd).length > per) out.push(wd); else out[l] = out[l] ? `${out[l]} ${wd}` : wd; }
     return out; };
   const slot = cyc ? 170 : W / Math.max(n, 1), boxes = ns.map(x => { const ls = wrap(x.text, slot - 28);
     return {ls, w: Math.min(slot - 28, Math.max(64, 8 * Math.max(...ls.map(l => l.length)) + 26)), h: LH * ls.length + 16}; });

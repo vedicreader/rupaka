@@ -11,3 +11,27 @@
 .rk-flow .node { animation: rk-rise var(--rk-dur-3) var(--rk-ease) backwards; animation-delay: calc(var(--i) * 80ms); }
 .rk-flow .edge path { stroke-dasharray: 1; animation: rk-line var(--rk-dur-3) var(--rk-ease) backwards; animation-delay: calc(var(--i) * 80ms); }
 @keyframes rk-line { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+/* The HTML row: a box grows with its words and wraps them inside; an arrow keeps its own gap. In a column under 480 px, the row is a list. */
+.rk-flow .chain { container-type: inline-size; }
+.rk-flow .line { display: flex; flex-wrap: wrap; row-gap: var(--rk-s3); }
+.rk-flow .step { display: flex; align-items: stretch; flex: 1 1 0; max-width: 16em; }
+.rk-flow .step:has(> .edge) { flex-basis: 46px; }   /* the gap of a plain arrow, so that each box gets the same width */
+.rk-flow .chain .node { flex: 1 1 auto; min-width: 5.5em; box-sizing: border-box; padding: 6px 10px; font-size: 15px; line-height: 1.35; text-align: center;
+  overflow-wrap: break-word; display: grid; place-items: center; color: var(--rk-fg); border: 1.5px solid var(--rk-in); border-radius: 6px;
+  background: color-mix(in srgb, var(--rk-in) 10%, var(--rk-bg)); }
+.rk-flow .chain .edge { flex: none; align-self: center; min-width: 30px; margin: 0 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
+.rk-flow .chain .et { font-size: 13px; line-height: 1.2; color: var(--rk-ink2); white-space: nowrap; }
+.rk-flow .chain .ln { align-self: stretch; height: 1.5px; background: var(--rk-ink2); position: relative; }
+.rk-flow .chain .ln::after { content: ''; position: absolute; right: 1px; top: 50%; width: 7px; height: 7px; border: solid var(--rk-ink2); border-width: 1.5px 1.5px 0 0;
+  transform: translateY(-50%) rotate(45deg); }
+.rk-flow .chain .sk { position: absolute; left: 3px; right: 7px; bottom: -3px; height: 1px; background: var(--rk-ink2); opacity: .45; rotate: -.5deg; }
+.rk-flow .chain .node, .rk-flow .chain .edge { animation: rk-draw var(--rk-dur-2) var(--rk-ease) backwards; animation-delay: calc(var(--i) * 80ms); }
+@container (max-width: 480px) {
+  .rk-flow .line { flex-direction: column; }
+  .rk-flow .step { flex-direction: column; max-width: none; }
+  .rk-flow .chain .edge { flex-direction: row-reverse; min-width: 0; margin: 6px 0; gap: 8px; }
+  .rk-flow .chain .ln { align-self: auto; width: 1.5px; height: 20px; }
+  .rk-flow .chain .ln::after { right: auto; top: auto; left: 50%; bottom: 1px; transform: translateX(-50%) rotate(135deg); }
+  .rk-flow .chain .sk { left: auto; right: -3px; top: 3px; bottom: 7px; width: 1px; height: auto; }
+  .rk-flow .chain .et { position: absolute; left: calc(50% + 10px); }
+}

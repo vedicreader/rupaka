@@ -100,7 +100,7 @@ def test_pair_reads_the_state(draw):
 # flow
 
 FLOW = examples()['flow']
-BOX = "g => { const r = g.querySelector('rect').getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width, h: r.height}; }"
+BOX = "g => { const r = (g.querySelector('rect') || g).getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width, h: r.height}; }"
 
 def still(d): d.pg.evaluate("Promise.all(document.getAnimations().map(a => a.finished))")
 
@@ -195,3 +195,28 @@ def test_paper_theme_passes_contrast(draw):
         for mode in ('light', 'dark'):           # paper is always light, also on a dark page
             d = paper(draw, spec, mode=mode); still(d)
             assert contrast(d.pg) == [], (spec['id'], mode)
+
+ORDER = dict(id='order', mode='learn', blocks=[dict(type='flow', label='The right order', nodes=[dict(id=f'n{i}', text=t) for i, t in enumerate(
+    ['1. Find the sunrise', '2. Note limbs at sunrise', '3. Name the day', '4. Pick the limb at your time', '5. Check the answer'], 1)])])
+FITS = """() => { const f = document.querySelector('.rk-flow').getBoundingClientRect(), r = e => e.getBoundingClientRect();
+  const ns = [...document.querySelectorAll('.rk-flow .node')], es = [...document.querySelectorAll('.rk-flow .edge')], bad = [];
+  const meet = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  const inside = (a, b) => a.left >= b.left - .5 && a.right <= b.right + .5 && a.top >= b.top - .5 && a.bottom <= b.bottom + .5;
+  ns.forEach((n, i) => { const t = document.createRange(); t.selectNodeContents(n);
+    if (!inside(t.getBoundingClientRect(), r(n)) || n.scrollWidth > n.clientWidth) bad.push(`node ${i} text is outside its box`); });
+  es.forEach((e, j) => ns.forEach((n, i) => { if (meet(r(e), r(n))) bad.push(`edge ${j} is on node ${i}`); }));
+  [...ns, ...es].forEach((e, i) => { if (!inside(r(e), f) || r(e).right > innerWidth) bad.push(`part ${i} is outside the flow`); });
+  return bad; }"""
+
+def order_at(draw, w, spec=ORDER):
+    "ORDER in a column `w` px wide, after the draw-in."
+    html = page(spec, fonts='none').replace('</style>', f'main.rk-page {{ max-width: none; width: {w}px; margin: 0; padding: 16px; }}</style>')
+    d = draw(None, html=html); d.pg.set_viewport_size(dict(width=w + 32, height=900)); still(d)
+    return d
+
+def test_flow_order_row_fits_each_width(draw):
+    "The boxes hold their words, the arrows sit between the boxes, and no part goes out: a slide column, a walk step, a full slide."
+    for w in (420, 540, 700, 1280):
+        d = order_at(draw, w)
+        assert d.pg.evaluate(FITS) == [], w
+        assert d.pg.locator('.rk-flow .node').count() == 5 and d.pg.locator('.rk-flow .edge').count() == 4 and d.errors == []
