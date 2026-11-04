@@ -266,7 +266,7 @@ A model can write a spec safely, because a spec cannot run code.
 | block | a reusable UI part in `rupaka/blocks/<name>/`: its JS, its CSS, a `block.json` manifest and an example |
 | fn | a pure function that computes a derived value: [`rules`](https://vedicreader.github.io/rupaka/spec.html#rules), [`rrf`](https://vedicreader.github.io/rupaka/spec.html#rrf), [`softmax`](https://vedicreader.github.io/rupaka/spec.html#softmax), [`lookup`](https://vedicreader.github.io/rupaka/spec.html#lookup), [`expr`](https://vedicreader.github.io/rupaka/spec.html#expr), [`field`](https://vedicreader.github.io/rupaka/spec.html#field), `ids`, `pick`, `sort`, [`fmt`](https://vedicreader.github.io/rupaka/spec.html#fmt) |
 | gate | the block that asks for the prediction and hides the result until the lock in |
-| spec | the JSON object: `state`, `derive`, `blocks` and `tables`, and a `mode` that is `predict` (the default) or `learn` |
+| spec | the JSON object: `state`, `derive`, `blocks` and `tables`, a `mode` that is `predict` (the default) or `learn`, and `askable` (true by default) |
 
 ### The host API
 
@@ -279,7 +279,8 @@ A host page can read and change a demo that it mounted. In these calls, `el` is 
 | `Rupaka.options(el, gate)` | gives the option values of the gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate), in the order that the gate shows them. Each value is the value itself, not the text that the gate shows. The gate reads options from the state after `derive`, and this call does the same. An unknown gate gives `null`. |
 | `Rupaka.settle(el, gate, pick, {answer})` | closes the gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate) as if the learner picked `pick`. It draws the verdict and shows the blocks that wait for the gate. With `pick` null, the gate closes with no verdict. An unknown gate does nothing and gives `false`. The options object is optional. |
 | `Rupaka.open(el, gate)` | opens the closed gate [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate) again, as the Try another button of the gate does. It removes the pick, the reason and the verdict, and hides the blocks that wait for the gate. It draws one time. It does not move the focus. A gate that is open does not change, and the call gives `true`. A gate that waits for the host to save a prediction does not open, and the call gives `false`. An unknown gate does nothing and gives `false`. |
-| `Rupaka.mount(el, spec, {save})` | calls `save(state)` after each change of an input key. `state` is the value that `Rupaka.state(el)` gives. |
+| `Rupaka.mount(el, spec, {save, askable})` | calls `save(state)` after each change of an input key. `state` is the value that `Rupaka.state(el)` gives. `askable` turns the Ask about this control on or off (see Host events). |
+| `Rupaka.ask(el, text)` | sends the `rk-ask` event, as the Ask about this control does, for example from a voice command. It gives `false` when a listener called `preventDefault`. |
 | `Rupaka.append(el, block, {into})` | adds one block at the end of the demo, or at the end of the [`stack`](https://vedicreader.github.io/rupaka/spec.html#stack) or [`row`](https://vedicreader.github.io/rupaka/spec.html#row) at the path `into`, with no rebuild. The parts that show stay. It gives the path of the new block, for example `'blocks.3'`. An unknown block type or a bad `into` throws an error. |
 | `Rupaka.anchor(el, path)` | gives the element of the block or the part at `path`, or `null`. Each block has `data-rk-id`: its path in the spec, such as `'blocks.2'`. A part adds to it: `'blocks.2.cells.0'`, `'blocks.2.to'`, `'blocks.3.nodes.1'`. The element can be hidden, for example in a later step. |
 
@@ -290,6 +291,26 @@ To show one demo in two windows, mount the spec in each window. Send `Rupaka.sta
 A host can remove the gate answers from the spec of a copy that a room sees, so that the room cannot read them early. Then give the answer to `Rupaka.settle` in `answer`. The gate uses it to draw the verdict. `answer` is `{is: value}` or a path in the state, as in a gate. When the spec has an answer, the gate uses the answer in the spec. Rupaka does not write `answer` into the spec or the state. When the spec has no answer and you give no `answer`, the gate closes with no verdict.
 
 `rupaka.poll` makes a question for a room from a gate. `of_gate(spec, gate)` gives the question and the index of the answer. `public(p)` gives the part that the room sees.
+
+### Host events
+
+A demo sends two events to the host page. Each event bubbles, crosses a shadow root and is cancelable. In each event, `detail.demo` is the `id` of the spec.
+
+| event | when | `detail` |
+|----|----|----|
+| `rk-predict` | the learner locks in a prediction | [`gate`](https://vedicreader.github.io/rupaka/spec.html#gate), `picked`, `ans`, `ok`, `why`, `context` and `settle(saved, message)`. A host that saves the prediction calls `preventDefault`, then calls `settle`. |
+| `rk-ask` | the learner clicks Ask about this, or the host calls `Rupaka.ask` | `text`: the words of the learner (at most 500 characters, can be empty). `state`: the input keys and their values now, clipped. `step`: the state key `step` of an explainer, else the id of the first open gate, else `null`. |
+
+An `rk-ask` event is plain JSON. It never holds derived values, gate answers, DOM or HTML. A string in `state` has at most 200 characters, and a list or an object at most 50 items, 3 levels deep.
+A host that takes the ask calls `preventDefault`. Then the demo says “Sent to the tutor.”, else “No tutor is on this page.” For example:
+
+``` js
+document.addEventListener('rk-ask', e => { e.preventDefault(); tutor.ask(e.detail); });
+// e.detail: {demo: 'add-two', text: 'explain this at b = 2', state: {a: 1, b: 2}, step: 'sum'}
+```
+
+The Ask about this control is on by default. A spec turns it off with `"askable": false`. A host page can turn it on or off for one render, and the host switch comes first.
+For example, a talk shows the control in the editor, but not in the window that the room sees. [`host`](https://vedicreader.github.io/rupaka/render.html#host), [`page`](https://vedicreader.github.io/rupaka/render.html#page) and [`Demo`](https://vedicreader.github.io/rupaka/render.html#demo) take `askable=True` or `askable=False`, which writes `data-rk-askable` on the element. `Rupaka.mount` takes `{askable}`. The event is the same in every case.
 
 ### 3D scenes
 
