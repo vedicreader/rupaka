@@ -269,3 +269,25 @@ def test_pixels_label_follows_the_state(draw):
     d.pg.locator('.rk-slider input').focus(); d.pg.keyboard.press('ArrowRight')
     assert d.st('t') == 501 and cv.get_attribute('aria-label') == 'Grid at t = 501'
     assert cv.evaluate(PIXELS) != before and d.errors == []
+
+# axis: dense ticks
+
+from rupaka.render import page
+
+DENSE = dict(id='dense', state=dict(d=170), blocks=[
+    dict(type='axis', label='Moon minus Sun, one slice every 12°', x=[0, 360], xstep=12, blocks=[dict(type='point', bind='d', label='Moon − Sun')]),
+    dict(type='axis', x=[0, 360], xstep=12, y=[-1, 1], ystep=0.04, height=200, blocks=[])])
+APART = """() => [...document.querySelectorAll('.rk-axis svg')].map(s => {
+  const rs = [...s.querySelectorAll('text.num')].map(t => t.getBoundingClientRect()), meet = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  return {n: rs.length, ticks: s.querySelectorAll('line.hair, line.zero').length, meets: rs.flatMap((a, i) => rs.slice(i + 1).filter(b => meet(a, b)).map(() => i)).length,
+          texts: [...s.querySelectorAll('text.num')].map(t => t.textContent)}; })"""
+
+@pytest.mark.parametrize('w', [420, 640, 1200])
+def test_dense_axis_labels_never_meet(draw, w):
+    "Each tick keeps its mark, but only every k-th tick has a label, so no two labels meet. The first and the last tick have one."
+    d = draw(None, html=page(DENSE, fonts='none').replace('</style>', f'main.rk-page {{ max-width: none; width: {w}px; margin: 0; padding: 16px; }} .rk {{ max-width: none; }}</style>'))
+    d.pg.set_viewport_size(dict(width=w + 32, height=900))
+    line, xy = d.pg.evaluate(APART)
+    assert line['meets'] == 0 and xy['meets'] == 0, w
+    assert line['ticks'] == 31 and 3 < line['n'] < 31 and line['texts'][0] == '0' and line['texts'][-1] == '360'
+    assert xy['texts'][-1] == '1' and d.errors == []
