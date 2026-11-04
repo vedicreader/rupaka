@@ -291,3 +291,9 @@ def test_dense_axis_labels_never_meet(draw, w):
     assert line['meets'] == 0 and xy['meets'] == 0, w
     assert line['ticks'] == 31 and 3 < line['n'] < 31 and line['texts'][0] == '0' and line['texts'][-1] == '360'
     assert xy['texts'][-1] == '1' and d.errors == []
+    ys = [float(t.replace('−', '-')) for t in d.pg.evaluate("[...document.querySelectorAll('.rk-axis')[1].querySelectorAll('text.num[text-anchor=end]')].map(t => t.textContent)")]
+    step = min(abs(a - b) for a, b in zip(ys, ys[1:]))
+    assert 0.0 in ys and all(abs(v / step - round(v / step)) < 1e-6 for v in ys), ys
+    t, ls = d.pg.evaluate("""(() => { const a = document.querySelectorAll('.rk-axis')[1], r = e => e.getBoundingClientRect();
+      return [r([...a.querySelectorAll('text.num[text-anchor=end]')].find(t => t.textContent === '0')), [...a.querySelectorAll('line.zero')].map(r)]; })()""")
+    assert any(l['height'] < 2 and t['top'] <= l['top'] <= t['bottom'] for l in ls)     # the label 0 sits at the zero line
