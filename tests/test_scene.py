@@ -184,3 +184,56 @@ def test_a_removed_scene_lets_go_of_its_view(draw):
     d.pg.evaluate("document.querySelector('[data-rupaka]').remove(); document.documentElement.classList.add('rk-theme-test')")
     d.pg.evaluate("new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
     assert d.errors == []
+
+# A host such as Leela takes a demo off the page and puts it back (a tab switch). The view must draw again, in Chromium and in WebKit.
+# Each engine runs in its own process, so this test does not need a second Playwright in this one.
+BACK = r"""
+import sys, json
+from playwright.sync_api import sync_playwright
+engine, url = sys.argv[1], sys.argv[2]
+DRAWN = '''() => { const c = document.querySelector('.rk-scene canvas.gl'), w = c.width, h = c.height;
+  const x = Object.assign(document.createElement('canvas'), {width: w, height: h}).getContext('2d');
+  x.drawImage(c, 0, 0); const px = x.getImageData(0, 0, w, h).data, bg = Rupaka.rgb(c, '--rk-bg'); let n = 0;
+  for (let i = 0; i < px.length; i += 16) if (Math.abs(px[i] - bg[0]) + Math.abs(px[i + 1] - bg[1]) + Math.abs(px[i + 2] - bg[2]) > 30) n++;
+  return n / (px.length / 16); }'''
+SUM = "(c => { const x = Object.assign(document.createElement('canvas'), {width: c.width, height: c.height}).getContext('2d'); x.drawImage(c, 0, 0); return x.getImageData(0, 0, c.width, c.height).data.reduce((a, v, i) => (a + v * (i % 7 + 1)) % 1000003, 0); })(document.querySelector('.rk-scene canvas.gl'))"
+READY = "[...document.querySelectorAll('.rk-scene .stage')].every(s => s.dataset.rkGl === 'ready' && s.dataset.rkStill === '1')"
+with sync_playwright() as p:
+    kind = getattr(p, engine)
+    b = kind.launch(headless=True, args=['--mute-audio', '--enable-unsafe-swiftshader'] if engine == 'chromium' else [])
+    try:
+        pg = b.new_page(viewport=dict(width=720, height=900))
+        errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(url); pg.wait_for_function(READY, timeout=20000)
+        out = dict(before=pg.evaluate(DRAWN))
+        pg.evaluate("window.host = document.querySelector('[data-rupaka]'); window.at = host.parentNode; host.remove()")
+        pg.evaluate("new Promise(r => setTimeout(r, 300))")
+        out['away'] = pg.evaluate("host.querySelector('.rk-scene .stage').dataset.rkGl")
+        # the browser takes the context away while the view is off the page, as it does with many views; then the view comes back
+        pg.evaluate("document.documentElement.classList.add('rk-theme-test')")   # a theme change while the view is away
+        pg.evaluate("new Promise(r => setTimeout(r, 300))")
+        out['kept'] = pg.evaluate("host.querySelector('.rk-scene .stage').dataset.rkGl")
+        pg.evaluate("host.querySelector('canvas.gl').getContext('webgl2')?.getExtension('WEBGL_lose_context')?.loseContext()")
+        pg.evaluate("new Promise(r => setTimeout(r, 300))")
+        pg.evaluate("at.appendChild(host)")
+        pg.evaluate("new Promise(r => setTimeout(r, 300))")
+        out['back'] = pg.evaluate(SUM)
+        for _ in range(6): pg.evaluate("host.querySelector('.rk-scene .stage').dispatchEvent(new KeyboardEvent('keydown', {key: 'e', bubbles: true}))")   # turn the view: a live renderer draws it new
+        try: pg.wait_for_function(READY + " && " + SUM + " !== " + str(out['back']), timeout=8000)
+        except Exception: pass
+        out['turned'] = pg.evaluate(SUM) != out['back']
+        out['after'] = pg.evaluate(DRAWN); out['canvases'] = pg.evaluate("document.querySelectorAll('.rk-scene canvas.gl').length"); out['errs'] = errs
+        print(json.dumps(out))
+    finally: b.close()
+"""
+
+@pytest.mark.parametrize('engine', ['chromium', 'webkit'])
+def test_a_scene_draws_again_when_its_view_comes_back(engine, tmp_path):
+    "Take the demo node off the page and put it back: the view keeps its renderer, and after a lost context it makes a new one, so it draws again."
+    import subprocess, sys
+    f = tmp_path/'scene.html'; f.write_text(page(F35, fonts='none'))
+    r = subprocess.run([sys.executable, '-c', BACK, engine, f.as_uri()], capture_output=True, text=True, timeout=120)
+    if 'Executable doesn' in r.stderr: pytest.skip(f"Playwright's {engine} is not installed")
+    assert r.returncode == 0, r.stderr[-2000:]
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    assert out['before'] > .05 and out['away'] == out['kept'] == 'ready' and out['turned'] and out['after'] > .05 and out['canvases'] == 1 and out['errs'] == [], out
