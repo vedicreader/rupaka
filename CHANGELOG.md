@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.15
+
+- A 3D scene that a host takes off the page and puts back (a tab switch) draws again. The view keeps its renderer while it is away. When the browser takes its WebGL context away, the view makes a new one when it comes back. Only a demo that the host replaces frees its context.
+
 ## 0.0.14
 
 - A demo has an "Ask about this" control. It sends the `rk-ask` event with the learner's words, the demo, the current step and the values of its declared state, clipped. It sends no DOM and no HTML. A host that takes the event calls `preventDefault`. With no listener, the demo says "No tutor is on this page." `Rupaka.ask(el, text)` sends the same event from code.
