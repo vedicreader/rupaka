@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.14
+
+- A demo has an "Ask about this" control. It sends the `rk-ask` event with the learner's words, the demo, the current step and the values of its declared state, clipped. It sends no DOM and no HTML. A host that takes the event calls `preventDefault`. With no listener, the demo says "No tutor is on this page." `Rupaka.ask(el, text)` sends the same event from code.
+- A spec turns the control off with `askable: false`. A host page turns it off or on with `askable=` on `host`, `page` and `Demo`, or `Rupaka.mount(el, {askable})`, and the host wins over the spec. Turn it off for a room's screen.
+- A row of step boxes in a flow fits each box to its words and wraps the row. In a column under 480 px it becomes a list from the top down. Arrows no longer cover a box.
+- An axis labels only every k-th tick, so labels never meet. The labels start at 0 on a round step, so the zero line says 0.
+
 ## 0.0.13
 
 - The ask, a gate prompt and a gate context showed **bold** with its stars. Now these texts and the caption show bold in a `strong` element through one helper, `Rupaka.rich`, and `validate` refuses **bold** in the other texts.
