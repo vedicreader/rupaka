@@ -1,0 +1,13 @@
+{
+  "rupaka": 1, "id": "layers-example", "title": "Layers", "mode": "learn",
+  "state": {"pan": 0},
+  "blocks": [
+    {"type": "layers", "label": "A hill and a sun", "pan": "pan", "blocks": [
+      {"type": "layer", "art": "sky"},
+      {"type": "layer", "art": "sun", "x": 110, "y": 24, "depth": 0.1},
+      {"type": "layer", "art": "hill", "tone": 0.2, "depth": 0.5},
+      {"type": "layer", "art": "water"}
+    ]},
+    {"type": "slider", "bind": "pan", "label": "Camera", "min": 0, "max": 40}
+  ]
+}

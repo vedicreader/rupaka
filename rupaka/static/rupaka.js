@@ -95,7 +95,7 @@
 
   // In an explainer, a block with `step` shows from that step of the state key `step`. These blocks use `step` for their own meaning.
   // A Python test keeps this list equal to the manifests that have a `step` prop.
-  R.ownStep = new Set(['body', 'force', 'grid', 'label3d', 'point', 'shot', 'slider', 'wheel']);
+  R.ownStep = new Set(['body', 'force', 'grid', 'label3d', 'layer', 'point', 'shot', 'slider', 'timeline', 'wheel']);
   function build(b, ctx) {
     const f = R.blocks[b.type];
     if (!f) throw new Error(`unknown block "${b.type}"`);

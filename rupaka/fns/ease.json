@@ -1,0 +1,11 @@
+{
+  "name": "ease", "since": "0.0.16",
+  "purpose": "A number moved from 0 to 1 along a curve: linear, in (slow start), out (slow end), inout, or step (0 until the end of the range).",
+  "returns": "a number from 0 to 1",
+  "props": {
+    "in": {"type": "numkey", "req": true, "doc": "the input: a number, or the key of a number"},
+    "kind": {"type": "str", "of": ["linear", "in", "out", "inout", "step"], "default": "linear"},
+    "over": {"type": "range", "default": [0, 1], "doc": "[from, to]: the input range that maps to 0 and 1; outside it the output stays at 0 or 1"}
+  },
+  "example": {"fn": "ease", "in": "t", "kind": "inout", "over": [0, 100], "out": "u"}
+}

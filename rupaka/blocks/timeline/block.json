@@ -1,0 +1,18 @@
+{
+  "name": "timeline",
+  "since": "0.0.16",
+  "purpose": "A bar for the time t of a scene: drag it, press play, or jump to a marker. While the bar moves, the layers that ask for it show a faint copy at the earlier time.",
+  "binds": "number: the time",
+  "keys": "A/D one step, ⇧ for ten steps, Q/E the marker before and after, W play and pause",
+  "lockable": true,
+  "props": {
+    "bind": {"type": "key", "req": true, "doc": "the state key of the time, a number"},
+    "label": {"type": "str", "default": "Time", "doc": "the name of the time"},
+    "min": {"type": "num", "default": 0},
+    "max": {"type": "num", "default": 100},
+    "step": {"type": "num", "default": 1},
+    "speed": {"type": "num", "min": 0, "doc": "how much the time grows in each second of play; a tenth of the range if left out"},
+    "loop": {"type": "bool", "default": false, "doc": "play starts again at the end"},
+    "markers": {"type": "list", "doc": "[{\"t\": time, \"label\": name}] with names of at most 24 characters; they show on the bar and the learner can jump to them"}
+  }
+}

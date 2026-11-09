@@ -1,0 +1,36 @@
+{
+  "rupaka": 1,
+  "id": "scene-dawn-to-dusk",
+  "mode": "learn",
+  "title": "A boat from dawn to dusk",
+  "state": {"t": 20, "boat": 50, "sun": 36},
+  "derive": [
+    {"fn": "expr", "expr": "t * 0.4", "out": "pan"},
+    {"fn": "expr", "expr": "abs(t - 50) / 50", "out": "warm"},
+    {"fn": "expr", "expr": "3 * sin(t / 5)", "out": "rock"},
+    {"fn": "keyframes", "in": "t", "keys": [[0, 24], [100, 136]], "ease": "inout", "out": "sunx"},
+    {"fn": "keyframes", "in": "t", "keys": [[0, 0], [30, 1], [60, 2], [85, 3]], "ease": "step", "out": "phase"},
+    {"fn": "lookup", "table": "lines", "key": "phase", "out": "line"}
+  ],
+  "tables": {"lines": [
+    {"text": "Dawn. The sun is low and the water is still."},
+    {"text": "Morning. The boat sails out across the river."},
+    {"text": "Afternoon. The hills move slowly behind the boat."},
+    {"text": "Dusk. The sun sets and the sky turns red."}
+  ]},
+  "blocks": [
+    {"type": "layers", "label": "A boat on a river, from dawn to dusk", "pan": "pan", "note": "Drag the boat or the sun. Or move the time bar.", "blocks": [
+      {"type": "layer", "art": "sky", "tint": "warm"},
+      {"type": "layer", "art": "sun", "x": "sunx", "y": "sun", "up": true, "yr": [10, 70], "drag": "y", "label": "Sun height", "tint": "warm", "depth": 0.05},
+      {"type": "layer", "art": "cloud", "x": 40, "y": 18, "depth": 0.25, "ghost": true, "opacity": 0.9},
+      {"type": "layer", "art": "cloud", "x": 120, "y": 26, "depth": 0.3, "scale": 0.8, "ghost": true, "opacity": 0.9},
+      {"type": "layer", "art": "hill", "seed": 1, "tone": 0.12, "depth": 0.2},
+      {"type": "layer", "art": "hill", "seed": 4, "tone": 0.26, "y": 3, "depth": 0.5},
+      {"type": "layer", "art": "water", "tone": 0.3, "depth": 0.7},
+      {"type": "layer", "art": "boat", "x": "boat", "y": 62, "rotate": "rock", "drag": "x", "xr": [14, 146], "label": "Boat position", "ghost": true}
+    ]},
+    {"type": "timeline", "bind": "t", "label": "Time of day", "markers": [{"t": 0, "label": "Dawn"}, {"t": 30, "label": "Morning"}, {"t": 60, "label": "Afternoon"}, {"t": 85, "label": "Dusk"}]},
+    {"type": "caption", "text": "{line.text}"},
+    {"type": "readout", "label": "Named values", "text": "t {t:0}   boat {boat:1}   sun {sun:1}"}
+  ]
+}

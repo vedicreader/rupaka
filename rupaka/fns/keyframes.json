@@ -1,0 +1,11 @@
+{
+  "name": "keyframes", "since": "0.0.16",
+  "purpose": "The value at a time from a list of [time, value] keys. Between two keys it moves along a curve.",
+  "returns": "a number",
+  "props": {
+    "in": {"type": "numkey", "req": true, "doc": "the time: a number, or the key of a number"},
+    "keys": {"type": "list", "req": true, "least": 1, "doc": "[[t, value], ...] with t going up; a third item sets the curve of the segment that starts there"},
+    "ease": {"type": "str", "of": ["linear", "in", "out", "inout", "step"], "default": "linear", "doc": "the curve of a segment that has none of its own"}
+  },
+  "example": {"fn": "keyframes", "in": "t", "keys": [[0, 20], [50, 80, "out"], [100, 20]], "out": "sun"}
+}

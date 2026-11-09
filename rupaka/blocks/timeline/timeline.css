@@ -1,0 +1,10 @@
+.rk-timeline { --thumb: 16px; }
+.rk-timeline output { font: 500 15px/1 var(--rk-serif); font-variant-numeric: tabular-nums; margin-left: 10px; color: var(--rk-fg); }
+.rk-timeline .rk-tl { display: flex; gap: var(--rk-s3); align-items: flex-start; max-width: 760px; margin-top: 6px; }
+.rk-timeline .rk-tl-play { min-width: 4.5em; }
+.rk-timeline .rk-tl-bar { position: relative; flex: 1; }
+.rk-timeline input { width: 100%; margin: 0; accent-color: var(--rk-acc); display: block; }
+.rk-timeline input:focus-visible, .rk-timeline button:focus-visible { outline: 2px solid var(--rk-acc); outline-offset: 3px; border-radius: 2px; }
+.rk-timeline .rk-tl-marks { position: relative; height: 2.2em; }
+.rk-timeline .rk-tl-mark { position: absolute; top: 2px; left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--p)); transform: translateX(-50%); padding: 2px 6px; font-size: var(--rk-t-meta); background: none; border: 0; border-top: 2px solid var(--rk-line); border-radius: 0; color: var(--rk-mute); cursor: pointer; white-space: nowrap; }
+.rk-timeline .rk-tl-mark.on { color: var(--rk-fg); border-top-color: var(--rk-acc); }

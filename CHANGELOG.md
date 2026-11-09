@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## Unreleased
+
+- A picture can have layers. The `layers` block holds `layer` blocks (sky, hill, water, sun, cloud, boat). Each layer has a place, a size, a turn, a fade and a depth, and a far layer moves less than a near one. A layer with `drag` has a handle that writes a state key. The new `timeline` block moves a time `t` with a bar, Play, markers and the keys A/D, Q/E and W. While a handle or the bar changes, a layer can show a faint ghost of its earlier place.
+- The new fns `ease` (linear, in, out, inout, step) and `keyframes` (a value at a time from `[t, value]` keys) have Python twins. The demo `scene-dawn-to-dusk` shows a boat on a river from dawn to dusk.
+
 ## 0.0.15
 
 - A 3D scene that a host takes off the page and puts back (a tab switch) draws again. The view keeps its renderer while it is away. When the browser takes its WebGL context away, the view makes a new one when it comes back. Only a demo that the host replaces frees its context.

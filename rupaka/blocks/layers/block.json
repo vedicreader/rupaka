@@ -1,0 +1,13 @@
+{
+  "name": "layers",
+  "since": "0.0.16",
+  "purpose": "A flat picture made of layers. Each layer has a place, a size, a turn, a fade and a depth, and a layer far away moves less than a layer that is near (parallax). A layer can have a handle that the learner drags.",
+  "binds": "none: each layer binds its own numbers",
+  "keys": "none on the picture; a handle takes A/D (left, right), W/S (up, down) and the arrows, and ⇧ moves ten steps",
+  "props": {
+    "pan": {"type": "numkey", "default": 0, "doc": "how far the camera moves: a number, or the key of a number; a layer with depth d shifts by -pan * d"},
+    "label": {"type": "str", "doc": "what the picture shows, for screen readers"},
+    "note": {"type": "str", "doc": "one short line under the picture"},
+    "blocks": {"type": "blocks", "req": true, "doc": "layer blocks only, from the back to the front", "only": ["layer"]}
+  }
+}

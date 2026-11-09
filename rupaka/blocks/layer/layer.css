@@ -1,0 +1,20 @@
+.rk-layer .sky { fill: color-mix(in srgb, var(--rk-acc) 26%, var(--rk-bg)); }
+.rk-layer .w0 { stop-color: var(--rk-no); stop-opacity: 0; }
+.rk-layer .w1 { stop-color: var(--rk-no); stop-opacity: 1; }
+.rk-layer .warm { opacity: calc(var(--tint, 0) * .7); }
+.rk-layer .hill { fill: color-mix(in srgb, var(--rk-fg) calc(var(--tone, .2) * 100%), var(--rk-bg)); }
+.rk-layer .water { fill: color-mix(in srgb, var(--rk-acc) calc(var(--tone, .3) * 100%), var(--rk-bg)); }
+.rk-layer .shine { stroke: var(--rk-bg); stroke-width: .6; stroke-linecap: round; opacity: .7; }
+.rk-layer .disc { fill: color-mix(in srgb, var(--rk-no) calc(30% + var(--tint, 0) * 40%), var(--rk-bg)); }
+.rk-layer .halo { fill: color-mix(in srgb, var(--rk-no) 25%, transparent); }
+.rk-layer.art-cloud ellipse { fill: var(--rk-bg); opacity: .85; }
+.rk-layer .hull { fill: var(--rk-fg); }
+.rk-layer .mast { stroke: var(--rk-fg); stroke-width: .8; }
+.rk-layer .sail { fill: var(--rk-bg); stroke: var(--rk-fg); stroke-width: .6; stroke-linejoin: round; }
+.rk-layer .sail.small { fill: color-mix(in srgb, var(--rk-no) 40%, var(--rk-bg)); }
+.rk-layers .handle .ring { fill: transparent; stroke: var(--rk-acc); stroke-width: .7; stroke-dasharray: 2 1.6; }
+.rk-layers .handle .dot { fill: var(--rk-acc); stroke: var(--rk-bg); stroke-width: .5; }
+.rk-layers .handle { cursor: grab; outline: none; } .rk-layers .handle.held { cursor: grabbing; }
+.rk-layers .handle:hover .ring, .rk-layers .handle.held .ring { fill: color-mix(in srgb, var(--rk-acc) 16%, transparent); }
+.rk-layers .handle:focus-visible .ring { stroke-width: 1.2; stroke-dasharray: none; }
+.rk-layers .handle text.tag { font-size: 4px; fill: var(--rk-fg); paint-order: stroke; stroke: var(--rk-bg); stroke-width: 1.2px; }

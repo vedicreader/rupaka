@@ -1,0 +1,11 @@
+{
+  "rupaka": 1, "id": "layer-example", "title": "Layer", "mode": "learn",
+  "state": {"boat": 60},
+  "blocks": [
+    {"type": "layers", "label": "A boat on water", "note": "Drag the round handle, or use A and D.", "blocks": [
+      {"type": "layer", "art": "sky"},
+      {"type": "layer", "art": "water"},
+      {"type": "layer", "art": "boat", "x": "boat", "y": 60, "drag": "x", "xr": [12, 148], "label": "Boat"}
+    ]}
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "layer",
+  "since": "0.0.16",
+  "purpose": "One layer of a picture: a drawn shape (sky, hill, water, sun, cloud, boat) with a place, a size, a turn, a fade and a depth. Each of these can be a number or the key of a number, so a slider, a timeline or a fn moves it.",
+  "binds": "number or numbers: x, y, scale, rotate, opacity and tint, each a number or a state key",
+  "keys": "with drag: A/D or ←/→ move it sideways, W/S or ↑/↓ move it up or down, ⇧ for ten steps",
+  "lockable": true,
+  "parent": "layers",
+  "props": {
+    "art": {"type": "str", "req": true, "of": ["sky", "hill", "water", "sun", "cloud", "boat"], "doc": "the shape to draw"},
+    "x": {"type": "numkey", "default": 0, "doc": "the place across, from 0 at the left to 160 at the right"},
+    "y": {"type": "numkey", "default": 0, "doc": "the place down, from 0 at the top to 90 at the bottom; with up, the height from the bottom"},
+    "up": {"type": "bool", "default": false, "doc": "y counts up from the bottom, so a bigger y is higher"},
+    "scale": {"type": "numkey", "default": 1},
+    "rotate": {"type": "numkey", "default": 0, "doc": "degrees, clockwise"},
+    "opacity": {"type": "numkey", "default": 1, "doc": "0 to 1"},
+    "tint": {"type": "numkey", "default": 0, "doc": "0 to 1: how much of the warm dawn and dusk colour the sky or the sun takes"},
+    "depth": {"type": "num", "default": 0, "doc": "0 stays with the camera; 1 moves with the whole pan; a far layer has a small depth"},
+    "tone": {"type": "num", "min": 0, "max": 1, "doc": "how dark a hill or the water is, from 0 to 1"},
+    "seed": {"type": "num", "default": 0, "doc": "the shape of a hill"},
+    "drag": {"type": "str", "of": ["x", "y", "xy"], "doc": "the learner moves the layer with a handle; the keys of x and y that it drags must be state keys"},
+    "xr": {"type": "range", "doc": "the least and most that a drag gives for x; the stage width if left out"},
+    "yr": {"type": "range", "doc": "the least and most that a drag gives for y; the stage height if left out"},
+    "step": {"type": "num", "default": 0.5, "doc": "the step of a drag or a key"},
+    "label": {"type": "str", "doc": "the name of the handle; it shows with the value"},
+    "ghost": {"type": "bool", "doc": "show a faint copy at the place before a change, while it changes; on by default for a layer with drag"}
+  }
+}

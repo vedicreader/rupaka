@@ -1,0 +1,13 @@
+{
+  "rupaka": 1, "id": "timeline-example", "title": "Timeline", "mode": "learn",
+  "state": {"t": 0},
+  "derive": [{"fn": "keyframes", "in": "t", "keys": [[0, 20], [100, 140]], "ease": "inout", "out": "sunx"}],
+  "blocks": [
+    {"type": "layers", "label": "A sun that crosses the sky", "blocks": [
+      {"type": "layer", "art": "sky"},
+      {"type": "layer", "art": "sun", "x": "sunx", "y": 40, "ghost": true},
+      {"type": "layer", "art": "water"}
+    ]},
+    {"type": "timeline", "bind": "t", "markers": [{"t": 0, "label": "Dawn"}, {"t": 50, "label": "Noon"}, {"t": 100, "label": "Dusk"}]}
+  ]
+}
