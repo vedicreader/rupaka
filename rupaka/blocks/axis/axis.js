@@ -32,9 +32,9 @@
     const svg = sv('svg', {viewBox: `0 0 ${W} ${H}`, role: 'group', 'aria-label': b.label || 'axes'});
     plane.svg = svg; plane.clip = `url(#${id})`;
     const g = sv('g', {class: 'grid'});
-    const xs = ticks(x0, x1, b.xstep || nice(x0, x1, 10)), ys = line ? [] : ticks(y0, y1, b.ystep || nice(y0, y1, 8));
+    const xs = ticks(x0, x1, b.xstep || (b.xlog ? 1 : nice(x0, x1, 10))), ys = line ? [] : ticks(y0, y1, b.ystep || nice(y0, y1, 8));
     const ax = line ? T : Y(Math.min(y1, Math.max(y0, 0))), ay = X(Math.min(x1, Math.max(x0, 0)));
-    const xl = xs.map(v => show(v, 3)), xon = every(xs, xs.map(X), i => 7.5 * xl[i].length), yon = every(ys, ys.map(Y), () => 13, 2);
+    const xl = xs.map(v => b.xlog ? (v >= 3 ? `${show(10 ** (v - 3), 3)}k` : show(10 ** v, 3)) : show(v, 3)), xon = every(xs, xs.map(X), i => 7.5 * xl[i].length), yon = every(ys, ys.map(Y), () => 13, 2);
     xs.forEach((v, i) => { g.append(sv('line', {class: v === 0 && !line ? 'zero' : 'hair', x1: X(v), x2: X(v), y1: line ? T - 5 : T, y2: line ? T + 5 : H - B}),
       ...xon[i] ? [sv('text', {class: 'num', x: X(v), y: line ? T + 22 : H - B + 18, 'text-anchor': 'middle', text: xl[i]})] : []); });
     ys.forEach((v, i) => { g.append(sv('line', {class: v === 0 ? 'zero' : 'hair', x1: L, x2: W - Rm, y1: Y(v), y2: Y(v)}),

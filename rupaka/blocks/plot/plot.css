@@ -1,2 +1,5 @@
-.rk-plot .ln { fill: none; stroke: var(--rk-acc); stroke-width: 2; stroke-linejoin: round; }
-.rk-plot .dots circle { fill: var(--rk-acc); }
+.rk-plot { --pc: var(--rk-acc); }
+.rk-plot.t-mute { --pc: var(--rk-mute); } .rk-plot.t-ok { --pc: var(--rk-ok); } .rk-plot.t-no { --pc: var(--rk-no); }
+.rk-plot .ln { fill: none; stroke: var(--pc); stroke-width: 2; stroke-linejoin: round; }
+.rk-plot .gh { fill: none; stroke: var(--pc); stroke-width: 2; stroke-linejoin: round; opacity: .28; }
+.rk-plot .dots circle { fill: var(--pc); }

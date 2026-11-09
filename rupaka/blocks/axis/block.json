@@ -9,6 +9,7 @@
     "y": {"type": "range", "doc": "[min, max] of y; leave it out for a number line"},
     "xstep": {"type": "num", "doc": "the tick step on x"},
     "ystep": {"type": "num", "doc": "the tick step on y"},
+    "xlog": {"type": "bool", "default": false, "doc": "x holds the log10 of a value (decades); the ticks show 1, 10, 100, 1k, and so on. A plot or point gives log10 of its x"},
     "xlabel": {"type": "str"},
     "ylabel": {"type": "str"},
     "height": {"type": "num", "default": 360},

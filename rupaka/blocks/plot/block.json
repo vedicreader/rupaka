@@ -8,6 +8,8 @@
   "props": {
     "series": {"type": "key", "req": true, "doc": "the state key of a list of {x, y}"},
     "dots": {"type": "bool", "default": false, "doc": "dots in place of a line"},
-    "label": {"type": "str", "doc": "what the curve is, for a screen reader"}
+    "label": {"type": "str", "doc": "what the curve is, for a screen reader"},
+    "ghost": {"type": "bool", "default": false, "doc": "keep the curve from before the latest change, faint, so the learner sees what moved; changes less than half a second apart count as one (a line only)"},
+    "tone": {"type": "str", "of": ["acc", "mute", "ok", "no"], "default": "acc", "doc": "the colour of the curve"}
   }
 }

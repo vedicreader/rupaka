@@ -297,3 +297,38 @@ def test_dense_axis_labels_never_meet(draw, w):
     t, ls = d.pg.evaluate("""(() => { const a = document.querySelectorAll('.rk-axis')[1], r = e => e.getBoundingClientRect();
       return [r([...a.querySelectorAll('text.num[text-anchor=end]')].find(t => t.textContent === '0')), [...a.querySelectorAll('line.zero')].map(r)]; })()""")
     assert any(l['height'] < 2 and t['top'] <= l['top'] <= t['bottom'] for l in ls)     # the label 0 sits at the zero line
+
+# plot ghost and tone, axis xlog
+
+GH = dict(id='gh', state=dict(m=1), derive=[dict(fn='expr', expr='m * x', over=dict(x=[-4, 4, 9]), out='line')], blocks=[
+    dict(type='axis', x=[-4, 4], y=[-8, 8], blocks=[dict(type='plot', series='line', ghost=True, tone='mute')]),
+    dict(type='slider', bind='m', min=-3, max=3, step=1)])
+
+def test_plot_ghost_keeps_the_line_from_before_the_change(draw):
+    from rupaka.spec import validate
+    assert [e for e in validate(GH) if 'gate' not in e] == []
+    d = draw(GH)
+    ln, gh = d.pg.locator('.rk-plot path.ln'), d.pg.locator('.rk-plot path.gh')
+    first = ln.get_attribute('d')
+    assert gh.get_attribute('d') is None                       # nothing has changed yet
+    d.pg.locator('.rk-slider input').focus(); d.pg.keyboard.press('d')
+    assert d.st('m') == 2 and gh.get_attribute('d') == first and ln.get_attribute('d') != first
+    second = ln.get_attribute('d')
+    d.pg.keyboard.press('d')                                   # a quick second step is the same drag: the ghost stays
+    assert gh.get_attribute('d') == first
+    d.pg.wait_for_timeout(600); d.pg.keyboard.press('a')       # after a pause, the line before this change is the ghost
+    assert gh.get_attribute('d') != first and d.errors == []
+    assert d.pg.locator('.rk-plot').first.evaluate("e => e.classList.contains('t-mute')")
+
+def test_plot_without_ghost_draws_no_ghost(draw):
+    d = draw(EX['plot'])
+    assert d.pg.locator('.rk-plot path.gh').count() == 0
+
+def test_axis_xlog_shows_decades(draw):
+    spec = dict(id='xl', state={}, derive=[dict(fn='expr', expr='-x / 2', over=dict(x=[0, 4, 9]), out='c')],
+                blocks=[dict(type='axis', x=[0, 4], xlog=True, y=[-3, 1], blocks=[dict(type='plot', series='c')])])
+    from rupaka.spec import validate
+    assert [e for e in validate(spec) if 'gate' not in e] == []
+    d = draw(spec)
+    labels = d.pg.evaluate("[...document.querySelectorAll('.rk-axis text.num[text-anchor=middle]')].map(t => t.textContent)")
+    assert labels == ['1', '10', '100', '1k', '10k'] and d.errors == []
