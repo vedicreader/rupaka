@@ -6,6 +6,10 @@
 
 - A picture can have layers. The `layers` block holds `layer` blocks (sky, hill, water, sun, cloud, boat). Each layer has a place, a size, a turn, a fade and a depth, and a far layer moves less than a near one. A layer with `drag` has a handle that writes a state key. The new `timeline` block moves a time `t` with a bar, Play, markers and the keys A/D, Q/E and W. While a handle or the bar changes, a layer can show a faint ghost of its earlier place.
 - The new fns `ease` (linear, in, out, inout, step) and `keyframes` (a value at a time from `[t, value]` keys) have Python twins. The demo `scene-dawn-to-dusk` shows a boat on a river from dawn to dusk.
+- Six new demos on circuits and signals: `ohms-law`, `rc-charging`, `rc-low-pass`, `add-sine-waves`, `sampling-aliasing` and `the-spectrum`.
+- New fns `sample` and `dft` for signals. A plot takes `ghost` and `tone`, and an axis takes `xlog`.
+- A plot draws the learner's guess dashed after Lock in.
+- A point can ride a curve: with `along`, its y follows its x, and a drag or the keys A/D change x only.
 
 ## 0.0.15
 
