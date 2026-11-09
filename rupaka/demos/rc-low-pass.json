@@ -1,0 +1,186 @@
+{
+  "rupaka": 1,
+  "id": "rc-low-pass",
+  "concept": "rc-low-pass-filter",
+  "title": "An RC low-pass filter",
+  "ask": "A sine wave of 1 V goes into a resistor R. The output is the voltage across the capacitor C. The plot shows how much of the input gets through at each frequency.",
+  "state": {
+    "R": 1.6,
+    "C": 1,
+    "lf": 2
+  },
+  "derive": [
+    {
+      "fn": "expr",
+      "expr": "1 / sqrt(2)",
+      "out": "half"
+    },
+    {
+      "fn": "expr",
+      "expr": "1000 / (2 * pi * R * C)",
+      "out": "fc"
+    },
+    {
+      "fn": "expr",
+      "expr": "log(fc) / log(10)",
+      "out": "lfc"
+    },
+    {
+      "fn": "expr",
+      "expr": "10 ^ lf",
+      "out": "fin"
+    },
+    {
+      "fn": "expr",
+      "expr": "1 / sqrt(1 + (10 ^ lf * 2 * pi * R * C / 1000) ^ 2)",
+      "out": "g"
+    },
+    {
+      "fn": "expr",
+      "expr": "sqrt(max(0, 1 - g ^ 2))",
+      "out": "gr"
+    },
+    {
+      "fn": "expr",
+      "expr": "1 / sqrt(1 + (10 ^ x * 2 * pi * R * C / 1000) ^ 2)",
+      "over": {
+        "x": [
+          0,
+          4,
+          161
+        ]
+      },
+      "out": "gain_c"
+    },
+    {
+      "fn": "expr",
+      "expr": "(10 ^ x * 2 * pi * R * C / 1000) / sqrt(1 + (10 ^ x * 2 * pi * R * C / 1000) ^ 2)",
+      "over": {
+        "x": [
+          0,
+          4,
+          161
+        ]
+      },
+      "out": "gain_r"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "axis",
+      "x": [
+        0,
+        4
+      ],
+      "xlog": true,
+      "y": [
+        0,
+        1.1
+      ],
+      "ystep": 0.25,
+      "xlabel": "frequency (Hz)",
+      "ylabel": "gain",
+      "height": 300,
+      "label": "Gain against frequency",
+      "blocks": [
+        {
+          "type": "plot",
+          "series": "gain_r",
+          "tone": "no",
+          "ghost": true,
+          "label": "gain across the resistor"
+        },
+        {
+          "type": "plot",
+          "series": "gain_c",
+          "ghost": true,
+          "label": "gain across the capacitor (the output)"
+        },
+        {
+          "type": "point",
+          "x": "lf",
+          "y": "g",
+          "show": false,
+          "label": "input"
+        },
+        {
+          "type": "point",
+          "after": "cut",
+          "x": "lfc",
+          "y": "half",
+          "show": false,
+          "label": "cut-off"
+        }
+      ]
+    },
+    {
+      "type": "gate",
+      "id": "cut",
+      "prompt": "R is 1.6 kΩ and C is 1 µF. C doubles to 2 µF. What happens to the cut-off frequency?",
+      "options": [
+        "It doubles",
+        "It halves",
+        "It stays the same"
+      ],
+      "answer": {
+        "is": "It halves"
+      },
+      "hides": [
+        "fc",
+        "lfc"
+      ],
+      "why": "Say why, in one line."
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "R",
+          "label": "R (kilohms)",
+          "min": 0.5,
+          "max": 10,
+          "step": 0.1,
+          "digits": 1,
+          "lock": "cut"
+        },
+        {
+          "type": "slider",
+          "bind": "C",
+          "label": "C (microfarads)",
+          "min": 0.1,
+          "max": 10,
+          "step": 0.1,
+          "digits": 1,
+          "lock": "cut"
+        }
+      ]
+    },
+    {
+      "type": "slider",
+      "bind": "lf",
+      "label": "Input frequency (power of ten)",
+      "min": 0,
+      "max": 4,
+      "step": 0.1,
+      "digits": 1,
+      "note": "2 is 100 Hz, and 3 is 1000 Hz."
+    },
+    {
+      "type": "readout",
+      "label": "At the input frequency",
+      "text": "{fin:0} Hz in: {g:2} V across the capacitor, {gr:2} V across the resistor"
+    },
+    {
+      "type": "readout",
+      "after": "cut",
+      "label": "Cut-off",
+      "text": "fc = 1 / (2π R C) = {fc:0} Hz"
+    },
+    {
+      "type": "caption",
+      "after": "cut",
+      "text": "At the cut-off, the output is 0.71 of the input. The faint curves show where they were. Make R twice as large. What happens to fc?"
+    }
+  ]
+}

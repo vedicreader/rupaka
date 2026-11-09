@@ -1,0 +1,251 @@
+{
+  "rupaka": 1,
+  "id": "rc-charging",
+  "concept": "rc-circuit",
+  "title": "An RC circuit charging",
+  "ask": "A battery of V volts charges a capacitor C through a resistor R. The switch closes at time 0. The capacitor starts empty.",
+  "state": {
+    "V": 5,
+    "R": 4,
+    "C": 10
+  },
+  "derive": [
+    {
+      "fn": "expr",
+      "expr": "R * C",
+      "out": "tau"
+    },
+    {
+      "fn": "expr",
+      "expr": "2 * tau",
+      "out": "t2"
+    },
+    {
+      "fn": "expr",
+      "expr": "5 * tau",
+      "out": "t5"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * (1 - exp(-1))",
+      "out": "c1"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * (1 - exp(-2))",
+      "out": "c2"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * (1 - exp(-5))",
+      "out": "c5"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * exp(-1)",
+      "out": "r1"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * exp(-2)",
+      "out": "r2"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * exp(-5)",
+      "out": "r5"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * (1 - exp(-t / (R * C)))",
+      "over": {
+        "t": [
+          0,
+          500,
+          251
+        ]
+      },
+      "out": "vc"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * exp(-t / (R * C))",
+      "over": {
+        "t": [
+          0,
+          500,
+          251
+        ]
+      },
+      "out": "vr"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "axis",
+      "x": [
+        0,
+        500
+      ],
+      "y": [
+        0,
+        10
+      ],
+      "xstep": 100,
+      "ystep": 2,
+      "ylabel": "capacitor (V)",
+      "height": 230,
+      "label": "Voltage across the capacitor",
+      "blocks": [
+        {
+          "type": "plot",
+          "series": "vc",
+          "ghost": true,
+          "label": "v of the capacitor"
+        },
+        {
+          "type": "point",
+          "after": "t63",
+          "x": "tau",
+          "y": "c1",
+          "show": false,
+          "label": "1τ"
+        },
+        {
+          "type": "point",
+          "after": "t63",
+          "x": "t2",
+          "y": "c2",
+          "show": false,
+          "label": "2τ"
+        },
+        {
+          "type": "point",
+          "after": "t63",
+          "x": "t5",
+          "y": "c5",
+          "show": false,
+          "label": "5τ"
+        }
+      ]
+    },
+    {
+      "type": "axis",
+      "x": [
+        0,
+        500
+      ],
+      "y": [
+        0,
+        10
+      ],
+      "xstep": 100,
+      "ystep": 2,
+      "xlabel": "time (ms)",
+      "ylabel": "resistor (V)",
+      "height": 230,
+      "label": "Voltage across the resistor",
+      "blocks": [
+        {
+          "type": "plot",
+          "series": "vr",
+          "ghost": true,
+          "tone": "no",
+          "label": "v of the resistor"
+        },
+        {
+          "type": "point",
+          "after": "t63",
+          "x": "tau",
+          "y": "r1",
+          "show": false,
+          "label": "1τ"
+        },
+        {
+          "type": "point",
+          "after": "t63",
+          "x": "t2",
+          "y": "r2",
+          "show": false,
+          "label": "2τ"
+        },
+        {
+          "type": "point",
+          "after": "t63",
+          "x": "t5",
+          "y": "r5",
+          "show": false,
+          "label": "5τ"
+        }
+      ]
+    },
+    {
+      "type": "gate",
+      "id": "t63",
+      "prompt": "R is 4 kΩ and C is 10 µF. How long does the capacitor take to reach 63 percent of V?",
+      "options": [
+        "4 ms",
+        "40 ms",
+        "400 ms"
+      ],
+      "answer": {
+        "is": "40 ms"
+      },
+      "hides": [
+        "tau",
+        "t2",
+        "t5",
+        "c1",
+        "c2",
+        "c5",
+        "r1",
+        "r2",
+        "r5"
+      ],
+      "why": "Say why, in one line."
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "V",
+          "label": "Source V (volts)",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "t63"
+        },
+        {
+          "type": "slider",
+          "bind": "R",
+          "label": "R (kilohms)",
+          "min": 2,
+          "max": 10,
+          "step": 1,
+          "lock": "t63"
+        },
+        {
+          "type": "slider",
+          "bind": "C",
+          "label": "C (microfarads)",
+          "min": 2,
+          "max": 10,
+          "step": 1,
+          "lock": "t63"
+        }
+      ]
+    },
+    {
+      "type": "readout",
+      "after": "t63",
+      "label": "Time constant",
+      "text": "τ = R × C = {tau:0} ms"
+    },
+    {
+      "type": "caption",
+      "after": "t63",
+      "text": "The two voltages add up to V at every moment. After 1τ the capacitor holds 63 percent of V. After 5τ it holds 99 percent. Double C. The faint curve shows the old one. What moved, and why?"
+    }
+  ]
+}

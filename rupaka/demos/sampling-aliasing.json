@@ -1,0 +1,174 @@
+{
+  "rupaka": 1,
+  "id": "sampling-aliasing",
+  "concept": "sampling-aliasing",
+  "title": "Sampling and aliasing",
+  "ask": "A meter reads a sine wave at a fixed rate. The dots are its readings. A line through the dots is what you can rebuild from them.",
+  "state": {
+    "f": 3,
+    "fs": 20
+  },
+  "derive": [
+    {
+      "fn": "expr",
+      "expr": "sin(2 * pi * f * t)",
+      "over": {
+        "t": [
+          0,
+          1,
+          401
+        ]
+      },
+      "out": "signal"
+    },
+    {
+      "fn": "sample",
+      "expr": "sin(2 * pi * f * t)",
+      "over": {
+        "t": [
+          0,
+          1
+        ]
+      },
+      "rate": "fs",
+      "out": "dots"
+    },
+    {
+      "fn": "expr",
+      "expr": "f - round(f / fs) * fs",
+      "out": "fa"
+    },
+    {
+      "fn": "expr",
+      "expr": "sin(2 * pi * fa * t)",
+      "over": {
+        "t": [
+          0,
+          1,
+          401
+        ]
+      },
+      "out": "recon"
+    },
+    {
+      "fn": "expr",
+      "expr": "min(1, max(0, 2 * f - fs + 1))",
+      "out": "bad"
+    },
+    {
+      "fn": "lookup",
+      "table": "warn",
+      "key": "bad",
+      "out": "w"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "axis",
+      "x": [
+        0,
+        1
+      ],
+      "y": [
+        -1.4,
+        1.4
+      ],
+      "xstep": 0.1,
+      "ystep": 0.5,
+      "xlabel": "time (s)",
+      "height": 300,
+      "label": "The signal, its samples and the rebuilt line",
+      "blocks": [
+        {
+          "type": "plot",
+          "series": "signal",
+          "tone": "mute",
+          "label": "the signal"
+        },
+        {
+          "type": "plot",
+          "after": "alias",
+          "series": "recon",
+          "tone": "ok",
+          "ghost": true,
+          "label": "the rebuilt line"
+        },
+        {
+          "type": "plot",
+          "series": "dots",
+          "dots": true,
+          "label": "the samples"
+        }
+      ]
+    },
+    {
+      "type": "gate",
+      "id": "alias",
+      "prompt": "The sine stays at 3 Hz. You lower the rate to 4 samples in one second. What does a line through the dots look like?",
+      "options": [
+        "The same 3 Hz sine",
+        "A slower sine that is not real (an alias)",
+        "A flat line"
+      ],
+      "answer": {
+        "is": "A slower sine that is not real (an alias)"
+      },
+      "hides": [
+        "fa",
+        "recon",
+        "bad",
+        "w"
+      ],
+      "why": "Say why, in one line."
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "f",
+          "label": "Signal frequency (Hz)",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "alias"
+        },
+        {
+          "type": "slider",
+          "bind": "fs",
+          "label": "Sampling rate (per second)",
+          "min": 2,
+          "max": 30,
+          "step": 1,
+          "lock": "alias"
+        }
+      ]
+    },
+    {
+      "type": "readout",
+      "after": "alias",
+      "label": "The rebuilt line",
+      "text": "{fa:0} Hz from {fs} readings in one second"
+    },
+    {
+      "type": "caption",
+      "after": "alias",
+      "text": "{w.msg}"
+    },
+    {
+      "type": "caption",
+      "after": "alias",
+      "text": "Set the signal to 5 Hz and the rate to 8. Then raise the rate to 11. At what rate does the false wave go away?"
+    }
+  ],
+  "tables": {
+    "warn": [
+      {
+        "msg": "The rate is above twice the frequency. The dots keep the signal."
+      },
+      {
+        "msg": "**Warning.** The rate is not above twice the frequency. The dots cannot tell the signal from a slower wave."
+      }
+    ]
+  }
+}

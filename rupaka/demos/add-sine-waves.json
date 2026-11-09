@@ -1,0 +1,201 @@
+{
+  "rupaka": 1,
+  "id": "add-sine-waves",
+  "concept": "fourier-synthesis",
+  "title": "Add sine waves",
+  "ask": "Three sine waves add up to one signal. Each has a height and a frequency in hertz (cycles in one second). The pale lines are the parts. The bold line is their sum.",
+  "state": {
+    "a1": 1,
+    "f1": 1,
+    "a2": 0.5,
+    "f2": 4,
+    "a3": 0.25,
+    "f3": 7
+  },
+  "derive": [
+    {
+      "fn": "expr",
+      "expr": "a1 * sin(2 * pi * f1 * t)",
+      "over": {
+        "t": [
+          0,
+          1,
+          401
+        ]
+      },
+      "out": "s1"
+    },
+    {
+      "fn": "expr",
+      "expr": "a2 * sin(2 * pi * f2 * t)",
+      "over": {
+        "t": [
+          0,
+          1,
+          401
+        ]
+      },
+      "out": "s2"
+    },
+    {
+      "fn": "expr",
+      "expr": "a3 * sin(2 * pi * f3 * t)",
+      "over": {
+        "t": [
+          0,
+          1,
+          401
+        ]
+      },
+      "out": "s3"
+    },
+    {
+      "fn": "expr",
+      "expr": "a1 * sin(2 * pi * f1 * t) + a2 * sin(2 * pi * f2 * t) + a3 * sin(2 * pi * f3 * t)",
+      "over": {
+        "t": [
+          0,
+          1,
+          401
+        ]
+      },
+      "out": "sum"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "axis",
+      "x": [
+        0,
+        1
+      ],
+      "y": [
+        -3,
+        3
+      ],
+      "xstep": 0.1,
+      "ystep": 1,
+      "xlabel": "time (s)",
+      "height": 320,
+      "label": "The three sines and their sum",
+      "blocks": [
+        {
+          "type": "plot",
+          "series": "s1",
+          "tone": "mute",
+          "label": "sine 1"
+        },
+        {
+          "type": "plot",
+          "series": "s2",
+          "tone": "mute",
+          "label": "sine 2"
+        },
+        {
+          "type": "plot",
+          "series": "s3",
+          "tone": "mute",
+          "label": "sine 3"
+        },
+        {
+          "type": "plot",
+          "after": "rep",
+          "series": "sum",
+          "ghost": true,
+          "label": "the sum"
+        }
+      ]
+    },
+    {
+      "type": "gate",
+      "id": "rep",
+      "prompt": "Sine 1 is at 1 Hz and sine 2 is at 4 Hz. How many times in one second does the sum repeat its shape?",
+      "options": [
+        "1 time",
+        "4 times",
+        "5 times"
+      ],
+      "answer": {
+        "is": "1 time"
+      },
+      "hides": [
+        "sum"
+      ],
+      "why": "Say why, in one line."
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "a1",
+          "label": "Sine 1 height",
+          "min": 0,
+          "max": 1,
+          "step": 0.25,
+          "lock": "rep"
+        },
+        {
+          "type": "slider",
+          "bind": "f1",
+          "label": "Sine 1 Hz",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "rep"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "a2",
+          "label": "Sine 2 height",
+          "min": 0,
+          "max": 1,
+          "step": 0.25,
+          "lock": "rep"
+        },
+        {
+          "type": "slider",
+          "bind": "f2",
+          "label": "Sine 2 Hz",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "rep"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "a3",
+          "label": "Sine 3 height",
+          "min": 0,
+          "max": 1,
+          "step": 0.25,
+          "lock": "rep"
+        },
+        {
+          "type": "slider",
+          "bind": "f3",
+          "label": "Sine 3 Hz",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "rep"
+        }
+      ]
+    },
+    {
+      "type": "caption",
+      "after": "rep",
+      "text": "The sum repeats as often as the slowest shared beat. Here that is 1 Hz, because 4 is a whole multiple of 1. Set sine 1 to 4 Hz and sine 2 to 6 Hz. How often does the sum repeat now?"
+    }
+  ]
+}

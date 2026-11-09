@@ -1,0 +1,121 @@
+{
+  "rupaka": 1,
+  "id": "ohms-law",
+  "concept": "ohms-law",
+  "title": "Ohm's law",
+  "ask": "A resistor R sits across a battery of V volts. The current through it is I = V / R. The line shows I for every voltage, and the dot shows the voltage now.",
+  "state": {
+    "V": 6,
+    "R": 3
+  },
+  "derive": [
+    {
+      "fn": "expr",
+      "expr": "V / R",
+      "out": "I"
+    },
+    {
+      "fn": "expr",
+      "expr": "V * V / R",
+      "out": "P"
+    },
+    {
+      "fn": "expr",
+      "expr": "v / R",
+      "over": {
+        "v": [
+          0,
+          12,
+          25
+        ]
+      },
+      "out": "line"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "axis",
+      "x": [
+        0,
+        12
+      ],
+      "y": [
+        0,
+        12
+      ],
+      "xstep": 2,
+      "ystep": 2,
+      "xlabel": "V (volts)",
+      "ylabel": "I (mA)",
+      "height": 300,
+      "label": "Current against voltage",
+      "blocks": [
+        {
+          "type": "plot",
+          "series": "line",
+          "ghost": true,
+          "label": "I = V / R"
+        },
+        {
+          "type": "point",
+          "after": "half",
+          "x": "V",
+          "y": "I",
+          "label": "now"
+        }
+      ]
+    },
+    {
+      "type": "gate",
+      "id": "half",
+      "prompt": "V stays at 6 V. R goes from 3 kΩ to 6 kΩ. What does the current do?",
+      "options": [
+        "It halves",
+        "It doubles",
+        "It stays the same"
+      ],
+      "answer": {
+        "is": "It halves"
+      },
+      "hides": [
+        "I",
+        "P"
+      ],
+      "why": "Say why, in one line."
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "V",
+          "label": "Voltage V (volts)",
+          "min": 0,
+          "max": 12,
+          "step": 1,
+          "lock": "half"
+        },
+        {
+          "type": "slider",
+          "bind": "R",
+          "label": "Resistance R (kilohms)",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "half"
+        }
+      ]
+    },
+    {
+      "type": "readout",
+      "after": "half",
+      "label": "The resistor",
+      "text": "{V} V across it, {I:2} mA through it, {P:1} mW of heat"
+    },
+    {
+      "type": "caption",
+      "after": "half",
+      "text": "The line has a slope of 1 / R. A larger R makes the line flatter, and the faint line shows where it was. Set V to 12 and R to 2. What is I? Check it on the line."
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "rupaka": 1,
+  "id": "the-spectrum",
+  "concept": "fourier-spectrum",
+  "title": "The spectrum",
+  "ask": "The same three sines add up to one signal. The bars show how much of each frequency is in the sum. This view is the spectrum.",
+  "state": {
+    "a1": 1,
+    "f1": 2,
+    "a2": 0.5,
+    "f2": 5,
+    "a3": 0.25,
+    "f3": 8
+  },
+  "derive": [
+    {
+      "fn": "expr",
+      "expr": "a1 * sin(2 * pi * f1 * t) + a2 * sin(2 * pi * f2 * t) + a3 * sin(2 * pi * f3 * t)",
+      "over": {
+        "t": [
+          0,
+          1,
+          401
+        ]
+      },
+      "out": "sum"
+    },
+    {
+      "fn": "dft",
+      "expr": "a1 * sin(2 * pi * f1 * t) + a2 * sin(2 * pi * f2 * t) + a3 * sin(2 * pi * f3 * t)",
+      "over": {
+        "t": [
+          0,
+          1,
+          64
+        ]
+      },
+      "upto": 10,
+      "out": "spectrum"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "axis",
+      "x": [
+        0,
+        1
+      ],
+      "y": [
+        -2.5,
+        2.5
+      ],
+      "xstep": 0.1,
+      "ystep": 1,
+      "xlabel": "time (s)",
+      "height": 260,
+      "label": "The sum of the three sines",
+      "blocks": [
+        {
+          "type": "plot",
+          "series": "sum",
+          "ghost": true,
+          "label": "the sum"
+        }
+      ]
+    },
+    {
+      "type": "gate",
+      "id": "bars",
+      "prompt": "The sines are at 2, 5 and 8 Hz. Where do the bars of the spectrum stand?",
+      "options": [
+        "At 2, 5 and 8 Hz, as tall as the sine heights",
+        "In one bar at 15 Hz",
+        "In every bin, all the same"
+      ],
+      "answer": {
+        "is": "At 2, 5 and 8 Hz, as tall as the sine heights"
+      },
+      "hides": [
+        "spectrum"
+      ],
+      "why": "Say why, in one line."
+    },
+    {
+      "type": "bars",
+      "after": "bars",
+      "bind": "spectrum",
+      "label": "Spectrum: height of each frequency",
+      "max": 1.5,
+      "digits": 2,
+      "gutter": 56,
+      "items": {
+        "0": "0 Hz",
+        "1": "1 Hz",
+        "2": "2 Hz",
+        "3": "3 Hz",
+        "4": "4 Hz",
+        "5": "5 Hz",
+        "6": "6 Hz",
+        "7": "7 Hz",
+        "8": "8 Hz",
+        "9": "9 Hz",
+        "10": "10 Hz"
+      }
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "a1",
+          "label": "Sine 1 height",
+          "min": 0,
+          "max": 1,
+          "step": 0.25,
+          "lock": "bars"
+        },
+        {
+          "type": "slider",
+          "bind": "f1",
+          "label": "Sine 1 Hz",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "bars"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "a2",
+          "label": "Sine 2 height",
+          "min": 0,
+          "max": 1,
+          "step": 0.25,
+          "lock": "bars"
+        },
+        {
+          "type": "slider",
+          "bind": "f2",
+          "label": "Sine 2 Hz",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "bars"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "blocks": [
+        {
+          "type": "slider",
+          "bind": "a3",
+          "label": "Sine 3 height",
+          "min": 0,
+          "max": 1,
+          "step": 0.25,
+          "lock": "bars"
+        },
+        {
+          "type": "slider",
+          "bind": "f3",
+          "label": "Sine 3 Hz",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "lock": "bars"
+        }
+      ]
+    },
+    {
+      "type": "caption",
+      "after": "bars",
+      "text": "Each sine makes one bar, and its height is the sine height. Move sine 1 to 5 Hz. Its bar lands on sine 2. What happens to that bar?"
+    }
+  ]
+}
