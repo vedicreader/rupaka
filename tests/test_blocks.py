@@ -225,7 +225,7 @@ def test_point_drag_and_keys(draw):
 
 def test_plot_draws_the_series(draw):
     d = draw(EX['plot'])
-    path = d.pg.locator('.rk-plot path').get_attribute('d')
+    path = d.pg.locator('.rk-plot path.ln').get_attribute('d')
     assert path.startswith('M') and path.count('L') == 8
 
 # grid
@@ -319,6 +319,34 @@ def test_plot_ghost_keeps_the_line_from_before_the_change(draw):
     d.pg.wait_for_timeout(600); d.pg.keyboard.press('a')       # after a pause, the line before this change is the ghost
     assert gh.get_attribute('d') != first and d.errors == []
     assert d.pg.locator('.rk-plot').first.evaluate("e => e.classList.contains('t-mute')")
+
+def test_plot_draws_the_guess_dashed_only_after_lock_in_and_keeps_it_while_inputs_move(draw):
+    from rupaka.spec import validate
+    d = draw(EX['plot']); assert validate(EX['plot']) == []
+    gs = d.pg.locator('.rk-plot path.gs')
+    assert gs.get_attribute('d') is None                          # nothing before Lock in
+    d.lock(2)                                                     # It gets flatter: m / 2
+    drawn = gs.get_attribute('d')
+    assert drawn and drawn != d.pg.locator('.rk-plot path.ln').get_attribute('d')
+    assert gs.evaluate("e => getComputedStyle(e).strokeDasharray") != 'none'
+    d.pg.locator('.rk-slider input').focus(); d.pg.keyboard.press('d')
+    assert d.st('m') == 1.5 and gs.get_attribute('d') == drawn and d.errors == []
+
+def test_a_point_that_rides_a_curve_drags_and_nudges_x_only(draw):
+    spec = dict(id='al', state=dict(x=1), derive=[dict(fn='expr', expr='x * x', out='y'), dict(fn='expr', expr='x * x', over=dict(x=[0, 4, 9]), out='c')],
+                blocks=[dict(type='axis', x=[0, 4], y=[0, 16], blocks=[dict(type='plot', series='c'), dict(type='point', x='x', y='y', along=True, step=0.5)])])
+    from rupaka.spec import validate
+    assert [e for e in validate(spec) if 'gate' not in e] == []
+    d = draw(spec)
+    pt = d.pg.locator('.rk-point'); assert pt.get_attribute('role') == 'slider'
+    pt.focus(); d.pg.keyboard.press('d'); assert d.st('x') == 1.5 and d.st('y') == 2.25
+    d.pg.keyboard.press('w'); assert d.st('x') == 1.5            # up does nothing: y is not an input
+    svg = d.pg.locator('.rk-axis svg'); bx = svg.bounding_box()
+    px = lambda v: bx['x'] + (40 + v / 4 * (600 - 40 - 16)) / 600 * bx['width']
+    dot = d.pg.locator('.rk-point .dot').bounding_box()
+    d.pg.mouse.move(dot['x'] + dot['width'] / 2, dot['y'] + dot['height'] / 2); d.pg.mouse.down()
+    d.pg.mouse.move(px(3.1), dot['y'] + dot['height'] / 2, steps=6); d.pg.mouse.up()
+    assert d.st('x') == 3 and d.st('y') == 9 and d.errors == []
 
 def test_plot_without_ghost_draws_no_ghost(draw):
     d = draw(EX['plot'])

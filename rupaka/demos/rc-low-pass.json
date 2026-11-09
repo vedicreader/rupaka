@@ -54,6 +54,30 @@
     },
     {
       "fn": "expr",
+      "expr": "1 / sqrt(1 + (10 ^ x * 2 * pi * R * C * 0.5 / 1000) ^ 2)",
+      "over": {
+        "x": [
+          0,
+          4,
+          161
+        ]
+      },
+      "out": "gain_up"
+    },
+    {
+      "fn": "expr",
+      "expr": "1 / sqrt(1 + (10 ^ x * 2 * pi * R * C * 2 / 1000) ^ 2)",
+      "over": {
+        "x": [
+          0,
+          4,
+          161
+        ]
+      },
+      "out": "gain_down"
+    },
+    {
+      "fn": "expr",
       "expr": "(10 ^ x * 2 * pi * R * C / 1000) / sqrt(1 + (10 ^ x * 2 * pi * R * C / 1000) ^ 2)",
       "over": {
         "x": [
@@ -94,14 +118,22 @@
           "type": "plot",
           "series": "gain_c",
           "ghost": true,
-          "label": "gain across the capacitor (the output)"
+          "label": "gain across the capacitor (the output)",
+          "guess": "cut",
+          "guesses": [
+            "gain_up",
+            "gain_down",
+            "gain_c"
+          ]
         },
         {
           "type": "point",
           "x": "lf",
           "y": "g",
           "show": false,
-          "label": "input"
+          "label": "input",
+          "along": true,
+          "step": 0.1
         },
         {
           "type": "point",

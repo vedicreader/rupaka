@@ -11,6 +11,7 @@
     "x": {"type": "key", "doc": "the key of x"},
     "y": {"type": "key", "doc": "the key of y, on x/y axes"},
     "step": {"type": "num", "default": 1},
+    "along": {"type": "bool", "default": false, "doc": "with x and y: the dot rides a curve whose y is derived; the learner drags it, or presses A/D, to change x only"},
     "drag": {"type": "bool", "doc": "false makes an input point still; a point on a derived value never drags"},
     "show": {"type": "bool", "default": true, "doc": "show the value beside the label"},
     "label": {"type": "str"}
