@@ -1,0 +1,11 @@
+{
+  "name": "dft", "since": "0.0.17",
+  "purpose": "The spectrum of a formula in time: the strength of each whole frequency, from n ticks over one span. A sine of amplitude a gives a bar of a.",
+  "returns": "a list of {id, value} for bars; the id is the frequency, and the span is 1 unit of time when it is [0, 1]",
+  "props": {
+    "expr": {"type": "expr", "req": true, "doc": "the formula, for example \"sin(2*pi*3*t)\""},
+    "over": {"type": "over", "req": true, "doc": "{\"t\": [lo, hi, n]}: the name for time, its span and the number of ticks (default 64)"},
+    "upto": {"type": "int", "doc": "the highest frequency bin to give; the default is n / 2"}
+  },
+  "example": {"fn": "dft", "expr": "a*sin(2*pi*3*t)", "over": {"t": [0, 1, 64]}, "upto": 8, "out": "spectrum"}
+}

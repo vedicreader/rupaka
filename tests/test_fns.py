@@ -67,3 +67,27 @@ def test_noise_is_only_in_field(draw):
 def test_path_reads_own_keys_only(draw):
     d = draw(dict(id='g', state=dict(o=dict(a=1)), blocks=[dict(type='readout', text='{o.constructor}|{o.__proto__}|{o.a}')]))
     assert d.pg.locator('.rk-readout .big').inner_text() == '||1'
+
+# sample and dft
+
+def test_sample_and_dft_match_python(draw):
+    spec = dict(state=dict(f=5, fs=8, a=2), derive=[dict(fn='sample', expr='sin(2*pi*f*t)', over=dict(t=[0, 1]), rate='fs', out='dots'),
+                                                    dict(fn='dft', expr='a*sin(2*pi*3*t) + 0.5*sin(2*pi*7*t) + 1', over=dict(t=[0, 1, 32]), upto=9, out='sp'),
+                                                    dict(fn='dft', expr='sin(2*pi*t)', over=dict(t=[0, 2, 16]), out='half')])
+    js, py = js_run(draw, spec), run(spec)
+    assert len(js['dots']) == len(py['dots']) == 9 and len(js['sp']) == 10 and len(js['half']) == 9
+    for a, b in zip(js['dots'], py['dots']): assert math.isclose(a['x'], b['x']) and math.isclose(a['y'], b['y'], abs_tol=1e-9)
+    for k in ('sp', 'half'):
+        assert [x['id'] for x in js[k]] == [x['id'] for x in py[k]]
+        assert all(math.isclose(x['value'], y['value'], abs_tol=1e-9) for x, y in zip(js[k], py[k]))
+    assert [x['id'] for x in py['half']][:3] == ['0', '0.5', '1']
+
+def test_dft_finds_the_sines():
+    sp = run(dict(state=dict(a=2), derive=[dict(fn='dft', expr='a*sin(2*pi*3*t) + 0.5*sin(2*pi*7*t) + 1', over=dict(t=[0, 1, 32]), out='sp')]))['sp']
+    assert len(sp) == 17
+    for k, v in {0: 1, 3: 2, 7: 0.5}.items(): assert math.isclose(sp[k]['value'], v, abs_tol=1e-9), k
+    assert all(x['value'] < 1e-9 for k, x in enumerate(sp) if k not in (0, 3, 7))
+
+def test_sample_alias_has_the_same_points(draw):
+    at = lambda f: [p['y'] for p in js_run(draw, dict(state=dict(f=f), derive=[dict(fn='sample', expr='sin(2*pi*f*t)', over=dict(t=[0, 1]), rate=8, out='d')]))['d']]
+    assert all(abs(a + b) < 1e-9 for a, b in zip(at(5), at(3)))

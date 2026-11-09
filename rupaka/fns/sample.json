@@ -1,0 +1,11 @@
+{
+  "name": "sample", "since": "0.0.17",
+  "purpose": "The points of a formula in time at a sampling rate: x = lo, lo + 1/rate, and so on up to hi.",
+  "returns": "a list of {x, y}, for a plot with dots",
+  "props": {
+    "expr": {"type": "expr", "req": true, "doc": "the formula, for example \"sin(2*pi*f*t)\""},
+    "over": {"type": "over", "req": true, "doc": "{\"t\": [lo, hi]}: the name for time and its range"},
+    "rate": {"type": "numkey", "req": true, "doc": "samples in one unit of time: a number, or the key of a number"}
+  },
+  "example": {"fn": "sample", "expr": "sin(2*pi*f*t)", "over": {"t": [0, 1]}, "rate": "fs", "out": "dots"}
+}

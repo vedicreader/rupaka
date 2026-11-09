@@ -9,9 +9,9 @@ __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'MAX_WOR
            'MODES', 'SHOTS', 'FLOW', 'NODE_ID', 'UPGRADES', 'manifests', 'fn_manifests', 'from_', 'is_', 'demo', 'gate',
            'readout', 'caption', 'row', 'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel', 'ranklist',
            'bars', 'axis', 'point', 'plot', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d', 'shot', 'rules',
-           'rrf', 'softmax', 'lookup', 'expr', 'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text',
-           'noise', 'run', 'long_sentences', 'syllables', 'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate',
-           'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
+           'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft', 'field', 'fmt', 'parse_expr', 'get', 'js_str',
+           'show_value', 'fmt_text', 'noise', 'run', 'long_sentences', 'syllables', 'grade', 'plain_why',
+           'plain_errors', 'has_bold', 'validate', 'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
 import math, re
@@ -89,6 +89,8 @@ def rrf(ins, k, out): return dict(fn='rrf', **{'in': list(ins)}, k=k, out=out)
 def softmax(src, out, t=None, labels=None, sort=None): return _drop(dict(fn='softmax', **{'in': src}, t=t, labels=labels, sort=sort, out=out))
 def lookup(table, key, out, by=None): return _drop(dict(fn='lookup', table=table, key=key, by=by, out=out))
 def expr(f, out, over=None): return _drop(dict(fn='expr', expr=f, over=over, out=out))
+def sample(f, over, rate, out): return dict(fn='sample', expr=f, over=over, rate=rate, out=out)
+def dft(f, over, out, upto=None): return _drop(dict(fn='dft', expr=f, over=over, upto=upto, out=out))
 def field(f, out, n=16, seed=0): return dict(fn='field', expr=f, n=n, seed=seed, out=out)
 def fmt(text, out): return dict(fn='fmt', text=text, out=out)
 
@@ -283,6 +285,25 @@ def _expr(d, st, spec):
     lo, hi, n = (list(rng) + [101])[:3]
     return [dict(x=(x := lo + (hi - lo) * i / (n - 1)), y=f({**st, name: x})) for i in range(int(n))]
 
+def _sample(d, st, spec):
+    f = parse_expr(d['expr'])[0]
+    (name, (lo, hi)), = d['over'].items(); rate = _num(d, st, 'rate')
+    if not rate > 0: raise ValueError('sample: rate must be above 0')
+    n = math.floor((hi - lo) * rate + 1e-9) + 1
+    if n > 4000: raise ValueError('sample: more than 4000 points')
+    return [dict(x=(x := lo + k / rate), y=f({**st, name: x})) for k in range(n)]
+
+def _dft(d, st, spec):
+    f = parse_expr(d['expr'])[0]
+    (name, rng), = d['over'].items()
+    lo, hi, n = (list(rng) + [64])[:3]; n = int(n); T = hi - lo
+    up = min(d.get('upto', n / 2), n // 2)
+    ys = [f({**st, name: lo + T * i / n}) for i in range(n)]
+    def bin(k):
+        re = sum(y * math.cos(2 * math.pi * k * i / n) for i, y in enumerate(ys)); im = -sum(y * math.sin(2 * math.pi * k * i / n) for i, y in enumerate(ys))
+        return dict(id=js_str(k / T), value=math.hypot(re, im) / n * (1 if k == 0 or 2 * k == n else 2))
+    return [bin(k) for k in range(int(up) + 1)]
+
 _M32 = 0xFFFFFFFF
 def _u32(x): return int(x) & _M32 if math.isfinite(x) else 0
 def _mix(h):
@@ -307,7 +328,7 @@ def _sortby(d, st, spec):
     v = lambda x: (x or {}).get(d['by']) if d.get('by') else x
     return sorted(get(st, d['from']) or [], key=v, reverse=bool(d.get('desc')))
 
-FNS = dict(rules=_rules, rrf=_rrf, softmax=_softmax, lookup=_lookup, expr=_expr, field=_field, sort=_sortby,
+FNS = dict(rules=_rules, rrf=_rrf, softmax=_softmax, lookup=_lookup, expr=_expr, sample=_sample, dft=_dft, field=_field, sort=_sortby,
            ids=lambda d, st, spec: [x.get('id') if isinstance(x, dict) else x for x in get(st, d['from']) or []],
            pick=lambda d, st, spec: [None if x is None else x.get(d['field']) for x in get(st, d['from']) or []],
            fmt=lambda d, st, spec: fmt_text(d['text'], st))
