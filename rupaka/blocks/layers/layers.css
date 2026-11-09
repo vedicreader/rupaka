@@ -1,2 +1,2 @@
-.rk-layers svg.stage { display: block; width: 100%; max-width: 760px; aspect-ratio: 16 / 9; border-radius: var(--rk-r-s); border: 1px solid var(--rk-line); background: var(--rk-bg); touch-action: none; user-select: none; }
+.rk-layers svg.stage { display: block; overflow: hidden; width: 100%; max-width: 760px; aspect-ratio: 16 / 9; border-radius: var(--rk-r-s); border: 1px solid var(--rk-line); background: var(--rk-bg); touch-action: none; user-select: none; }
 .rk-layers .ghost { opacity: .3; }

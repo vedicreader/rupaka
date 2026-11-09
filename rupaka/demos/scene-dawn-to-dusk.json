@@ -3,7 +3,7 @@
   "id": "scene-dawn-to-dusk",
   "mode": "learn",
   "title": "A boat from dawn to dusk",
-  "state": {"t": 20, "boat": 50, "sun": 36},
+  "state": {"t": 20, "boat": 50, "sun": 58},
   "derive": [
     {"fn": "expr", "expr": "t * 0.4", "out": "pan"},
     {"fn": "expr", "expr": "abs(t - 50) / 50", "out": "warm"},
@@ -21,7 +21,7 @@
   "blocks": [
     {"type": "layers", "label": "A boat on a river, from dawn to dusk", "pan": "pan", "note": "Drag the boat or the sun. Or move the time bar.", "blocks": [
       {"type": "layer", "art": "sky", "tint": "warm"},
-      {"type": "layer", "art": "sun", "x": "sunx", "y": "sun", "up": true, "yr": [10, 70], "drag": "y", "label": "Sun height", "tint": "warm", "depth": 0.05},
+      {"type": "layer", "art": "sun", "x": "sunx", "y": "sun", "up": true, "yr": [10, 75], "drag": "y", "label": "Sun height", "tint": "warm", "depth": 0.05},
       {"type": "layer", "art": "cloud", "x": 40, "y": 18, "depth": 0.25, "ghost": true, "opacity": 0.9},
       {"type": "layer", "art": "cloud", "x": 120, "y": 26, "depth": 0.3, "scale": 0.8, "ghost": true, "opacity": 0.9},
       {"type": "layer", "art": "hill", "seed": 1, "tone": 0.12, "depth": 0.2},

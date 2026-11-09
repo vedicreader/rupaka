@@ -90,7 +90,7 @@ def test_handle_drag_writes_the_key_and_shows_a_ghost(draw):
     sun0 = d.st('sun'); sb = d.pg.locator('.handle[aria-label="Sun height"]').bounding_box()
     d.pg.mouse.move(sb['x'] + sb['width'] / 2, sb['y'] + sb['height'] / 2); d.pg.mouse.down()
     d.pg.mouse.move(sb['x'] + sb['width'] / 2, sb['y'] - 30, steps=5); d.pg.mouse.up()
-    assert d.st('sun') > sun0 and 10 <= d.st('sun') <= 70       # up is higher, inside its range
+    assert d.st('sun') > sun0 and 10 <= d.st('sun') <= 75       # up is higher, inside its range
     assert d.errors == []
 
 def test_handle_keys_and_range(draw):
@@ -101,8 +101,8 @@ def test_handle_keys_and_range(draw):
     for _ in range(30): d.pg.keyboard.press('Shift+d')
     assert d.st('boat') == 146                                  # stays in xr
     s = d.pg.locator('.handle[aria-label="Sun height"]'); s.focus()
-    d.pg.keyboard.press('w'); assert d.st('sun') == 36.5       # W lifts the sun
-    d.pg.keyboard.press('s'); d.pg.keyboard.press('s'); assert d.st('sun') == 35.5
+    d.pg.keyboard.press('w'); assert d.st('sun') == 58.5       # W lifts the sun
+    d.pg.keyboard.press('s'); d.pg.keyboard.press('s'); assert d.st('sun') == 57.5
 
 def test_scrub_shows_ghosts_then_clears(draw):
     d = draw(DEMO)
@@ -113,7 +113,7 @@ def test_scrub_shows_ghosts_then_clears(draw):
 def test_named_values_are_the_state_keys(draw):
     d = draw(DEMO)
     assert {'t', 'boat', 'sun'} <= set(d.st()) and 'gate' in d.st()
-    assert d.pg.evaluate("Rupaka.state(document.querySelector('[data-rupaka]'))") == dict(t=20, boat=50, sun=36)
+    assert d.pg.evaluate("Rupaka.state(document.querySelector('[data-rupaka]'))") == dict(t=20, boat=50, sun=58)
     d.pg.evaluate("Rupaka.set(document.querySelector('[data-rupaka]'), {boat: 90, t: 60})")
     assert d.st('boat') == 90 and d.pg.locator('.rk-caption p').inner_text().startswith('Afternoon')
 
