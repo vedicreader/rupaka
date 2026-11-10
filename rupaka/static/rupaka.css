@@ -41,7 +41,7 @@
 .rk-lbl { display: block; font: 500 var(--rk-t-lbl)/1.4 var(--rk-serif); letter-spacing: .14em; text-transform: uppercase; color: var(--rk-mute); margin: 0 0 var(--rk-s2); }
 .rk-note { color: var(--rk-mute); font-size: var(--rk-t-small); font-style: italic; margin-top: var(--rk-s1); }
 .rk-err { color: var(--rk-no); font-style: italic; }
-.rk svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; }
+.rk svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; user-select: none; -webkit-user-select: none; }
 .rk svg:focus { outline: none; }
 .rk svg:focus-visible, .rk [tabindex]:focus-visible { outline: 2px solid var(--rk-acc); outline-offset: 3px; }
 .rk text { fill: var(--rk-fg); font-family: var(--rk-serif); }
