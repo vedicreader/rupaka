@@ -360,3 +360,61 @@ def test_axis_xlog_shows_decades(draw):
     d = draw(spec)
     labels = d.pg.evaluate("[...document.querySelectorAll('.rk-axis text.num[text-anchor=middle]')].map(t => t.textContent)")
     assert labels == ['1', '10', '100', '1k', '10k'] and d.errors == []
+
+# a dot that rides a curve in the shipped demos, and the tags of the guess and the true curve
+
+def _demo(name):
+    from pathlib import Path
+    import rupaka
+    return json.loads((Path(rupaka.__file__).parent / 'demos' / f'{name}.json').read_text())
+
+def _points(bs):
+    for b in bs:
+        if b['type'] == 'point': yield b
+        yield from _points(b.get('blocks', []))
+
+def test_every_demo_point_on_a_derived_value_rides_its_curve():
+    from pathlib import Path
+    import rupaka
+    for f in sorted((Path(rupaka.__file__).parent / 'demos').glob('*.json')):
+        sp = json.loads(f.read_text())
+        for p in _points(sp['blocks']):
+            if p.get('y') and p['y'] not in sp['state'] and p.get('x') in sp['state'] and p.get('drag') is not False and p.get('label') != 'cut-off':
+                assert p.get('along'), f"{f.stem}: the dot '{p.get('label')}' cannot be dragged: its y is derived and it has no `along`"
+
+def _drag_dot(d, dx=80):
+    dot = d.pg.locator('.rk-point .dot').first.bounding_box()
+    cx, cy = dot['x'] + dot['width'] / 2, dot['y'] + dot['height'] / 2
+    d.pg.mouse.move(cx, cy); d.pg.mouse.down(); d.pg.mouse.move(cx + dx, cy, steps=6); d.pg.mouse.up()
+
+def test_ohms_law_dot_drags_after_lock_in(draw):
+    d = draw(_demo('ohms-law')); d.lock(1)
+    assert d.pg.locator('.rk-point').first.get_attribute('role') == 'slider'
+    v = d.st('V'); _drag_dot(d)
+    assert d.st('V') > v and d.st('R') == 3 and d.errors == []
+
+def test_rc_low_pass_input_dot_drags(draw):
+    d = draw(_demo('rc-low-pass'))
+    assert d.pg.locator('.rk-point').first.get_attribute('role') == 'slider'
+    lf = d.st('lf'); _drag_dot(d)
+    assert d.st('lf') > lf and d.errors == []
+
+@pytest.mark.parametrize('mode,width', [('light', 720), ('dark', 720), ('dark', 340)])
+def test_plot_names_the_guess_and_the_true_curve_after_lock_in(draw, mode, width):
+    d = draw(_demo('rc-low-pass'), mode=mode); d.pg.set_viewport_size(dict(width=width, height=900))
+    tags = d.pg.locator('.rk-plot text.tg')
+    assert [t for t in tags.all() if t.is_visible()] == []              # no tags before Lock in
+    d.lock(1)                                                           # "It doubles": a wrong guess, so the curves part
+    shown = d.pg.evaluate("[...document.querySelectorAll('.rk-plot text.tg')].filter(t => t.getAttribute('display') !== 'none').map(t => t.textContent)")
+    assert sorted(shown) == ['true', 'your guess'], shown
+    box = d.pg.locator('.rk-axis svg').bounding_box()
+    for t in tags.all():
+        if t.is_visible():
+            tb = t.bounding_box()
+            assert tb['x'] >= box['x'] - 1 and tb['x'] + tb['width'] <= box['x'] + box['width'] + 1, (mode, width, tb, box)
+    assert d.errors == []
+
+def test_plot_gives_one_tag_when_the_guess_is_the_true_curve(draw):
+    d = draw(_demo('rc-low-pass')); d.lock(3)                           # "It stays the same": the guess is the curve now
+    shown = d.pg.evaluate("[...document.querySelectorAll('.rk-plot text.tg')].filter(t => t.getAttribute('display') !== 'none').map(t => t.textContent)")
+    assert shown == ['your guess, true']
