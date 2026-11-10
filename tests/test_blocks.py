@@ -418,3 +418,52 @@ def test_plot_gives_one_tag_when_the_guess_is_the_true_curve(draw):
     d = draw(_demo('rc-low-pass')); d.lock(3)                           # "It stays the same": the guess is the curve now
     shown = d.pg.evaluate("[...document.querySelectorAll('.rk-plot text.tg')].filter(t => t.getAttribute('display') !== 'none').map(t => t.textContent)")
     assert shown == ['your guess, true']
+
+# the first drag after Lock in, and the one tag for a guess that lies on the true curve
+
+def _grab(d, kind, dx=80):
+    "Drag the first dot with the mouse or with a finger, from its centre."
+    dot = d.pg.locator('.rk-point .dot').first; dot.scroll_into_view_if_needed(); bb = dot.bounding_box()
+    cx, cy = bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2
+    if kind == 'mouse': d.pg.mouse.move(cx, cy); d.pg.mouse.down(); d.pg.mouse.move(cx + dx, cy, steps=8); d.pg.mouse.up(); return
+    cdp = d.pg.context.new_cdp_session(d.pg); ev = lambda t, x=None: cdp.send('Input.dispatchTouchEvent', dict(type=t, touchPoints=[dict(x=x, y=cy)] if x is not None else []))
+    ev('touchStart', cx)
+    for i in range(1, 9): ev('touchMove', cx + dx * i / 8)
+    ev('touchEnd')
+
+@pytest.mark.parametrize('kind', ['mouse', 'touch'])
+@pytest.mark.parametrize('name', ['ohms-law', 'rc-low-pass'])
+def test_the_first_drag_after_lock_in_moves_the_dot_and_the_readout(draw, name, kind):
+    d = draw(_demo(name)); d.lock(1)
+    read = lambda: d.pg.locator('.rk-readout').first.text_content()
+    first = read(); _grab(d, kind); d.pg.wait_for_timeout(100)
+    assert read() != first and d.errors == [], (name, kind, first)
+
+def test_in_every_demo_the_dot_that_drags_is_the_top_mark_at_the_start_state(draw):
+    from pathlib import Path
+    import rupaka
+    for f in sorted((Path(rupaka.__file__).parent / 'demos').glob('*.json')):
+        sp = json.loads(f.read_text())
+        if not any(p.get('along') for p in _points(sp['blocks'])): continue
+        d = draw(sp)
+        if sp.get('blocks') and any(b['type'] == 'gate' for b in sp['blocks']): d.lock(1)
+        for dot in d.pg.locator('.rk-point[role=slider] .dot').all():
+            bb = dot.bounding_box(); cx, cy = bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2
+            top = d.pg.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y), g = e && e.closest('.rk-point'); return g ? g.getAttribute('role') : (e ? e.tagName : null) }", [cx, cy])
+            assert top == 'slider', (f.stem, top)
+
+@pytest.mark.parametrize('mode,width', [('light', 1200), ('dark', 1200), ('light', 390), ('dark', 390)])
+def test_the_tag_for_a_guess_on_the_true_curve_touches_no_label_and_no_curve(draw, mode, width):
+    d = draw(_demo('rc-low-pass'), mode=mode); d.pg.set_viewport_size(dict(width=width, height=900)); d.pg.wait_for_timeout(200)
+    d.lock(3); d.pg.wait_for_timeout(200)                               # "It stays the same"
+    hit = d.pg.evaluate("""() => {
+      const R = e => e.getBoundingClientRect(), svg = document.querySelector('.rk-axis svg'), s = R(svg);
+      const tags = [...svg.querySelectorAll('text.tg')].filter(t => t.getAttribute('display') !== 'none'); if (tags.length !== 1) return ['tags ' + tags.length];
+      const r = R(tags[0]), out = [], meet = (a, b) => a.x < b.right && b.x < a.right && a.y < b.bottom && b.y < a.bottom;
+      if (r.x < s.x || r.right > s.right || r.y < s.y || r.bottom > s.bottom) out.push('leaves the svg');
+      svg.querySelectorAll('text:not(.tg)').forEach(t => { if (t.textContent.trim() && meet(r, R(t))) out.push('label ' + t.textContent.trim()); });
+      svg.querySelectorAll('path.ln, path.gs').forEach(p => { const m = p.getScreenCTM(), L = p.getTotalLength(); let n = 0;
+        for (let i = 0; i <= 400; i++) { const q = p.getPointAtLength(L * i / 400), x = q.x * m.a + m.e, y = q.y * m.d + m.f; if (x > r.x && x < r.right && y > r.y && y < r.bottom) n++; }
+        if (n) out.push('curve ' + p.getAttribute('class')); });
+      return out; }""")
+    assert hit == [] and d.errors == [], (mode, width, hit)
