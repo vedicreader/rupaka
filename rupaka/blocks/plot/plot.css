@@ -4,3 +4,4 @@
 .rk-plot .gh { fill: none; stroke: var(--pc); stroke-width: 2; stroke-linejoin: round; opacity: .28; }
 .rk-plot .dots circle { fill: var(--pc); }
 .rk-plot .gs { fill: none; stroke: var(--pc); stroke-width: 2; stroke-linejoin: round; stroke-dasharray: 6 5; opacity: .75; }
+.rk-plot .tg { font-size: 13px; fill: var(--rk-fg); paint-order: stroke; stroke: var(--rk-bg); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
