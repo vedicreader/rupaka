@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.17
+
+- The dot on the `ohms-law` demo can be dragged now. Its y is a derived value, so it needs `along`, and the spec did not have it. A new test checks that every dot in the shipped demos that sits on a derived value has `along` (the `cut-off` dot of `rc-low-pass` is only a mark). The dot on `rc-low-pass` already dragged in 0.0.16; a test now keeps it so.
+- After Lock in, a plot with a guess names its two curves: a small tag `your guess` by the dashed curve and `true` by the true curve. The tags sit where the two curves are far apart, stay inside the axis, and grow on a narrow screen so that they stay readable. Where the guess is the true curve, one tag says `your guess, true`. The tags use the theme colours, so they work in the dark theme.
+- rupaka now owns the presentation stage code that came from abhyasa. The file `rupaka/static/stage.js` is the presenter window, the laser and the audience stage, with the same code as abhyasa's `core/stage.js`. It sets `window.abhyasaStage` as before, and also `window.rupakaStage`. The module `rupaka.stagekit` has `room_spec(spec)` and `is_local(url)`, with the same names and signatures, and imports only the standard library. Both files are in the wheel.
+- How a consumer changes: `from abhyasa.stagekit import room_spec, is_local` becomes `from rupaka.stagekit import room_spec, is_local`. The file that was `files('abhyasa')/'core'/'stage.js'` becomes `files('rupaka')/'static'/'stage.js'`. abhyasa's `stage.css` does not move in this release.
+
 ## 0.0.16
 
 - A picture can have layers. The `layers` block holds `layer` blocks (sky, hill, water, sun, cloud, boat). Each layer has a place, a size, a turn, a fade and a depth, and a far layer moves less than a near one. A layer with `drag` has a handle that writes a state key. The new `timeline` block moves a time `t` with a bar, Play, markers and the keys A/D, Q/E and W. While a handle or the bar changes, a layer can show a faint ghost of its earlier place.
