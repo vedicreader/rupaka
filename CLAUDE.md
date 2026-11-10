@@ -27,4 +27,4 @@ A block is a folder in `rupaka/blocks/<name>/`, as in lego: `<name>.js` (`Rupaka
 - Prose (notebooks, docs, UI text, commit messages, release notes) is ASD-STE100 Simplified Technical English, US grade 9.
 - Notebooks read as documents: an intro, short sections, a one-line lead before each code cell, small cells, tests in small steps.
 - Commit messages are one plain line, with no AI credit.
-- Release: write the CHANGELOG entry, `nbdev-prepare`, push, check that CI passes, then `nbdev-release-git` and `nbdev-pypi`. Never `nbdev-release-gh`.
+- Release: write the CHANGELOG entry, `nbdev-prepare`, push, check that CI passes, then `nbdev-release-gh --no-changelog --no-editor --yes` and `nbdev-pypi`.
