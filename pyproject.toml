@@ -31,6 +31,9 @@ Documentation = "https://vedicreader.github.io/rupaka/"
 [project.entry-points.nbdev]
 rupaka = "rupaka._modidx:d"
 
+[project.entry-points.pyskills]
+rupaka = "rupaka.skill"
+
 [tool.nbdev]
 tst_flags = "slow"
 

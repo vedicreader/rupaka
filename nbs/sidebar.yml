@@ -9,3 +9,4 @@ website:
       - 04_gallery.ipynb
       - 05_poll.ipynb
       - 06_board.ipynb
+      - 07_skill.ipynb
