@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.18
+
+adding skills
+
 ## 0.0.17
 
 - The dot on the `ohms-law` demo can be dragged now. Its y is a derived value, so it needs `along`, and the spec did not have it. A new test checks that every dot in the shipped demos that sits on a derived value has `along` (the `cut-off` dot of `rc-low-pass` is only a mark). The dot on `rc-low-pass` already dragged in 0.0.16; a test now keeps it so.
