@@ -7,7 +7,7 @@
   "parent": "scene",
   "props": {
     "id": {"type": "str", "req": true, "doc": "the body id; force, label3d, in and close:<id> name it"},
-    "kind": {"type": "str", "req": true, "of": ["box", "cylinder", "cone", "sphere", "capsule", "torus", "plane", "ring", "disc", "map", "globe", "group"], "doc": "the shape; plane [w, d], ring [inner, outer] and disc [r] lie flat; map is a flat piece of the world picture (needs uv); globe is the world picture on a ball; a group has no shape and holds other bodies"},
+    "kind": {"type": "str", "req": true, "of": ["box", "cylinder", "cone", "sphere", "capsule", "torus", "plane", "ring", "disc", "map", "globe", "group"], "doc": "the shape; plane [w, d], ring [inner, outer] and disc [r] lie flat; map is a flat piece of the world picture (needs uv); globe is the world picture on a ball; both show the world unless texture says otherwise; a group has no shape and holds other bodies"},
     "size": {"type": "nums", "doc": "box [x, y, z]; cylinder [radius, height] or [top radius, bottom radius, height]; cone and capsule [radius, height]; sphere and disc [radius]; torus [radius, tube]; plane [width, depth]; ring [inner, outer]"},
     "at": {"type": "vec3key", "doc": "the place [x, y, z] in the frame of the parent body (y is up); an item can be a state key, and the body then follows the state at once. With coords geo or globe: [lon, lat, height]"},
     "rot": {"type": "vec3key", "doc": "the turn in degrees about x, y and z; an item can be a state key"},

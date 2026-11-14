@@ -15,7 +15,7 @@
       sync(P, live) { P.mesh.visible = live; },
       run: () => S.num(b.speed) !== 0,
       frame(P, now) {
-        const p = S.paths[b.on], r = S.unit * (b.size ?? 1) * .5; if (!p || !S.unit) return;
+        const p = S.paths[b.on], r = S.unit * (b.size ?? 1) * .35; if (!p || !S.unit) return;
         if (!still() && P.t0 != null) P.ph += S.num(b.speed) * Math.min(.1, (now - P.t0) / 1000);
         P.t0 = now;
         for (let i = 0; i < P.n; i++) P.mesh.setMatrixAt(i, P.m.makeScale(r, r, r).setPosition(p.at((((i / P.n + P.ph) % 1) + 1) % 1, P.v)));

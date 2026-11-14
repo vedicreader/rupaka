@@ -197,7 +197,7 @@
     let tw = null, last = 0;
     S.kick = () => kick();
     const texs = {};   // a vendored picture (window.RupakaTEX, data URIs), loaded once; the view draws again when it is there
-    S.tex = name => texs[name] ??= (u => { if (!u) return null; const t = new T.TextureLoader().load(u, () => kick()); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t; })(window.RupakaTEX?.[name]);
+    S.tex = name => texs[name] ??= (u => { if (!u) return null; const t = new T.TextureLoader().load(u, () => kick()); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; t.wrapS = T.RepeatWrapping; return t; })(window.RupakaTEX?.[name]);
     const kick = () => { again(); if (!raf && gl) raf = requestAnimationFrame(frame); };
     // A host can take the view off the page and put it back (a tab switch): the view keeps its renderer then. When it has no renderer
     // (the browser took the WebGL context away), it makes a new one on a new canvas as soon as it is on the page again.

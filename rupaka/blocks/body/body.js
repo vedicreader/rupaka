@@ -74,6 +74,7 @@
   const add = {transparent: true, depthWrite: false};
 
   function material(T, S, b) {
+    b = {...b, texture: b.texture ?? (['map', 'globe'].includes(b.kind) ? 'earth' : undefined)};   // a map and a globe show the world by default
     const name = b.color || 'body', tex = b.texture && b.texture !== 'sun' && S.tex(b.texture), keep = (m, c) => (S.recolors.push(() => S.paint(m, S.palette()[c] || S.palette().body)), m);
     let m;
     if (b.texture === 'sun') m = new T.ShaderMaterial({uniforms: {time: {value: 0}}, ...SUN});
@@ -188,7 +189,7 @@
         if (b.kind !== 'group') {
           frame.add(P.mesh = new T.Mesh(shape(T, b, arc()), material(T, S, b)));
           const r = size();
-          if (b.texture === 'earth' && b.kind !== 'map' && b.kind !== 'plane') frame.add(new T.Mesh(new T.SphereGeometry(r * 1.07, 64, 48), new T.ShaderMaterial({...AIR, ...add, side: T.BackSide, blending: T.AdditiveBlending})));
+          if ((b.texture ?? (b.kind === 'globe' ? 'earth' : 0)) === 'earth' && ['sphere', 'globe'].includes(b.kind)) frame.add(new T.Mesh(new T.SphereGeometry(r * 1.07, 64, 48), new T.ShaderMaterial({...AIR, ...add, side: T.BackSide, blending: T.AdditiveBlending})));
           if (b.glow != null) frame.add(...(P.halos = HALO.map((st, i) => sprite(T, st, r * (i ? 18 : 6)))));
           if (b.light) { frame.add(new T.PointLight(0xfff4e0, 3.4, 0, 0)); S.lights(); S.lamp(); }
           if (b.ticks && b.kind === 'ring') frame.add(spokes(T, S, Object.assign([...SIZE.ring], b.size || []), b.ticks));
