@@ -11,30 +11,31 @@
     if (bad) throw new Error(`links names "${bad}", which is not a body`);
     // The weights now as a list of [i, j, w], largest weight first.
     const edges = () => {
-      const w = S.s.get(b.w), r = b.row == null ? null : Math.round(S.num(b.row)), n = b.nodes.length, out = [];
+      const w = S.list(b.w), r = b.row == null ? null : Math.round(S.num(b.row)), n = b.nodes.length, out = [];
       if (!Array.isArray(w)) return out;
-      const pairs = Array.isArray(w[0]) ? w.flatMap((row, i) => row.map((x, j) => [i, j, num(x)])) : w.map((x, j) => [r ?? 0, j, num(x)]);
+      const pairs = Array.isArray(w[0]) ? w.flatMap((row, i) => Array.isArray(row) ? row.map((x, j) => [i, j, num(x)]) : []) : w.map((x, j) => [r ?? 0, j, num(x)]);
       for (const [i, j, x] of pairs) if (i < n && j < n && (r == null || i === r) && x >= (b.min ?? .02)) out.push([i, j, x]);
       return out;
     };
     function build(T, P) {
       const es = edges(), at = b.nodes.map(id => S.bodies[id].frame.getWorldPosition(new T.Vector3()));
+      const gapMin = Math.min(...at.flatMap((p, i) => at.slice(i + 1).map(q => p.distanceTo(q))), S.size);
       const top = Math.max(...es.map(e => e[2]), 1e-9), sig = es.map(e => e.map(x => x.toFixed(3))).join(';') + at.map(p => p.toArray().map(x => x.toFixed(2))).join(';') + S.unit;
       if (sig === P.sig) return;
       P.sig = sig;
-      P.g.children.slice().forEach(c => { c.geometry.dispose(); P.g.remove(c); });
+      P.g.children.slice().forEach(c => { c.geometry.dispose(); c.material.dispose(); P.g.remove(c); });
       for (const [i, j, x] of es) {
         const a = at[i], c = at[j], d = a.distanceTo(c), up = new T.Vector3(0, 1, 0), lift = (b.lift ?? .45) * Math.max(d, S.size * .12);
         const curve = i === j
           ? new T.CubicBezierCurve3(a, a.clone().addScaledVector(up, lift * 1.4).add(new T.Vector3(-lift * .5, 0, 0)), a.clone().addScaledVector(up, lift * 1.4).add(new T.Vector3(lift * .5, 0, 0)), a)
           : new T.QuadraticBezierCurve3(a, a.clone().lerp(c, .5).addScaledVector(up, lift), c);
-        const r = S.unit * (b.width ?? 1) * .3 * (.25 + .75 * x / top);
+        const r = Math.min(S.unit * (b.width ?? 1) * .3, gapMin * .08) * (.25 + .75 * x / top);
         const m = P.mat.clone(); m.opacity = clamp(.25 + .75 * x / top, .2, 1); m.transparent = true;
         P.g.add(new T.Mesh(new T.TubeGeometry(curve, 28, r, 6, false), m));
       }
     }
     return S.part(b, {
-      make(T, P) { P.mat = S.lineMat(b.tone || 'acc'); P.g = new T.Group(); S.world.add(P.g); return P.g; },
+      make(T, P) { P.mat = S.lineMat(b.tone || 'acc'); S.recolors.push(() => { P.sig = null; }); P.g = new T.Group(); S.world.add(P.g); return P.g; },
       sync(P, live) { P.g.visible = live; },
       frame(P) { if (S.unit && S.T) build(S.T, P); },
     }, Rupaka.el('li', {text: 'links between the bodies'}));

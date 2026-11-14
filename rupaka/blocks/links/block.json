@@ -11,7 +11,7 @@
     "row": {"type": "numkey", "doc": "the index of one node, from 0: only its arcs show; a key lets the learner pick the node"},
     "min": {"type": "num", "default": 0.02, "min": 0, "max": 1, "doc": "a weight below this has no arc"},
     "lift": {"type": "num", "default": 0.45, "min": 0, "max": 2, "doc": "how high the arcs rise above the line of nodes, as a share of the span"},
-    "width": {"type": "num", "default": 1, "min": 0.2, "max": 6, "doc": "the thickness of the heaviest arc, in units of a thin line"},
+    "width": {"type": "num", "default": 1, "min": 0.2, "max": 2, "doc": "the thickness of the heaviest arc, in units of a thin line"},
     "tone": {"type": "str", "of": ["ink", "acc", "ok", "no", "dim", "mute", "glow", "light"], "default": "acc", "doc": "the colour"},
     "show": {"type": "key", "doc": "a state key; the arcs show when its value is true"},
     "step": {"type": "int", "min": 1, "doc": "the arcs show from this step of the scene"}

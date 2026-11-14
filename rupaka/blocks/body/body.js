@@ -69,7 +69,7 @@
     if (tex && (b.kind === 'map' || b.kind === 'plane')) m = new T.MeshBasicMaterial({map: tex});   // a map is read, not lit
     else if (tex) { S.lights(); m = new T.MeshStandardMaterial({map: tex, roughness: 1, metalness: 0}); }
     else if (b.glow != null || b.light) { const c = b.color || 'glow'; m = new T.MeshBasicMaterial({color: S.col(S.palette()[c])}); S.recolors.push(() => S.paint(m, S.palette()[c])); }
-    else if (b.opacity != null || b.kind === 'ring' || b.kind === 'disc') { S.lights(); m = S.mat(name).clone(); S.recolors.push(() => S.paint(m, S.palette()[name] || S.palette().body)); }
+    else if (b.opacity != null || b.kind === 'ring' || b.kind === 'disc') { S.lights(); m = S.mat(name).clone(); if (m.uniforms) m.uniforms.light = S.light; S.recolors.push(() => S.paint(m, S.palette()[name] || S.palette().body)); }
     else return S.mat(name);
     if (b.opacity != null) { m.transparent = true; m.opacity = b.opacity; m.depthWrite = false; }
     if (m.isMeshStandardMaterial) m.side = T.DoubleSide;
@@ -154,7 +154,7 @@
     }
     // The place of the body now: on its path, on its orbit, or at `at`. `pivot` is the point that rot turns about.
     function put(P) {
-      const T = S.T, at = b.along ? S.paths[b.along].at(S.num(b.t)).toArray() : b.orbit != null ? onOrbit() : S.pos(b.at ?? mid()), pv = b.pivot ? S.pos(b.pivot) : at;
+      const T = S.T, at = b.along ? S.paths[b.along]?.at(S.num(b.t)).toArray() ?? [0, 0, 0] : b.orbit != null ? onOrbit() : S.pos(b.at ?? mid()), pv = b.pivot ? S.pos(b.pivot) : at;
       P.outer.position.set(...pv); P.frame.position.set(at[0] - pv[0], at[1] - pv[1], at[2] - pv[2]);
       if (b.scale) P.frame.scale.set(...S.vec(b.scale, [1, 1, 1]).map(x => Math.max(1e-3, x)));
     }
@@ -172,8 +172,8 @@
         (b.in ? S.bodies[b.in].frame : S.world).add(outer);
         S.bodies[b.id] = {outer, frame, b, P};
         P.rot = S.vec(b.rot).map(rad); outer.rotation.set(...P.rot);
-        if (b.glow != null) P.r = Math.max(...(b.size || SIZE[b.kind] || [.5]));
-        if (b.drag) P.grip = grip(S, b, ctx, P);
+        if (b.glow != null) P.r = b.kind === 'globe' ? R.GLOBE : b.kind === 'map' ? Math.max(b.uv[2] - b.uv[0], b.uv[3] - b.uv[1]) / 2 : Math.max(...(b.size || SIZE[b.kind] || [.5]));
+        if (b.drag) P.grip ??= grip(S, b, ctx, P);
         return outer;
       },
       sync(P, live) {
@@ -196,7 +196,7 @@
       },
       over(P) {
         if (!P.grip) return;
-        const v = S.screen(P.frame.getWorldPosition(new S.T.Vector3())), live = S.live(b);
+        const v = S.screen(P.frame.getWorldPosition(new S.T.Vector3())), live = S.live(b) && S.seen(b.id);
         P.grip.hidden = !live || !v.on; P.grip.style.transform = `translate(${v.x.toFixed(1)}px, ${v.y.toFixed(1)}px)`;
       },
     }, Rupaka.el('li', {text: `${b.id}: a ${b.kind}${b.drag ? ', with a grip' : ''}`}));

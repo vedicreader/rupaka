@@ -103,16 +103,19 @@
 
   Rupaka.block('scene', (b, ctx) => {
     const sky = b.look === 'sky', s = ctx.s, parts = [], specs = Object.fromEntries((b.blocks || []).filter(k => k.type === 'body').map(k => [k.id, k]));
-    const ids = new Set(Object.keys(specs)), S = {b, s, ids, bodies: {}, anims: new Map()};
+    const pathSpec = Object.fromEntries((b.blocks || []).filter(k => k.type === 'path' && k.id).map(k => [k.id, k])), ids = new Set(Object.keys(specs)), S = {b, s, ids, bodies: {}, anims: new Map()};
     S.part = (pb, impl, node) => { parts.push({b: pb, impl, node}); return node; };
-    S.num = v => typeof v === 'number' ? v : +s.get(v);
+    S.num = (v, d = 0) => { const n = typeof v === 'number' ? v : +s.get(v); return Number.isFinite(n) ? n : d; };   // a bad value is d, so one key cannot blank the view
+    S.list = k => { const v = s.get(k); return Array.isArray(v) ? v : []; };
     S.vec = (v, d = [0, 0, 0]) => Array.isArray(v) ? v.map((x, i) => { const n = S.num(x); return Number.isFinite(n) ? n : d[i]; }) : d;
     S.pos = (v, d) => (FLAT[b.coords] || (a => a))(S.vec(v, d));   // a place: at, pivot and pts go through the coords
     S.sky = sky; S.paths = {};
     S.step = () => b.bind ? (+s.get(b.bind) || 1) : Infinity;
     const own = pb => ctx.live(pb.after) && (pb.step == null || S.step() >= pb.step) && (pb.show == null || !!s.get(pb.show));
     S.seen = id => !!specs[id] && own(specs[id]) && (!specs[id].in || S.seen(specs[id].in));   // a body and each body that holds it
-    S.live = pb => own(pb) && (pb.on == null || !['force', 'label3d'].includes(pb.type) || S.seen(pb.on));   // only a force and a label name a body in on
+    S.live = pb => own(pb) && (pb.on == null || !['force', 'label3d'].includes(pb.type) || S.seen(pb.on))
+      && (pb.type !== 'drift' || !pathSpec[pb.on] || own(pathSpec[pb.on])) && (pb.type !== 'body' || !pb.along || !pathSpec[pb.along] || own(pathSpec[pb.along]))
+      && (pb.type !== 'links' || (pb.nodes || []).every(id => S.seen(id)));   // a part that rides a path or joins bodies shows only when they show   // only a force and a label name a body in on
     S.shotKey = () => parts.find(p => p.b.type === 'shot' && p.b.bind)?.b.bind;
     // A chip: a label in screen space with a leader line to its point. Its text fills {path} from the state.
     S.chip = (pb, tpl, tone) => {
@@ -218,7 +221,7 @@
     }
     const mats = {};
     const col = c => new T.Color().setRGB(c[0], c[1], c[2], T.SRGBColorSpace);
-    const LIGHT = {value: null};
+    const LIGHT = {value: null}; S.light = LIGHT;
     const paint = (m, c) => { if (m.uniforms) m.uniforms.color.value = col(c); else m.color.copy(col(c)); };
     S.mat = name => mats[name] ??= sky ? new T.MeshStandardMaterial({color: col(pal[name] || pal.body), roughness: .85, metalness: 0})
                                        : new T.ShaderMaterial({uniforms: {color: {value: col(pal[name] || pal.body)}, light: LIGHT}, vertexShader: TOON_V, fragmentShader: TOON_F});
@@ -232,8 +235,8 @@
     S.recolors = [];   // functions that a part gives to repaint what it made when the theme changes
     // Lights, for a lit material (a texture, or the sky look): a soft ambient and a sun for the toon look. A glowing body adds its own.
     S.lights = () => {
-      if (S.lit) return S.lit;
-      S.lit = new T.Group(); S.lit.add(new T.AmbientLight(0xffffff, sky ? .42 : .9));
+      if (S.lit?.parent === world) return S.lit;
+      S.lit = new T.Group(); S.lit.add(new T.AmbientLight(0xffffff, sky ? .6 : .9));
       if (!sky) { const d = new T.DirectionalLight(0xffffff, 1.6); d.position.set(-.45, .78, .45); S.lit.add(d); }
       world.add(S.lit);
       return S.lit;
@@ -454,9 +457,9 @@
       T = S.T = lib;
       if (wired) { const c = cv.cloneNode(); cv.replaceWith(c); cv = c; }   // a canvas whose context is lost cannot give a new one
       gl = new T.WebGLRenderer({canvas: cv, antialias: sky, preserveDrawingBuffer: true, powerPreference: 'low-power'});
-      LIGHT.value = new T.Vector3();
+      LIGHT.value = new T.Vector3(); for (const k of Object.keys(mats)) delete mats[k];   // a new renderer: new materials
       pal = palette();
-      world = new T.Scene(); S.world = world;
+      world = new T.Scene(); S.world = world; S.recolors.length = 0;
       if (sky) S.lights();
       cam = new T.PerspectiveCamera(32, 1, .1, 100);
       S.normal = new T.MeshNormalMaterial(); S.white = new T.MeshBasicMaterial({color: 0xffffff});

@@ -63,7 +63,8 @@ Rules:
 - To let the learner drag a part, give the body "drag": "orbit" (round an axis) or "x", "y", "z", and "to": a key of "state". Give that key a start value.
 - "coords": "geo" reads "at" as [longitude, latitude, height] on a flat map. "globe" puts it on a ball. A "map" body shows a window "uv": [lon0, lat0, lon1, lat1] of the world picture. A body with "texture": "earth" or "moon" wears a real picture.
 - A scene part that shows the answer of the gate has "after". The chips of a scene say a value in at most 60 characters.
-- Choose a "shot": "high" looks down from above at an angle, "side" shows a row that runs along x, "top" shows a map.
+- Choose a "shot" by the plane that you built the picture in. "side" faces the x-y plane (a row along x, a circuit with z = 0). "front" faces the z-y plane. "top" faces the x-z plane (a map, an orbit). "high" looks down at the x-z plane at an angle. A flat picture seen edge-on is a line, so pick the shot that faces it.
+- Keep "width" of a path at 0.3 to 0.6 for a guide line, and at most 2 for a link. Give a map a "ground": false and no "label3d" for each of many names: use "points" with "round" and "names" or one chip for each key place.
 The shape of a spec:
 {SHAPE}
 Use only these blocks and fns:

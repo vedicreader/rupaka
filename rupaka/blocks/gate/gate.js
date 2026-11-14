@@ -36,7 +36,7 @@ Rupaka.block('gate', (b, ctx) => {
   const tell = (c, ok, a) => {
     said = c; say('');
     verdict.replaceChildren(...(said ? [...rich(said), ' '] : []), 'You said ', el('b', {class: ok ? 'ok' : 'no', text: show(picked)}), '. ',
-      ok ? el('span', {class: 'ok', text: 'That is right.'}) : el('span', {}, 'It is ', el('b', {class: 'ok', text: show(a)}), '.'), stale);
+      ok ? el('span', {class: 'ok', text: 'That is right.'}) : el('span', {}, 'It is ', el('b', {class: 'ok', text: show(a)}), /[.!?]$/.test(show(a)) ? '' : '.'), stale);
   };
   function commit() {
     if (picked == null || !open()) return false;

@@ -16,7 +16,7 @@
     "smooth": {"type": "bool", "default": false, "doc": "with pts: round the corners into a curve"},
     "grow": {"type": "numkey", "doc": "the share of the length that shows, 0 to 1; a slider can walk the path"},
     "tone": {"type": "str", "of": ["ink", "acc", "ok", "no", "dim", "mute", "glow", "light"], "default": "ink", "doc": "the colour"},
-    "width": {"type": "num", "default": 1, "min": 0.2, "max": 6, "doc": "the thickness, in units of a thin line"},
+    "width": {"type": "num", "default": 1, "min": 0.2, "max": 3, "doc": "the thickness, in units of a thin line"},
     "arrow": {"type": "bool", "default": false, "doc": "an arrow head at the end"},
     "opacity": {"type": "num", "min": 0.05, "max": 1, "doc": "how solid the line is; 1 if left out"},
     "show": {"type": "key", "doc": "a state key; the path shows when its value is true"},

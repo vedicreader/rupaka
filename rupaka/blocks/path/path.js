@@ -31,14 +31,14 @@
         const [u, v] = S.basis(n);
         return Array.from({length: 192}, (_, i) => { const a = i / 192 * 2 * Math.PI; return c.clone().addScaledVector(u, r * Math.cos(a)).addScaledVector(v, r * Math.sin(a)); });
       }
-      const src = b.of ? (S.s.get(b.of) || []).map(p => pt(S, p)) : (b.pts || []).map(p => S.pos(p));
+      const src = b.of ? S.list(b.of).filter(p => p && typeof p === 'object').map(p => pt(S, p)) : (b.pts || []).map(p => S.pos(p));
       const ps = src.map(p => new T.Vector3(...p));
       return b.smooth && ps.length > 2 ? new T.CatmullRomCurve3(ps, !!b.closed, 'centripetal').getPoints(ps.length * 16) : ps;
     };
     const closed = b.circle != null || !!b.closed;
     function build(T, P, final) {
       const ps = points(T, P), g = b.grow == null ? 1 : clamp(S.num(b.grow), 0, 1);
-      const r = final ? S.unit * .22 * (b.width ?? 1) : 1e-3, sig = [ps.map(p => p.toArray().map(x => x.toFixed(3))).join(';'), g.toFixed(3), r.toFixed(4)].join('|');
+      const r = final ? S.unit * .15 * (b.width ?? 1) : 1e-3, sig = [ps.map(p => p.toArray().map(x => x.toFixed(3))).join(';'), g.toFixed(3), r.toFixed(4)].join('|');
       const full = line(T, ps, closed);
       P.ln = full;   // the path as a whole: other parts ride it whatever `grow` shows
       if (b.id) S.paths[b.id] = {at: (t, o) => full.at(t, o), length: () => full.L, closed};

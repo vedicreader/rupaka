@@ -6,7 +6,7 @@
   "keys": "none",
   "parent": "scene",
   "props": {
-    "name": {"type": "str", "doc": "wide, high, side, front, top or close:<body id>; high looks down at an angle of 40 degrees"},
+    "name": {"type": "str", "doc": "wide, high, side, front, top or close:<body id>; side faces the x-y plane, front the z-y plane, top the x-z plane; high looks down at the x-z plane at an angle of 40 degrees"},
     "bind": {"type": "key", "doc": "a state key that holds the shot name; the board's cam operation sets it"},
     "step": {"type": "int", "min": 1, "doc": "the shot starts at this step of the scene"}
   },

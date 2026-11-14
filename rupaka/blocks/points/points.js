@@ -26,7 +26,7 @@
       return (k, mid = true) => { const a = (off + (k + (mid ? .5 : 0)) * 360 / b.round) * Math.PI / 180; return c.clone().addScaledVector(u, r * Math.cos(a)).addScaledVector(v, r * Math.sin(a)); };
     };
     const places = T => b.stars ? [] : b.round ? (f => Array.from({length: b.round}, (_, k) => f(k)))(circle(T))
-      : (b.of ? (S.s.get(b.of) || []).map(p => Array.isArray(p) ? p : [p.x ?? 0, p.y ?? 0, p.z ?? 0]) : b.pts).map(p => new T.Vector3(...S.pos(p)));
+      : (b.of ? S.list(b.of).filter(p => p && typeof p === 'object').map(p => Array.isArray(p) ? p : [p.x ?? 0, p.y ?? 0, p.z ?? 0]) : b.pts).map(p => new T.Vector3(...S.pos(p)));
     // The dots now: positions, sizes and colours, as plain arrays.
     function dots(T) {
       if (b.stars) {
@@ -44,7 +44,7 @@
       return {pos, size, col};
     }
     function fill(T, P) {
-      const d = dots(T), sig = d.pos.map(x => x.toFixed(3)).join();
+      const d = dots(T), sig = d.pos.map(x => x.toFixed(3)).join() + d.col.slice(0, 3).join();
       if (sig === P.sig) return;
       P.sig = sig; P.obj.geometry.dispose();
       const g = new T.BufferGeometry();
@@ -58,18 +58,28 @@
           transparent: true, blending: T.AdditiveBlending, depthWrite: false}));
         P.obj.frustumCulled = false; P.obj.userData.flat = true; fill(T, P); S.world.add(P.obj);
         // A label chip for each place. It is a part of its own, so the scene keeps the chips from overlapping.
-        P.at = places(T);
-        (b.names || []).forEach((name, i) => {
+        P.at = places(T); S.recolors.push(() => { P.sig = null; fill(S.T, P); });
+        P.sprites = [];
+        if (b.round) (b.names || []).forEach(name => {   // names round a ring are flat text that faces the viewer, with no leader to clutter the ring
+          const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+          const g = c.getContext('2d'); g.font = '600 30px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.fillStyle = '#ece7da'; g.shadowColor = '#000'; g.shadowBlur = 6; g.fillText(String(name), 128, 32);
+          const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace;
+          const sp = new T.Sprite(new T.SpriteMaterial({map: t, transparent: true, depthWrite: false})); sp.userData.flat = true;
+          S.world.add(sp); P.sprites.push(sp);
+        });
+        else (b.names || []).forEach((name, i) => {
           const pb = {type: 'label3d', tone: b.tone, after: b.after, step: b.step, show: b.show};
           S.chipBox.append(S.part(pb, {anchor: () => P.at[i]?.clone() ?? null}, S.chip(pb, String(name))));
         });
         return P.obj;
       },
-      sync(P, live) { P.obj.visible = live; },
+      sync(P, live) { P.obj.visible = live; P.sprites.forEach(s => { s.visible = live; }); },
       frame(P) {
         P.obj.material.uniforms.px.value = Math.min(2, devicePixelRatio || 1);
         if (b.stars) P.obj.scale.setScalar(S.size * (b.radius ?? 3.2));
         if (keyed) { fill(S.T, P); P.at = places(S.T); }
+        P.sprites.forEach((s, i) => { if (P.at[i] && S.unit) { s.position.copy(P.at[i]).multiplyScalar(1 + .09 / Math.max(1, S.num(b.r) / 6)); s.scale.set(S.unit * 6, S.unit * 1.5, 1); } });
       },
     }, Rupaka.el('li', {text: b.stars ? 'the stars' : b.names ? `places: ${b.names.join(', ')}` : 'a cloud of dots'}));
   });
