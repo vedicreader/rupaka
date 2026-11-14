@@ -52,12 +52,12 @@
   const TOON_V = `varying vec3 vN;
     void main() { vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;
   // Three bands of light with soft edges, so a flat colour stays true in the light band and a round part still reads as round.
-  const TOON_F = `uniform vec3 color; uniform vec3 light; varying vec3 vN;
+  const TOON_F = `uniform vec3 color; uniform vec3 light; uniform float alpha; varying vec3 vN;
     void main() {
       vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
       float d = dot(n, light), a = fwidth(d) + .11;
       float band = .66 + .16 * smoothstep(-.3 - a, -.3 + a, d) + .18 * smoothstep(.3 - a, .3 + a, d);
-      gl_FragColor = vec4(color * band, 1.);
+      gl_FragColor = vec4(color * band, alpha);
       #include <colorspace_fragment>
     }`;
   const FLAT_V = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;
@@ -109,13 +109,13 @@
     S.list = k => { const v = s.get(k); return Array.isArray(v) ? v : []; };
     S.vec = (v, d = [0, 0, 0]) => Array.isArray(v) ? v.map((x, i) => { const n = S.num(x); return Number.isFinite(n) ? n : d[i]; }) : d;
     S.pos = (v, d) => (FLAT[b.coords] || (a => a))(S.vec(v, d));   // a place: at, pivot and pts go through the coords
-    S.sky = sky; S.paths = {};
+    S.sky = sky; S.paths = {};   // id -> {at(t), length()}: a path, for the parts that ride it
     S.step = () => b.bind ? (+s.get(b.bind) || 1) : Infinity;
     const own = pb => ctx.live(pb.after) && (pb.step == null || S.step() >= pb.step) && (pb.show == null || !!s.get(pb.show));
     S.seen = id => !!specs[id] && own(specs[id]) && (!specs[id].in || S.seen(specs[id].in));   // a body and each body that holds it
-    S.live = pb => own(pb) && (pb.on == null || !['force', 'label3d'].includes(pb.type) || S.seen(pb.on))
-      && (pb.type !== 'drift' || !pathSpec[pb.on] || own(pathSpec[pb.on])) && (pb.type !== 'body' || !pb.along || !pathSpec[pb.along] || own(pathSpec[pb.along]))
-      && (pb.type !== 'links' || (pb.nodes || []).every(id => S.seen(id)));   // a part that rides a path or joins bodies shows only when they show   // only a force and a label name a body in on
+    const rides = pb => [pb.type === 'drift' && pathSpec[pb.on], pb.type === 'body' && pathSpec[pb.along]].filter(Boolean);
+    S.live = pb => own(pb) && (pb.on == null || !['force', 'label3d'].includes(pb.type) || S.seen(pb.on))   // a part shows only with the bodies and paths it uses
+      && rides(pb).every(own) && (pb.type !== 'links' || pb.nodes.every(S.seen));
     S.shotKey = () => parts.find(p => p.b.type === 'shot' && p.b.bind)?.b.bind;
     // A chip: a label in screen space with a leader line to its point. Its text fills {path} from the state.
     S.chip = (pb, tpl, tone) => {
@@ -224,7 +224,7 @@
     const LIGHT = {value: null}; S.light = LIGHT;
     const paint = (m, c) => { if (m.uniforms) m.uniforms.color.value = col(c); else m.color.copy(col(c)); };
     S.mat = name => mats[name] ??= sky ? new T.MeshStandardMaterial({color: col(pal[name] || pal.body), roughness: .85, metalness: 0})
-                                       : new T.ShaderMaterial({uniforms: {color: {value: col(pal[name] || pal.body)}, light: LIGHT}, vertexShader: TOON_V, fragmentShader: TOON_F});
+                                       : new T.ShaderMaterial({uniforms: {color: {value: col(pal[name] || pal.body)}, light: LIGHT, alpha: {value: 1}}, vertexShader: TOON_V, fragmentShader: TOON_F});
     S.col = col; S.paint = paint; S.palette = () => pal;
     // The colour of a line, a dot or a halo: full strength, from the tone name. It follows the theme.
     S.lineMat = (tone, opts) => {
@@ -233,10 +233,11 @@
       return m;
     };
     S.recolors = [];   // functions that a part gives to repaint what it made when the theme changes
-    // Lights, for a lit material (a texture, or the sky look): a soft ambient and a sun for the toon look. A glowing body adds its own.
+    // Lights for lit materials: an ambient, and a sun in the toon look. A lamp body dims the ambient, so its far side goes dark.
     S.lights = () => {
       if (S.lit?.parent === world) return S.lit;
-      S.lit = new T.Group(); S.lit.add(new T.AmbientLight(0xffffff, sky ? .6 : .9));
+      S.lit = new T.Group(); S.lit.add(S.amb = new T.AmbientLight(0xffffff, sky ? .7 : .9));
+      S.lamp = () => { S.amb.intensity = sky ? .09 : .5; };
       if (!sky) { const d = new T.DirectionalLight(0xffffff, 1.6); d.position.set(-.45, .78, .45); S.lit.add(d); }
       world.add(S.lit);
       return S.lit;
@@ -257,7 +258,7 @@
     function boxes(o, out = []) {
       o.updateWorldMatrix(true, true);
       o.traverseVisible(m => {
-        if (!m.isMesh || m.userData.flat) return;
+        if (!(m.isMesh || m.isLine) || m.userData.flat) return;
         m.geometry.boundingBox ?? m.geometry.computeBoundingBox();
         out.push(tmp().copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld));
       });
@@ -358,7 +359,7 @@
         const out = d => (d[0] * ox + d[1] * oy) / on - d[1] * .35;   // away from the middle, and a little up
         const dirs = [...DIRS].sort((p, q) => out(q) - out(p));
         if (it.q.d) tries.push(it.q.d);
-        for (const r of [30, 54, 84, 124, 170]) for (const [cx, cy] of dirs) {
+        for (const r of [22, 40, 64, 96]) for (const [cx, cy] of dirs) {
           const ext = Math.abs(cx) * it.w / 2 + Math.abs(cy) * it.h / 2;
           tries.push([cx * (r + ext), cy * (r + ext)]);
         }
@@ -418,7 +419,8 @@
       if (sky) { gl.setRenderTarget(null); gl.setClearColor(col(pal.bg), 1); gl.clear(); gl.render(world, cam); layout(); for (const q of parts) q.impl.over?.(q); return; }
       shade();
       LIGHT.value.set(-.45, .78, .45).normalize();
-      const flat = [floor, shadow], vis = flat.map(o => o.visible);
+      const flat = [], vis = [];
+      world.traverseVisible(o => { if (o.userData.flat || o.isSprite || o.isPoints || o.isLine) { flat.push(o); vis.push(true); } });
       flat.forEach(o => { o.visible = false; });
       world.overrideMaterial = S.normal; gl.setRenderTarget(rtN); gl.setClearColor(0, 0); gl.clear(); gl.render(world, cam);
       world.overrideMaterial = S.white; gl.setRenderTarget(rtM); gl.setClearColor(0, 1); gl.clear(); gl.render(world, cam);
@@ -511,6 +513,7 @@
 
     // On each change of the state: the step bar, then each part, then the shot.
     function sync() {
+      S.ver = (S.ver || 0) + 1;
       if (b.bind) {
         const k = S.step();
         count.textContent = `Step ${Math.min(k, N)} of ${N}`;

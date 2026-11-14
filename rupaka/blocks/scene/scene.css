@@ -23,3 +23,12 @@
 .rk-scene .rk-grip.held { cursor: grabbing; }
 .rk-scene .rk-grip[data-locked] { opacity: .35; cursor: not-allowed; box-shadow: none; }
 .rk-scene .rk-grip:focus-visible { outline: 2px solid var(--rk-fg); outline-offset: 3px; }
+/* In the sky look a chip is plain lettering with a dark halo, as on a star chart. */
+.rk-scene .stage[data-look="sky"] .rk-chip { background: none; border: 0; box-shadow: none; padding: 1px 3px; color: var(--tone);
+  font: 400 14px/1.2 var(--rk-head); letter-spacing: .05em; text-shadow: 0 0 6px var(--rk-bg), 0 0 3px var(--rk-bg), 0 0 1px var(--rk-bg); }
+.rk-scene .stage[data-look="sky"] .rk-chip[data-tone="ink"] { --tone: var(--rk-fg); }
+.rk-scene .stage[data-look="sky"] .leads line { opacity: .35; stroke-width: 1; }
+.rk-scene .stage[data-look="sky"] .leads circle { opacity: .8; }
+.rk-scene .stage[data-look="sky"] .rk-grip { width: 30px; height: 30px; margin: -15px 0 0 -15px; border-width: 1.5px; background: transparent;
+  border-color: color-mix(in srgb, var(--rk-acc) 70%, transparent); box-shadow: none; }
+.rk-scene .stage[data-look="sky"] .rk-grip:hover, .rk-scene .stage[data-look="sky"] .rk-grip.held { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rk-acc) 22%, transparent); }

@@ -19,9 +19,9 @@
     "show": {"type": "key", "doc": "a state key; the body shows when its value is true"},
     "step": {"type": "int", "min": 1, "doc": "the body shows from this step of the scene"},
     "scale": {"type": "vec3key", "doc": "the size factor [x, y, z], default [1, 1, 1]; an item can be a state key, so a bar can grow"},
-    "texture": {"type": "str", "of": ["earth", "moon"], "doc": "a picture wrapped on the body, lit by the lamps of the scene; earth is the world map (a sphere, a globe or a map), moon is the Moon"},
+    "texture": {"type": "str", "of": ["earth", "moon", "sun"], "doc": "a picture on the body: earth (the world map, with air round a ball), moon, or sun (a live surface of moving cells); earth and moon are lit by the lamps"},
     "uv": {"type": "list", "least": 4, "most": 4, "doc": "[lon0, lat0, lon1, lat1]: the window of the world picture that a plane or a map shows; a map is that many degrees wide"},
-    "glow": {"type": "numkey", "doc": "a halo round the body, from 0 (small) to 1 (wide); the body shines with no shading, as a lamp"},
+    "glow": {"type": "numkey", "doc": "a warm halo round the body, from 0 (small) to 1 (full); the body shines with no shading, as a lamp"},
     "light": {"type": "bool", "default": false, "doc": "the body lights the lit bodies of the scene, as the Sun does"},
     "opacity": {"type": "num", "min": 0.05, "max": 1, "doc": "how solid the body is; 1 if left out"},
     "along": {"type": "str", "doc": "the id of a path (a body in the world): the body sits on that path at t"},
@@ -36,7 +36,8 @@
     "label": {"type": "str", "doc": "with drag: what the grip moves, for screen readers"},
     "orbit": {"type": "numkey", "doc": "the body sits on a circle of this radius round about, across axis, at the angle angle; a key lets a slider or a drag move it round"},
     "angle": {"type": "numkey", "doc": "with orbit: the angle in degrees; 0 is along x, 90 is along -z for the axis [0, 1, 0]"},
-    "arc": {"type": "numkeys", "least": 2, "most": 2, "doc": "ring and disc only: the angles [from, to] in degrees that the shape covers, 0 to 360 if left out; an item can be a state key, so a sector follows the state"}
+    "arc": {"type": "numkeys", "least": 2, "most": 2, "doc": "ring and disc only: the angles [from, to] in degrees that the shape covers, 0 to 360 if left out; an item can be a state key, so a sector follows the state"},
+    "ticks": {"type": "int", "min": 2, "max": 120, "doc": "ring only: this many thin spokes across the ring, the edges of its slices, as on a dial"}
   },
   "lockable": true
 }

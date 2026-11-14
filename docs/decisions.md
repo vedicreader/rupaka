@@ -41,3 +41,11 @@ The first design and plan (26 October 2026) are in the git history under `docs/s
 
 - **Mark the release as Latest.** `nbdev-release-git` makes the GitHub release, but it does not mark it as Latest. After it, run `gh api -X PATCH repos/<owner>/rupaka/releases/<id> -f make_latest=true`. (3 Nov 2026)
 - **Give the imports of a test cell their own cell.** The docs build runs only the cells with an import, `#| export` or `show_doc`. A test cell that starts with an import runs there without its setup, and the build fails. Before a release push, run `uv run nbdev-proc-nbs --force`. (3 Nov 2026)
+
+## 3D worlds (0.0.19)
+
+- **One scene, two looks.** `look: "sky"` is a dark, lit view with no floor or ink, for space, circuits, networks and maps; the toon look stays for objects and forces. The sky vars live in `rupaka.css`, so block CSS keeps no colours.
+  Why: a model writes data, so a new kind of picture is a few new props, not new code. (0.0.19) `rupaka/blocks/scene/`.
+- **The model never does trigonometry.** A body sits on a circle with `orbit` and `angle`, rides a path with `along` and `t`, and a ring of names is `points` with `round`. Derive does the rest.
+- **A grip writes one input.** `drag` on a body makes a real button over it, so A/D work, a lock holds it and the checker plays it. The maths runs in the parent frame, and a linear grip moves one item of `at`, so geo and globe coords drag the right way.
+- **Textures travel with three.js.** `earth.jpg` and `moon.jpg` ride in the three.js bundle as data URIs (about 120 KB), so hosts serve no new file. The sun is a shader. `tools/live_author.py` asks a real model for demos and checks them.

@@ -630,8 +630,19 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
     for gid, (p, g) in gates.items(): waits[gid] = _waits(p, allp)
     for gid, (p, g) in gates.items():
         if gid in _all_waits(p, allp, waits): err(f'{p}.after', f'the gate "{gid}" waits for itself')
+    _scene_reads(spec, reads)
     for gid, (p, g) in gates.items(): errs += _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads)
     return errs
+
+def _scene_reads(spec, reads):
+    "A part that rides a path or joins bodies shows what they read: add their reads to its own, for the think rule."
+    for p, b, _ in _walk(spec['blocks']):
+        if not isinstance(b, dict) or b.get('type') != 'scene': continue
+        kids = {f'{p}.blocks[{i}]': k for i, k in enumerate(b.get('blocks') or []) if isinstance(k, dict)}
+        by = {(k.get('type'), k.get('id')): reads.get(q, set()) for q, k in kids.items()}
+        for q, k in kids.items():
+            use = [('path', k.get('on'))] if k.get('type') == 'drift' else [('path', k.get('along'))] if k.get('along') else [('body', x) for x in k.get('nodes') or []] if k.get('type') == 'links' else []
+            for u in use: reads[q] = reads.get(q, set()) | by.get(u, set())
 
 def _step_err(b, m, learn, st):
     "Why the reveal `step` of block `b` is bad, or None. An explainer shows the part from that value of the state key `step`."
@@ -684,6 +695,14 @@ def shot_error(v, ids) -> str|None:
     if isinstance(v, str) and v.startswith('close:'): return f'"{v[6:]}" is not a body in this scene, so "{v}" is not a shot'
     return f'"{v}" is not a shot; use wide, high, side, front, top or close:<body id>'
 
+def _isnum(x): return isinstance(x, (int, float)) and not isinstance(x, bool)
+def _pts_ok(v): return isinstance(v, list) and all((isinstance(p, list) and len(p) == 3 and all(map(_isnum, p))) or (isinstance(p, dict) and all(_isnum(p.get(c, 0)) for c in 'xyz')) for p in v)
+def _cell_ok(x): return _isnum(x) or (isinstance(x, dict) and _isnum(x.get('value')))
+def _weights_ok(v, n):
+    "A list of up to `n` weights, or an up to `n` x `n` matrix of them; a weight can be {id, value}, as softmax gives."
+    if not isinstance(v, list) or len(v) > n: return False
+    return all(isinstance(r, list) and len(r) <= n and all(map(_cell_ok, r)) for r in v) if v and isinstance(v[0], list) else all(map(_cell_ok, v))
+
 def _check_scene(p, b, st, st0, err):
     kids = [(f'{p}.blocks[{i}]', k) for i, k in enumerate(b.get('blocks') or []) if isinstance(k, dict)]
     ids = []
@@ -720,7 +739,17 @@ def _check_scene(p, b, st, st0, err):
         if t == 'points' and k.get('names') and k.get('round') and len(k['names']) != k['round']: err(f'{q}.names', f'needs {k["round"]} names, one for each place')
         if t == 'points' and k.get('names') and not (k.get('round') or isinstance(k.get('pts'), list)): err(f'{q}.names', 'goes with round or pts')
         if t == 'points' and k.get('names') and k.get('pts') and len(k['names']) != len(k['pts']): err(f'{q}.names', f'needs {len(k["pts"])} names, one for each point')
+        if t == 'path' and isinstance(k.get('of'), str) and not _pts_ok(get(st0, k['of'])): err(f'{q}.of', f'"{k["of"]}" must start as a list of points [x, y, z]')
+        if t == 'links' and isinstance(k.get('w'), str) and not _weights_ok(get(st0, k['w']), len(k.get('nodes') or [])):
+            err(f'{q}.w', f'"{k["w"]}" must start as a list of numbers, or a matrix of numbers, with at most {len(k.get("nodes") or [])} rows and columns')
         if t == 'body':
+            if k.get('along') and 't' not in k: err(f'{q}.t', 'a body with along needs t, its place on the path from 0 to 1')
+            if k.get('uv') is not None and not (len(k['uv']) == 4 and all(isinstance(x, (int, float)) for x in k['uv'])): err(f'{q}.uv', 'must be four numbers [lon0, lat0, lon1, lat1]')
+            if k.get('drag') == 'orbit' and k.get('orbit') is None: err(f'{q}.drag', 'an orbit grip needs a body on an orbit: give it orbit and angle, with angle the key of to')
+            if k.get('drag') == 'orbit' and k.get('orbit') is not None and k.get('angle') != k.get('to'): err(f'{q}.to', 'an orbit grip writes the angle, so to and angle must be the same key')
+            if k.get('drag') in ('x', 'y', 'z') and (not isinstance(k.get('at'), list) or k['at'][{'x': 0, 'y': 1, 'z': 2}[k['drag']]] != k.get('to')):
+                err(f'{q}.to', f'a {k["drag"]} grip moves the {k["drag"]} item of at, so that item must be the key of to')
+            if k.get('drag') and k.get('in'): err(f'{q}.drag', 'a body with a grip is not in another body; put it in the scene')
             if k.get('along') is not None and k['along'] not in pids: err(f'{q}.along', f'"{k["along"]}" is not a path in this scene' + (f'; use one of: {", ".join(pids)}' if pids else '; give a path an id'))
             if k.get('drag') and k.get('to') not in st: err(f'{q}.to', 'a grip writes an input, so "to" must be a key in state')
             if k.get('drag') and not k.get('to'): err(f'{q}.to', 'a body with drag needs "to"')

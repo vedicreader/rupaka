@@ -64,7 +64,8 @@ Rules:
 - "coords": "geo" reads "at" as [longitude, latitude, height] on a flat map. "globe" puts it on a ball. A "map" body shows a window "uv": [lon0, lat0, lon1, lat1] of the world picture. A body with "texture": "earth" or "moon" wears a real picture.
 - A scene part that shows the answer of the gate has "after". The chips of a scene say a value in at most 60 characters.
 - Choose a "shot" by the plane that you built the picture in. "side" faces the x-y plane (a row along x, a circuit with z = 0). "front" faces the z-y plane. "top" faces the x-z plane (a map, an orbit). "high" looks down at the x-z plane at an angle. A flat picture seen edge-on is a line, so pick the shot that faces it.
-- Keep "width" of a path at 0.3 to 0.6 for a guide line, and at most 2 for a link. Give a map a "ground": false and no "label3d" for each of many names: use "points" with "round" and "names" or one chip for each key place.
+- Make it look like a good star chart or lab drawing: a "ring" with "ticks" for a dial or a band of signs, "points" with "round" and "names" for the names in the band, "points" with "stars" and "lines" for the sky, "texture": "sun" with "glow" and "light" for a sun, and a path with "width" 0.3 for an orbit or a ray.
+- Keep "width" of a path at 0.3 for a hairline guide, and at most 2 for a link. Give a map a "ground": false and no "label3d" for each of many names: use "points" with "round" and "names" or one chip for each key place.
 The shape of a spec:
 {SHAPE}
 Use only these blocks and fns:
