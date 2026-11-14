@@ -1,0 +1,181 @@
+{
+ "rupaka": 1,
+ "id": "links-example",
+ "title": "Links",
+ "ask": "Three words look at each other. The word it must find what it refers to.",
+ "state": {
+  "scores": [
+   [
+    1,
+    0,
+    0
+   ],
+   [
+    0,
+    1,
+    0
+   ],
+   [
+    0.5,
+    2.5,
+    1
+   ]
+  ],
+  "temp": 1
+ },
+ "derive": [
+  {
+   "fn": "softmax",
+   "in": "scores",
+   "row": 2,
+   "t": "temp",
+   "labels": [
+    "the",
+    "cat",
+    "it"
+   ],
+   "out": "att"
+  },
+  {
+   "fn": "expr",
+   "expr": "2",
+   "out": "who"
+  }
+ ],
+ "blocks": [
+  {
+   "type": "gate",
+   "id": "who",
+   "prompt": "The word it looks at the, cat and it. Which word gets the most weight?",
+   "options": [
+    "the",
+    "cat",
+    "it"
+   ],
+   "answer": {
+    "is": "cat"
+   },
+   "hides": [
+    "att"
+   ],
+   "context": "For temperature {temp}:"
+  },
+  {
+   "type": "scene",
+   "label": "Three words and the weights of it",
+   "look": "sky",
+   "height": 300,
+   "ground": false,
+   "blocks": [
+    {
+     "type": "body",
+     "id": "w0",
+     "kind": "box",
+     "size": [
+      1.2,
+      0.5,
+      0.5
+     ],
+     "at": [
+      -2.5,
+      0,
+      0
+     ]
+    },
+    {
+     "type": "body",
+     "id": "w1",
+     "kind": "box",
+     "size": [
+      1.2,
+      0.5,
+      0.5
+     ],
+     "at": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "type": "body",
+     "id": "w2",
+     "kind": "box",
+     "size": [
+      1.2,
+      0.5,
+      0.5
+     ],
+     "at": [
+      2.5,
+      0,
+      0
+     ],
+     "color": "acc"
+    },
+    {
+     "type": "label3d",
+     "on": "w0",
+     "text": "the",
+     "at": [
+      0,
+      -0.6,
+      0
+     ]
+    },
+    {
+     "type": "label3d",
+     "on": "w1",
+     "text": "cat",
+     "at": [
+      0,
+      -0.6,
+      0
+     ]
+    },
+    {
+     "type": "label3d",
+     "on": "w2",
+     "text": "it",
+     "at": [
+      0,
+      -0.6,
+      0
+     ],
+     "tone": "acc"
+    },
+    {
+     "type": "links",
+     "nodes": [
+      "w0",
+      "w1",
+      "w2"
+     ],
+     "w": "att",
+     "row": 2,
+     "tone": "acc",
+     "width": 2,
+     "after": "who"
+    },
+    {
+     "type": "shot",
+     "name": "side"
+    }
+   ]
+  },
+  {
+   "type": "slider",
+   "bind": "temp",
+   "label": "Temperature",
+   "min": 0.3,
+   "max": 3,
+   "step": 0.1,
+   "lock": "who"
+  },
+  {
+   "type": "caption",
+   "after": "who",
+   "text": "A low temperature gives the top word almost all the weight. A high one spreads it out."
+  }
+ ]
+}

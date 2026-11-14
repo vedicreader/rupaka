@@ -9,10 +9,10 @@ __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'EASE', 
            'TOP', 'MODES', 'SHOTS', 'FLOW', 'NODE_ID', 'UPGRADES', 'manifests', 'fn_manifests', 'from_', 'is_', 'demo',
            'gate', 'readout', 'caption', 'row', 'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel',
            'ranklist', 'bars', 'axis', 'point', 'plot', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d', 'shot',
-           'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft', 'field', 'fmt', 'parse_expr', 'get', 'js_str',
-           'show_value', 'fmt_text', 'noise', 'ease', 'keyframes', 'run', 'long_sentences', 'syllables', 'grade',
-           'plain_why', 'plain_errors', 'has_bold', 'validate', 'shot_error', 'shots', 'append', 'upgrade', 'examples',
-           'gallery']
+           'path', 'links', 'points', 'drift', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft', 'field',
+           'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'noise', 'ease', 'keyframes', 'run',
+           'long_sentences', 'syllables', 'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate', 'shot_error',
+           'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
 import math, re
@@ -83,6 +83,10 @@ def body(id, kind, size=None, at=None, inside=None, **kw): return _b('body', id=
 def force(dir, mag, on=None, at=None, **kw): return _b('force', dir=list(dir), mag=mag, on=on, at=at, **kw)
 def label3d(text, on=None, at=None, **kw): return _b('label3d', text=text, on=on, at=at, **kw)
 def shot(name=None, bind=None, **kw): return _b('shot', name=name, bind=bind, **kw)
+def path(pts=None, **kw): return _b('path', pts=[list(p) for p in pts] if pts else None, **kw)
+def links(nodes, w, **kw): return _b('links', nodes=list(nodes), w=w, **kw)
+def points(**kw): return _b('points', **kw)
+def drift(on, speed, **kw): return _b('drift', on=on, speed=speed, **kw)
 
 # %% ../nbs/00_spec.ipynb #c016
 def rules(table, ins, out, alts=4): return dict(fn='rules', table=table, **{'in': list(ins)}, out=out, alts=alts)
@@ -386,6 +390,8 @@ def _type_err(t, v, tables):
           'vec3': lambda: isinstance(v, list) and len(v) == 3 and all(map(num, v)),
           'vec3key': lambda: isinstance(v, list) and len(v) == 3 and all(num(x) or isinstance(x, str) for x in v),
           'nums': lambda: isinstance(v, list) and 1 <= len(v) <= 3 and all(num(x) and x > 0 for x in v),
+          'numkeys': lambda: isinstance(v, list) and all(num(x) or isinstance(x, str) for x in v),
+          'pts': lambda: isinstance(v, list) and all(isinstance(p, list) and len(p) == 3 and all(num(x) or isinstance(x, str) for x in p) for p in v),
           'texts': lambda: isinstance(v, list) and all(isinstance(x, str) for x in v),
           'keys': lambda: isinstance(v, list) and all(isinstance(x, str) for x in v),
           'numkey': lambda: num(v) or isinstance(v, str),
@@ -400,7 +406,8 @@ def _type_err(t, v, tables):
     return {'table': f'"{v}" is not a table in tables', 'options': 'must be a list of two or more options, or {"from": path}',
             'answer': 'must be a state path, or {"is": value}', 'range': 'must be [min, max] with min < max',
             'over': 'must be {"x": [min, max, n]}', 'vec3': 'must be [x, y, z]: three numbers',
-            'vec3key': 'must be [x, y, z]: three numbers or state keys', 'nums': 'must be a list of one to three numbers above 0',
+            'vec3key': 'must be [x, y, z]: three numbers or state keys', 'pts': 'must be a list of points [x, y, z]: three numbers or state keys each',
+            'numkeys': 'must be a list of numbers or state keys', 'nums': 'must be a list of one to three numbers above 0',
             'texts': 'must be a list of lines of text'}.get(t, f'must be of type {t}')
 
 def _reads(t, v) -> set:
@@ -410,7 +417,8 @@ def _reads(t, v) -> set:
     if t == 'numkey': return {v} if isinstance(v, str) else set()
     if t == 'text': return {_root(m[1]) for m in _TPL.finditer(v)}
     if t == 'texts': return {_root(m[1]) for x in v for m in _TPL.finditer(x)}
-    if t == 'vec3key': return {_root(x) for x in v if isinstance(x, str)}
+    if t in ('vec3key', 'numkeys'): return {_root(x) for x in v if isinstance(x, str)}
+    if t == 'pts': return {_root(x) for p in v for x in p if isinstance(x, str)}
     if t == 'options': return {_root(v['from'])} if isinstance(v, dict) else set()
     if t == 'answer': return {_root(v)} if isinstance(v, str) else set()
     if t == 'expr':
@@ -612,7 +620,7 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
         if b['type'] == 'gate':
             if b['id'] in gates: err(f'{p}.id', f'the gate id "{b["id"]}" is used twice')
             gates[b['id']] = (p, b)
-        if m.get('lockable'): controls.append((p, b, {b[k] for k in ('bind', 'angle', 'x', 'y') if isinstance(b.get(k), str)} & set(st)))
+        if m.get('lockable'): controls.append((p, b, {b[k] for k in ('bind', 'angle', 'x', 'y', 'to') if isinstance(b.get(k), str)} & set(st)))
     allp = {p: b for p, b, _ in _walk(spec['blocks']) if isinstance(b, dict)}
     for p, b in allp.items():
         for k in ('after', 'lock'):
@@ -666,15 +674,15 @@ def _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads) -> L:
     return errs
 
 # %% ../nbs/00_spec.ipynb #s3d102
-SHOTS = ('wide', 'side', 'front', 'top')
-_SIZES = dict(box=(3,), cylinder=(2, 3), cone=(2,), sphere=(1,), capsule=(2,), torus=(2,), group=(0,))
-_MOST = dict(body=40, force=12, label3d=12)
+SHOTS = ('wide', 'high', 'side', 'front', 'top')
+_SIZES = dict(box=(3,), cylinder=(2, 3), cone=(2,), sphere=(1,), capsule=(2,), torus=(2,), plane=(2,), ring=(2,), disc=(1,), map=(0,), globe=(0,), group=(0,))
+_MOST = dict(body=60, force=12, label3d=32, path=24, links=4, points=6, drift=8)
 
 def shot_error(v, ids) -> str|None:
     "Why `v` is not a shot name for a scene with the body `ids`, or None."
     if isinstance(v, str) and (v in SHOTS or (v.startswith('close:') and v[6:] in ids)): return None
     if isinstance(v, str) and v.startswith('close:'): return f'"{v[6:]}" is not a body in this scene, so "{v}" is not a shot'
-    return f'"{v}" is not a shot; use wide, side, front, top or close:<body id>'
+    return f'"{v}" is not a shot; use wide, high, side, front, top or close:<body id>'
 
 def _check_scene(p, b, st, st0, err):
     kids = [(f'{p}.blocks[{i}]', k) for i, k in enumerate(b.get('blocks') or []) if isinstance(k, dict)]
@@ -699,9 +707,26 @@ def _check_scene(p, b, st, st0, err):
         if b['bind'] not in st: err(f'{p}.bind', f'"{b["bind"]}" must be a state key, so that the learner and the host can set the step')
         elif not (isinstance(v, int) and not isinstance(v, bool) and v >= 1): err(f'{p}.bind', f'the step "{b["bind"]}" must start as an int from 1')
         elif steps and v > len(steps): err(f'{p}.bind', f'the step starts at {v}, but there are {len(steps)} steps')
+    pids = [k['id'] for _, k in kids if k.get('type') == 'path' and 'id' in k]
+    if len(set(pids)) < len(pids): err(p, 'two paths have the same id')
     for q, k in kids:
-        if 'on' in k and k['on'] not in ids:
+        if k.get('type') in ('force', 'label3d') and 'on' in k and k['on'] not in ids:
             err(f'{q}.on', f'"{k["on"]}" is not a body in this scene' + (f'; use one of: {", ".join(map(str, ids))}' if ids else ''))
+        t = k.get('type')
+        if t == 'drift' and k.get('on') not in pids: err(f'{q}.on', f'"{k.get("on")}" is not a path in this scene' + (f'; use one of: {", ".join(pids)}' if pids else '; give a path an id'))
+        if t == 'links':
+            for x in k.get('nodes') or []:
+                if x not in ids: err(f'{q}.nodes', f'"{x}" is not a body in this scene')
+        if t == 'points' and k.get('names') and k.get('round') and len(k['names']) != k['round']: err(f'{q}.names', f'needs {k["round"]} names, one for each place')
+        if t == 'points' and k.get('names') and not (k.get('round') or isinstance(k.get('pts'), list)): err(f'{q}.names', 'goes with round or pts')
+        if t == 'points' and k.get('names') and k.get('pts') and len(k['names']) != len(k['pts']): err(f'{q}.names', f'needs {len(k["pts"])} names, one for each point')
+        if t == 'body':
+            if k.get('along') is not None and k['along'] not in pids: err(f'{q}.along', f'"{k["along"]}" is not a path in this scene' + (f'; use one of: {", ".join(pids)}' if pids else '; give a path an id'))
+            if k.get('drag') and k.get('to') not in st: err(f'{q}.to', 'a grip writes an input, so "to" must be a key in state')
+            if k.get('drag') and not k.get('to'): err(f'{q}.to', 'a body with drag needs "to"')
+            if (k.get('orbit') is None) != (k.get('angle') is None): err(f'{q}', 'orbit and angle go together')
+            if k.get('kind') == 'map' and not k.get('uv'): err(f'{q}.uv', 'a map needs uv: [lon0, lat0, lon1, lat1]')
+            if k.get('arc') and k.get('kind') not in ('ring', 'disc'): err(f'{q}.arc', 'only a ring or a disc has an arc')
         if 'step' in k:
             if 'bind' not in b: err(f'{q}.step', 'a step needs a scene with bind')
             elif steps and isinstance(k['step'], int) and k['step'] > len(steps): err(f'{q}.step', f'the scene has {len(steps)} steps')

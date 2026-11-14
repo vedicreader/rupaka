@@ -1,0 +1,26 @@
+{
+  "name": "path",
+  "since": "0.0.19",
+  "purpose": "A line in a scene, drawn as a thin tube: through points, round a circle, or through a state list. With grow it draws part of its length.",
+  "binds": "pts, circle, about, grow: numbers or state keys; of: a state list of [x, y, z]",
+  "keys": "none",
+  "parent": "scene",
+  "props": {
+    "id": {"type": "str", "doc": "the path id; a body with along, and a drift, name it"},
+    "pts": {"type": "pts", "least": 2, "most": 60, "doc": "the points [x, y, z] that the line goes through; an item can be a state key"},
+    "circle": {"type": "numkey", "doc": "a circle of this radius round about, in the plane across axis"},
+    "about": {"type": "vec3key", "doc": "with circle: the centre"},
+    "axis": {"type": "vec3", "doc": "with circle: the direction across the plane of the circle; [0, 1, 0] if left out, a flat circle"},
+    "of": {"type": "key", "doc": "the state key of a list of points, each [x, y, z] or {x, y, z}"},
+    "closed": {"type": "bool", "default": false, "doc": "with pts: join the last point to the first"},
+    "smooth": {"type": "bool", "default": false, "doc": "with pts: round the corners into a curve"},
+    "grow": {"type": "numkey", "doc": "the share of the length that shows, 0 to 1; a slider can walk the path"},
+    "tone": {"type": "str", "of": ["ink", "acc", "ok", "no", "dim", "mute", "glow", "light"], "default": "ink", "doc": "the colour"},
+    "width": {"type": "num", "default": 1, "min": 0.2, "max": 6, "doc": "the thickness, in units of a thin line"},
+    "arrow": {"type": "bool", "default": false, "doc": "an arrow head at the end"},
+    "opacity": {"type": "num", "min": 0.05, "max": 1, "doc": "how solid the line is; 1 if left out"},
+    "show": {"type": "key", "doc": "a state key; the path shows when its value is true"},
+    "step": {"type": "int", "min": 1, "doc": "the path shows from this step of the scene"}
+  },
+  "one_of": [["pts", "circle", "of"]]
+}

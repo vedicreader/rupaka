@@ -2,6 +2,16 @@
 
 <!-- do not remove -->
 
+## 0.0.19
+
+- A scene can now show space, circuits, networks and maps. `look: "sky"` gives a dark, lit view with no floor. `coords: "geo"` and `"globe"` read places as longitude and latitude.
+- Four new blocks inside a scene: `path` (wires, roads, orbits, with `grow`), `links` (arcs as thick as the weights of a matrix), `points` (the real bright stars, or N places round a circle with names) and `drift` (dots that ride a path).
+- A `body` can now follow state: `at`, `scale`, `orbit` with `angle`, `along` a path, `arc` of a ring, `spin`. It can wear the `earth` or `moon` picture, glow, light the scene, and be a `map`, `globe`, `plane`, `ring` or `disc`.
+- A body with `drag` has a grip. The learner drags it, or presses A/D, and it writes a state key. The checker plays the keys of each grip.
+- New shot `high`, and the keys R/F zoom a scene.
+- The demo `panchangam-sky` shows the Sun and the Moon round the ring of the 27 nakshatras. `tools/live_author.py` asks a real Claude model for demos on five topics and checks them.
+- The three.js bundle carries the two textures (about 120 KB).
+
 ## 0.0.18
 
 adding skills

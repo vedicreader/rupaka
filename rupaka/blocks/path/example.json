@@ -1,0 +1,133 @@
+{
+ "rupaka": 1,
+ "id": "path-example",
+ "title": "Path",
+ "ask": "A car drives along a road of three equal legs. Predict how far it has gone.",
+ "state": {
+  "t": 0.25
+ },
+ "derive": [
+  {
+   "fn": "expr",
+   "expr": "t * 12",
+   "out": "gone"
+  }
+ ],
+ "blocks": [
+  {
+   "type": "gate",
+   "id": "far",
+   "prompt": "The road is 12 km long. The car is 25% of the way. How far has it gone, in km?",
+   "options": [
+    2,
+    3,
+    4
+   ],
+   "answer": "gone",
+   "context": "For a car {t} of the way:"
+  },
+  {
+   "type": "scene",
+   "label": "A road with three legs and a car",
+   "look": "sky",
+   "height": 300,
+   "ground": false,
+   "blocks": [
+    {
+     "type": "path",
+     "id": "road",
+     "pts": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       4,
+       0,
+       0
+      ],
+      [
+       4,
+       0,
+       -4
+      ],
+      [
+       8,
+       0,
+       -4
+      ]
+     ],
+     "tone": "dim"
+    },
+    {
+     "type": "path",
+     "pts": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       4,
+       0,
+       0
+      ],
+      [
+       4,
+       0,
+       -4
+      ],
+      [
+       8,
+       0,
+       -4
+      ]
+     ],
+     "grow": "t",
+     "tone": "acc",
+     "width": 2,
+     "arrow": true
+    },
+    {
+     "type": "body",
+     "id": "car",
+     "kind": "box",
+     "size": [
+      0.7,
+      0.35,
+      0.45
+     ],
+     "along": "road",
+     "t": "t",
+     "color": "acc"
+    },
+    {
+     "type": "label3d",
+     "on": "car",
+     "text": "{gone} km",
+     "tone": "acc",
+     "after": "far"
+    },
+    {
+     "type": "shot",
+     "name": "high"
+    }
+   ]
+  },
+  {
+   "type": "slider",
+   "bind": "t",
+   "label": "Share of the road",
+   "min": 0,
+   "max": 1,
+   "step": 0.05,
+   "lock": "far"
+  },
+  {
+   "type": "caption",
+   "after": "far",
+   "text": "The car has gone 25% of 12 km. Move the slider to drive it on."
+  }
+ ]
+}

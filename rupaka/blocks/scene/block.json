@@ -1,9 +1,9 @@
 {
   "name": "scene",
   "since": "0.0.8",
-  "purpose": "A 3D view in a toon style, drawn with three.js. Put body, force, label3d and shot blocks inside it. With bind, it builds one step at a time.",
+  "purpose": "A 3D view drawn with three.js. Put body, force, label3d, shot, path, links, points and drift blocks inside it. With bind, it builds one step at a time. With look sky it is a dark, lit view for space, circuits, networks and maps.",
   "binds": "number: the step, an int from 1 (optional)",
-  "keys": "A/D or ←/→ back and next step, 1-9 go to a step, Q/E turn the view, W/S tilt it; drag to turn",
+  "keys": "A/D or ←/→ back and next step, 1-9 go to a step, Q/E turn the view, W/S tilt it, R/F zoom in and out; drag to turn; a grip has its own keys",
   "lockable": true,
   "props": {
     "bind": {"type": "key", "doc": "the state key of the step, an int from 1; a part with step n shows from step n"},
@@ -13,6 +13,8 @@
     "scale": {"type": "num", "min": 0, "doc": "the arrow length for a mag of 1; if left out, the largest force is 0.3 of the scene size"},
     "floor": {"type": "num", "doc": "the height (y) of the floor; the lowest point of the bodies if left out"},
     "ground": {"type": "bool", "default": true, "doc": "false hides the floor and the shadow"},
-    "blocks": {"type": "blocks", "req": true, "doc": "body, force, label3d and shot blocks only", "only": ["body", "force", "label3d", "shot"]}
+    "blocks": {"type": "blocks", "req": true, "doc": "body, force, label3d, shot, path, links, points and drift blocks only", "only": ["body", "force", "label3d", "shot", "path", "links", "points", "drift"]},
+    "look": {"type": "str", "of": ["toon", "sky"], "default": "toon", "doc": "toon: flat colour with ink lines on a floor, for objects and forces; sky: a dark, lit view with no floor, for space, circuits, networks and maps"},
+    "coords": {"type": "str", "of": ["xyz", "geo", "globe"], "default": "xyz", "doc": "how at, pivot and pts read their three numbers: xyz (y is up); geo: [lon, lat, height] on a flat map, one unit is one degree; globe: [lon, lat, height] on a ball of radius 10"}
   }
 }

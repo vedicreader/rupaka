@@ -8,7 +8,7 @@
   "props": {
     "text": {"type": "text", "req": true, "doc": "the chip text, at most 60 characters; {path} takes a state value"},
     "on": {"type": "str", "doc": "the id of the body that the chip points at"},
-    "at": {"type": "vec3", "doc": "the point in the frame of the body on (or of the world)"},
+    "at": {"type": "vec3key", "doc": "the point in the frame of the body on (or of the world); an item can be a state key"},
     "tone": {"type": "str", "of": ["ink", "acc", "ok", "no"], "default": "ink", "doc": "the colour of the bar at the left of the chip"},
     "show": {"type": "key", "doc": "a state key; the chip shows when its value is true"},
     "step": {"type": "int", "min": 1, "doc": "the chip shows from this step of the scene"}

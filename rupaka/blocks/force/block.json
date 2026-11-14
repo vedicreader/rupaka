@@ -9,7 +9,7 @@
     "dir": {"type": "vec3key", "req": true, "doc": "the direction [x, y, z] in the world; [0, 1, 0] is up"},
     "mag": {"type": "numkey", "req": true, "doc": "the size of the force; a negative mag turns the arrow round"},
     "on": {"type": "str", "doc": "the id of the body that the force acts on; the arrow moves with it"},
-    "at": {"type": "vec3", "doc": "the point in the frame of the body on (or of the world)"},
+    "at": {"type": "vec3key", "doc": "the point in the frame of the body on (or of the world); an item can be a state key"},
     "tip": {"type": "bool", "default": false, "doc": "true: the arrow ends at the point, as a push; false: it starts there"},
     "tone": {"type": "str", "of": ["up", "down", "side", "acc", "ok", "no", "ink"], "doc": "the colour; if left out, up, down or side from dir"},
     "label": {"type": "text", "doc": "a chip on the arrow, at most 60 characters; {path} takes a state value"},

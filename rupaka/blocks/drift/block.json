@@ -1,0 +1,17 @@
+{
+  "name": "drift",
+  "since": "0.0.19",
+  "purpose": "Dots that ride a path, as charge rides a wire. The speed can be a state key, so a slider changes the flow.",
+  "binds": "speed: a number or a state key",
+  "keys": "none",
+  "parent": "scene",
+  "props": {
+    "on": {"type": "str", "req": true, "doc": "the id of the path that the dots ride"},
+    "speed": {"type": "numkey", "req": true, "doc": "laps of the path in one second; a negative number turns the dots round; 0 stops them"},
+    "n": {"type": "int", "default": 10, "min": 1, "max": 60, "doc": "the number of dots"},
+    "size": {"type": "num", "default": 1, "min": 0.3, "max": 4, "doc": "the size of a dot, in units of a thin line"},
+    "tone": {"type": "str", "of": ["ink", "acc", "ok", "no", "dim", "mute", "glow", "light"], "default": "glow", "doc": "the colour"},
+    "show": {"type": "key", "doc": "a state key; the dots show when its value is true"},
+    "step": {"type": "int", "min": 1, "doc": "the dots show from this step of the scene"}
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "links",
+  "since": "0.0.19",
+  "purpose": "Arcs between the bodies in nodes, as thick as their weights in w. A matrix gives one arc for each pair. It shows who gives weight to whom, for example attention between words.",
+  "binds": "w: a matrix, or a list of numbers; row: a number or a state key",
+  "keys": "none",
+  "parent": "scene",
+  "props": {
+    "nodes": {"type": "list", "req": true, "least": 2, "most": 16, "doc": "the ids of the bodies that the arcs join, in the order of the rows and columns of w"},
+    "w": {"type": "key", "req": true, "doc": "the state key of a matrix (row i, column j is the weight from node i to node j), or of a list (the weights from node row)"},
+    "row": {"type": "numkey", "doc": "the index of one node, from 0: only its arcs show; a key lets the learner pick the node"},
+    "min": {"type": "num", "default": 0.02, "min": 0, "max": 1, "doc": "a weight below this has no arc"},
+    "lift": {"type": "num", "default": 0.45, "min": 0, "max": 2, "doc": "how high the arcs rise above the line of nodes, as a share of the span"},
+    "width": {"type": "num", "default": 1, "min": 0.2, "max": 6, "doc": "the thickness of the heaviest arc, in units of a thin line"},
+    "tone": {"type": "str", "of": ["ink", "acc", "ok", "no", "dim", "mute", "glow", "light"], "default": "acc", "doc": "the colour"},
+    "show": {"type": "key", "doc": "a state key; the arcs show when its value is true"},
+    "step": {"type": "int", "min": 1, "doc": "the arcs show from this step of the scene"}
+  }
+}

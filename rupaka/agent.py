@@ -55,6 +55,15 @@ Rules:
 - Text uses {{path}} for state values, and **bold** in the ask, the captions and the gate prompts and contexts. No HTML.
 - Fit in 640 x 720 pixels. At most 8 blocks. Write text in ASD-STE100 Simplified Technical English, US grade 9: short sentences of at most 20 words, active voice, simple words.
 - Facts must be correct. Use only facts that you are sure of.
+3D scenes. Use a scene when the idea is about space, shape, motion, a circuit, a network or a map:
+- One "scene" block holds the whole picture. "look": "sky" is a dark, lit view with no floor, for space, circuits, networks and maps. The default look is a toon view on a floor, for objects and forces.
+- y is up. Keep the picture inside a box of about 12 units. Give each body a place with "at". A state key in "at", "scale", "angle" or "rot" lets a slider or a drag move the part.
+- Do the maths in "derive", never in the scene. A body sits on a circle with "orbit" (the radius) and "angle" (degrees). A body rides a path with "along" and "t".
+- "path" draws wires, roads, orbits and routes. "points" with "round" and "names" puts a ring of labels, such as a zodiac. "points" with "stars" draws the real night sky. "links" draws arcs between bodies, as thick as the weights of a matrix. "drift" moves dots along a path, as charge flows in a wire.
+- To let the learner drag a part, give the body "drag": "orbit" (round an axis) or "x", "y", "z", and "to": a key of "state". Give that key a start value.
+- "coords": "geo" reads "at" as [longitude, latitude, height] on a flat map. "globe" puts it on a ball. A "map" body shows a window "uv": [lon0, lat0, lon1, lat1] of the world picture. A body with "texture": "earth" or "moon" wears a real picture.
+- A scene part that shows the answer of the gate has "after". The chips of a scene say a value in at most 60 characters.
+- Choose a "shot": "high" looks down from above at an angle, "side" shows a row that runs along x, "top" shows a map.
 The shape of a spec:
 {SHAPE}
 Use only these blocks and fns:

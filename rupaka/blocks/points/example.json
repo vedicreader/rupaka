@@ -1,0 +1,78 @@
+{
+ "rupaka": 1,
+ "id": "points-example",
+ "title": "Points",
+ "ask": "Twelve marks stand round a circle, as on a clock. Predict the gap between two marks.",
+ "state": {
+  "n": 12
+ },
+ "derive": [
+  {
+   "fn": "expr",
+   "expr": "360 / n",
+   "out": "gap"
+  }
+ ],
+ "blocks": [
+  {
+   "type": "gate",
+   "id": "gap",
+   "prompt": "The 12 marks are equally far apart. What is the angle between two marks, in degrees?",
+   "options": [
+    15,
+    30,
+    60
+   ],
+   "answer": "gap"
+  },
+  {
+   "type": "scene",
+   "label": "Twelve marks round a circle, with stars behind",
+   "look": "sky",
+   "height": 320,
+   "ground": false,
+   "blocks": [
+    {
+     "type": "points",
+     "stars": true
+    },
+    {
+     "type": "path",
+     "circle": 4,
+     "tone": "dim"
+    },
+    {
+     "type": "points",
+     "round": 12,
+     "r": 4,
+     "edge": true,
+     "size": 8,
+     "tone": "acc",
+     "names": [
+      "I",
+      "II",
+      "III",
+      "IV",
+      "V",
+      "VI",
+      "VII",
+      "VIII",
+      "IX",
+      "X",
+      "XI",
+      "XII"
+     ]
+    },
+    {
+     "type": "shot",
+     "name": "high"
+    }
+   ]
+  },
+  {
+   "type": "caption",
+   "after": "gap",
+   "text": "The circle has 360 degrees. Twelve equal gaps make 30 degrees each."
+  }
+ ]
+}

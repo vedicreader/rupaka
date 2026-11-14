@@ -1,0 +1,514 @@
+{
+ "rupaka": 1,
+ "id": "panchangam-sky",
+ "concept": "panchangam",
+ "title": "Tithi and nakshatra from the Sun and the Moon",
+ "ask": "Earth is at the centre. The Sun and the Moon stand on the sky ring. The ring has **27 nakshatras**. A **tithi** is each 12° that the Moon gets ahead of the Sun.",
+ "state": {
+  "sun": 212,
+  "moon": 272
+ },
+ "derive": [
+  {
+   "fn": "expr",
+   "expr": "((moon - sun) / 360 - floor((moon - sun) / 360)) * 360",
+   "out": "elong"
+  },
+  {
+   "fn": "expr",
+   "expr": "floor(elong / 12) + 1",
+   "out": "tithi"
+  },
+  {
+   "fn": "expr",
+   "expr": "sun + elong",
+   "out": "ahead"
+  },
+  {
+   "fn": "expr",
+   "expr": "floor((moon / 360 - floor(moon / 360)) * 27)",
+   "out": "nakIdx"
+  },
+  {
+   "fn": "expr",
+   "expr": "nakIdx * 40 / 3",
+   "out": "nakFrom"
+  },
+  {
+   "fn": "expr",
+   "expr": "nakFrom + 40 / 3",
+   "out": "nakTo"
+  },
+  {
+   "fn": "expr",
+   "expr": "floor((tithi - 1) / 15)",
+   "out": "pk"
+  },
+  {
+   "fn": "expr",
+   "expr": "tithi - 15 * pk - 1",
+   "out": "ti"
+  },
+  {
+   "fn": "lookup",
+   "table": "tithis",
+   "key": "ti",
+   "out": "tn"
+  },
+  {
+   "fn": "lookup",
+   "table": "nakshatras",
+   "key": "nakIdx",
+   "out": "nk"
+  },
+  {
+   "fn": "lookup",
+   "table": "paksha",
+   "key": "pk",
+   "out": "pa"
+  },
+  {
+   "fn": "expr",
+   "expr": "6.8 * cos(pi * sun / 180)",
+   "out": "sx"
+  },
+  {
+   "fn": "expr",
+   "expr": "-6.8 * sin(pi * sun / 180)",
+   "out": "sz"
+  },
+  {
+   "fn": "expr",
+   "expr": "6.8 * cos(pi * moon / 180)",
+   "out": "mx"
+  },
+  {
+   "fn": "expr",
+   "expr": "-6.8 * sin(pi * moon / 180)",
+   "out": "mz"
+  }
+ ],
+ "tables": {
+  "tithis": [
+   {
+    "id": 0,
+    "name": "Pratipada"
+   },
+   {
+    "id": 1,
+    "name": "Dwitiya"
+   },
+   {
+    "id": 2,
+    "name": "Tritiya"
+   },
+   {
+    "id": 3,
+    "name": "Chaturthi"
+   },
+   {
+    "id": 4,
+    "name": "Panchami"
+   },
+   {
+    "id": 5,
+    "name": "Shashthi"
+   },
+   {
+    "id": 6,
+    "name": "Saptami"
+   },
+   {
+    "id": 7,
+    "name": "Ashtami"
+   },
+   {
+    "id": 8,
+    "name": "Navami"
+   },
+   {
+    "id": 9,
+    "name": "Dashami"
+   },
+   {
+    "id": 10,
+    "name": "Ekadashi"
+   },
+   {
+    "id": 11,
+    "name": "Dwadashi"
+   },
+   {
+    "id": 12,
+    "name": "Trayodashi"
+   },
+   {
+    "id": 13,
+    "name": "Chaturdashi"
+   },
+   {
+    "id": 14,
+    "name": "Purnima"
+   }
+  ],
+  "nakshatras": [
+   {
+    "id": 0,
+    "name": "Ashwini"
+   },
+   {
+    "id": 1,
+    "name": "Bharani"
+   },
+   {
+    "id": 2,
+    "name": "Krittika"
+   },
+   {
+    "id": 3,
+    "name": "Rohini"
+   },
+   {
+    "id": 4,
+    "name": "Mrigashira"
+   },
+   {
+    "id": 5,
+    "name": "Ardra"
+   },
+   {
+    "id": 6,
+    "name": "Punarvasu"
+   },
+   {
+    "id": 7,
+    "name": "Pushya"
+   },
+   {
+    "id": 8,
+    "name": "Ashlesha"
+   },
+   {
+    "id": 9,
+    "name": "Magha"
+   },
+   {
+    "id": 10,
+    "name": "P. Phalguni"
+   },
+   {
+    "id": 11,
+    "name": "U. Phalguni"
+   },
+   {
+    "id": 12,
+    "name": "Hasta"
+   },
+   {
+    "id": 13,
+    "name": "Chitra"
+   },
+   {
+    "id": 14,
+    "name": "Swati"
+   },
+   {
+    "id": 15,
+    "name": "Vishakha"
+   },
+   {
+    "id": 16,
+    "name": "Anuradha"
+   },
+   {
+    "id": 17,
+    "name": "Jyeshtha"
+   },
+   {
+    "id": 18,
+    "name": "Mula"
+   },
+   {
+    "id": 19,
+    "name": "P. Ashadha"
+   },
+   {
+    "id": 20,
+    "name": "U. Ashadha"
+   },
+   {
+    "id": 21,
+    "name": "Shravana"
+   },
+   {
+    "id": 22,
+    "name": "Dhanishta"
+   },
+   {
+    "id": 23,
+    "name": "Shatabhisha"
+   },
+   {
+    "id": 24,
+    "name": "P. Bhadra"
+   },
+   {
+    "id": 25,
+    "name": "U. Bhadra"
+   },
+   {
+    "id": 26,
+    "name": "Revati"
+   }
+  ],
+  "paksha": [
+   {
+    "id": 0,
+    "name": "Shukla (the bright half)"
+   },
+   {
+    "id": 1,
+    "name": "Krishna (the dark half)"
+   }
+  ]
+ },
+ "blocks": [
+  {
+   "type": "gate",
+   "id": "g",
+   "prompt": "The Sun is at {sun}° and the Moon is at {moon}°. Which tithi is it?",
+   "options": [
+    3,
+    6,
+    9
+   ],
+   "answer": "tithi",
+   "context": "For Sun {sun}° and Moon {moon}°:",
+   "why": "Say why, in one line."
+  },
+  {
+   "type": "scene",
+   "label": "Earth, Sun and Moon inside the ring of the 27 nakshatras",
+   "look": "sky",
+   "height": 560,
+   "ground": false,
+   "blocks": [
+    {
+     "type": "points",
+     "stars": true
+    },
+    {
+     "type": "body",
+     "id": "band",
+     "kind": "ring",
+     "size": [
+      6.1,
+      7.5
+     ],
+     "color": "dark",
+     "opacity": 0.55
+    },
+    {
+     "type": "body",
+     "id": "nak",
+     "kind": "ring",
+     "size": [
+      6.1,
+      7.5
+     ],
+     "arc": [
+      "nakFrom",
+      "nakTo"
+     ],
+     "color": "glow",
+     "opacity": 0.85,
+     "after": "g"
+    },
+    {
+     "type": "body",
+     "id": "gap",
+     "kind": "ring",
+     "size": [
+      2.2,
+      2.6
+     ],
+     "arc": [
+      "sun",
+      "ahead"
+     ],
+     "color": "acc",
+     "opacity": 0.8,
+     "after": "g"
+    },
+    {
+     "type": "points",
+     "round": 27,
+     "r": 6.8,
+     "edge": true,
+     "size": 5,
+     "tone": "light",
+     "names": [
+      "Ashwini",
+      "Bharani",
+      "Krittika",
+      "Rohini",
+      "Mrigashira",
+      "Ardra",
+      "Punarvasu",
+      "Pushya",
+      "Ashlesha",
+      "Magha",
+      "P. Phalguni",
+      "U. Phalguni",
+      "Hasta",
+      "Chitra",
+      "Swati",
+      "Vishakha",
+      "Anuradha",
+      "Jyeshtha",
+      "Mula",
+      "P. Ashadha",
+      "U. Ashadha",
+      "Shravana",
+      "Dhanishta",
+      "Shatabhisha",
+      "P. Bhadra",
+      "U. Bhadra",
+      "Revati"
+     ]
+    },
+    {
+     "type": "body",
+     "id": "earth",
+     "kind": "sphere",
+     "size": [
+      1.0
+     ],
+     "texture": "earth",
+     "spin": 6
+    },
+    {
+     "type": "path",
+     "pts": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       "sx",
+       0,
+       "sz"
+      ]
+     ],
+     "tone": "glow",
+     "width": 0.7
+    },
+    {
+     "type": "path",
+     "pts": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       "mx",
+       0,
+       "mz"
+      ]
+     ],
+     "tone": "light",
+     "width": 0.7
+    },
+    {
+     "type": "body",
+     "id": "sun",
+     "kind": "sphere",
+     "size": [
+      0.8
+     ],
+     "glow": 1,
+     "light": true,
+     "orbit": 5,
+     "angle": "sun",
+     "drag": "orbit",
+     "to": "sun",
+     "label": "Sun: drag it round the ring",
+     "lock": "g"
+    },
+    {
+     "type": "body",
+     "id": "moon",
+     "kind": "sphere",
+     "size": [
+      0.38
+     ],
+     "texture": "moon",
+     "orbit": 3.2,
+     "angle": "moon",
+     "drag": "orbit",
+     "to": "moon",
+     "label": "Moon: drag it round the ring",
+     "lock": "g"
+    },
+    {
+     "type": "label3d",
+     "on": "sun",
+     "text": "Sun",
+     "tone": "acc"
+    },
+    {
+     "type": "label3d",
+     "on": "moon",
+     "text": "Moon"
+    },
+    {
+     "type": "label3d",
+     "on": "earth",
+     "text": "Earth",
+     "at": [
+      0,
+      -1.1,
+      0
+     ]
+    },
+    {
+     "type": "label3d",
+     "at": [
+      "sx",
+      0,
+      "sz"
+     ],
+     "text": "Sun {sun}°",
+     "tone": "acc",
+     "after": "g"
+    },
+    {
+     "type": "label3d",
+     "at": [
+      "mx",
+      0,
+      "mz"
+     ],
+     "text": "Moon {moon}°",
+     "after": "g"
+    },
+    {
+     "type": "shot",
+     "name": "high"
+    }
+   ]
+  },
+  {
+   "type": "readout",
+   "after": "g",
+   "text": "Tithi {tithi}: {tn.name}, {pa.name}. The Moon is in {nk.name}, nakshatra number {nakIdx}."
+  },
+  {
+   "type": "caption",
+   "after": "g",
+   "text": "The Moon is {elong}° ahead of the Sun. Each 12° is one tithi, so 30 tithis make one lunar month. Drag the Moon to start the next tithi."
+  }
+ ]
+}

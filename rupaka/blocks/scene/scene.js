@@ -2,10 +2,12 @@
    three.js loads only for a spec that has a scene (Rupaka.need). The look: flat colour in three soft bands, ink outlines from
    one edge pass on depth and normals, a soft floor with contact shadows, and label chips in screen space that never overlap.
    Colours come from the --rk-* vars. The camera moves between named shots with easing; with prefers-reduced-motion it cuts.
-   `bind` is the step: a part with `step: n` shows from step n. Keys on the view: A/D back and next, 1-9 a step, Q/E turn, W/S tilt. */
+   `bind` is the step: a part with `step: n` shows from step n. Keys on the view: A/D back and next, 1-9 a step, Q/E turn, W/S tilt, R/F in and out.
+   `look: "sky"` is a dark, lit view with no floor and no ink, for space, circuits and maps. `coords` ("geo", "globe") reads at and pts as
+   [lon, lat, alt]. A body with `drag` has a grip: a button that the learner drags, or moves with A/D, and that writes a state key. */
 (() => {
   const R = Rupaka, {el, sv, fmt} = R;
-  const SHOTS = {wide: {az: 30, el: 18, fov: 30}, side: {az: 0, el: 4, fov: 12}, front: {az: 90, el: 4, fov: 12},
+  const SHOTS = {wide: {az: 30, el: 18, fov: 30}, high: {az: 20, el: 40, fov: 30}, side: {az: 0, el: 4, fov: 12}, front: {az: 90, el: 4, fov: 12},
                  top: {az: 0, el: 89, fov: 12}, close: {az: 30, el: 18, fov: 28}};
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
   const inout = t => (t = clamp(t, 0, 1)) < .5 ? 4 * t ** 3 : 1 - (2 - 2 * t) ** 3 / 2;
@@ -14,6 +16,10 @@
   const rad = d => d * Math.PI / 180;
   const lum = c => .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
   const mix = (a, b, t) => a.map((x, i) => x + (b[i] - x) * t);
+  // Where [lon, lat, alt] is. "geo": a flat map, x = lon, z = -lat, y = alt (one unit is one degree). "globe": a ball of radius GLOBE.
+  const GLOBE = 10, FLAT = {geo: ([lo, la, h]) => [lo, h, -la],
+    globe: ([lo, la, h]) => { const r = GLOBE + h, p = rad(la), l = rad(lo); return [r * Math.cos(p) * Math.cos(l), r * Math.sin(p), -r * Math.cos(p) * Math.sin(l)]; }};
+  R.GLOBE = GLOBE;
   const scenes = new WeakMap();   // store -> its scenes, for Rupaka.cam
   // One watch on the theme for all scenes: a change of the OS scheme, or of a class, data-theme or style on <html>.
   // Each scene in `themed` gives false when its view has left the page; then it frees its WebGL context and drops out.
@@ -96,15 +102,17 @@
     }`;
 
   Rupaka.block('scene', (b, ctx) => {
-    const s = ctx.s, parts = [], specs = Object.fromEntries((b.blocks || []).filter(k => k.type === 'body').map(k => [k.id, k]));
+    const sky = b.look === 'sky', s = ctx.s, parts = [], specs = Object.fromEntries((b.blocks || []).filter(k => k.type === 'body').map(k => [k.id, k]));
     const ids = new Set(Object.keys(specs)), S = {b, s, ids, bodies: {}, anims: new Map()};
     S.part = (pb, impl, node) => { parts.push({b: pb, impl, node}); return node; };
     S.num = v => typeof v === 'number' ? v : +s.get(v);
     S.vec = (v, d = [0, 0, 0]) => Array.isArray(v) ? v.map((x, i) => { const n = S.num(x); return Number.isFinite(n) ? n : d[i]; }) : d;
+    S.pos = (v, d) => (FLAT[b.coords] || (a => a))(S.vec(v, d));   // a place: at, pivot and pts go through the coords
+    S.sky = sky; S.paths = {};
     S.step = () => b.bind ? (+s.get(b.bind) || 1) : Infinity;
     const own = pb => ctx.live(pb.after) && (pb.step == null || S.step() >= pb.step) && (pb.show == null || !!s.get(pb.show));
     S.seen = id => !!specs[id] && own(specs[id]) && (!specs[id].in || S.seen(specs[id].in));   // a body and each body that holds it
-    S.live = pb => own(pb) && (pb.on == null || S.seen(pb.on));
+    S.live = pb => own(pb) && (pb.on == null || !['force', 'label3d'].includes(pb.type) || S.seen(pb.on));   // only a force and a label name a body in on
     S.shotKey = () => parts.find(p => p.b.type === 'shot' && p.b.bind)?.b.bind;
     // A chip: a label in screen space with a leader line to its point. Its text fills {path} from the state.
     S.chip = (pb, tpl, tone) => {
@@ -127,17 +135,25 @@
       else S.anim(o, 220, k => { o.scale.setScalar(Math.max(1e-3, 1 - k)); if (k >= 1) o.visible = false; });
     };
     S.point = (on, at) => {
-      const v = new S.T.Vector3(...S.vec(at));
+      const v = new S.T.Vector3(...S.pos(at));
       return on ? S.bodies[on].frame.localToWorld(v) : v;
     };
 
+    S.gripBox = el('div', {class: 'grips'});
+    const chips = el('div', {class: 'chips'}); S.chipBox = chips;   // a part can add chips of its own (points with names)
+    // A frame across the axis n: u and v, so that the angle a gives cos(a) u + sin(a) v. For n = y: x = cos a, z = -sin a.
+    S.basis = n => {
+      const u = new S.T.Vector3(1, 0, 0).addScaledVector(n, -n.x);
+      if (u.lengthSq() < 1e-6) u.set(0, 0, 1).addScaledVector(n, -n.z);
+      u.normalize(); return [u, new S.T.Vector3().crossVectors(n, u)];
+    };
     const c2 = Object.assign(Object.create(ctx), {scene: S});
     const nodes = (b.blocks || []).map(k => R.build(k, c2));
     let cv = el('canvas', {class: 'gl'});
-    const leads = sv('svg', {class: 'leads', 'aria-hidden': 'true'}), chips = el('div', {class: 'chips'});
+    const leads = sv('svg', {class: 'leads', 'aria-hidden': 'true'});
     const msg = el('p', {class: 'rk-note msg', hidden: true});
     const stage = el('div', {class: 'stage', tabindex: 0, role: 'group', 'aria-roledescription': '3D scene',
-                             'aria-label': b.label || 'A 3D scene', style: `height: ${b.height ?? 380}px`}, cv, leads, chips, msg);
+                             'aria-label': b.label || 'A 3D scene', 'data-look': b.look || 'toon', style: `height: ${b.height ?? 380}px`}, cv, leads, chips, S.gripBox, msg);
     const sr = el('ul', {class: 'rk-sr'});
     nodes.forEach(n => (n.classList.contains('rk-chip') ? chips : sr).append(n));
 
@@ -148,8 +164,8 @@
     const next = el('button', {type: 'button', onclick: () => go(1)}, 'Next', el('kbd', {text: 'D'}));
     const bar = b.bind ? el('div', {class: 'bar'}, prev, count, next) : null;
 
-    const user = {az: 0, el: 0};
-    const turn = (daz, del, now) => { user.az += daz; user.el = clamp(user.el + del, -20, 60); if (S.T) aim(frameOf(S.shot), now ? 0 : 260); };
+    const user = {az: 0, el: 0, zoom: 0};
+    const turn = (daz, del, now, dz = 0) => { user.az += daz; user.el = clamp(user.el + del, -20, 60); user.zoom = clamp(user.zoom + dz, -3, 4); if (S.T) aim(frameOf(S.shot), now ? 0 : 260); };
     stage.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key.toLowerCase();
@@ -157,12 +173,14 @@
       else if (k === 'd' || k === 'arrowright') go(1);
       else if (k === 'q') turn(-20, 0); else if (k === 'e') turn(20, 0);
       else if (k === 'w') turn(0, 10); else if (k === 's') turn(0, -10);
+      else if (k === 'r') turn(0, 0, false, 1); else if (k === 'f') turn(0, 0, false, -1);
       else if (/^[1-9]$/.test(k) && b.bind && +k <= N) ctx.put(b, b.bind, +k);
       else return;
       e.preventDefault();
     });
     let held = null;
-    stage.addEventListener('pointerdown', e => { held = [e.clientX, e.clientY]; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener('pointerdown', e => { if (e.target.closest?.('.rk-grip')) return; held = [e.clientX, e.clientY]; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); turn(0, 0, true, -Math.sign(e.deltaY) * .5); }, {passive: false});
     stage.addEventListener('pointermove', e => {
       if (!held) return;
       turn((e.clientX - held[0]) * .4, (e.clientY - held[1]) * .3, true); held = [e.clientX, e.clientY];
@@ -173,7 +191,10 @@
     let rtM, mask, MW = 96, MH = 48;
     let T, gl, world, cam, post, postCam, rtC, rtN, floor, W = 0, H = 0, raf = 0, sig = '', pal;
     const view = {az: 35, el: 22, fov: 32, dist: 10, tx: 0, ty: 0, tz: 0};
-    let tw = null;
+    let tw = null, last = 0;
+    S.kick = () => kick();
+    const texs = {};   // a vendored picture (window.RupakaTEX, data URIs), loaded once; the view draws again when it is there
+    S.tex = name => texs[name] ??= (u => { if (!u) return null; const t = new T.TextureLoader().load(u, () => kick()); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t; })(window.RupakaTEX?.[name]);
     const kick = () => { again(); if (!raf && gl) raf = requestAnimationFrame(frame); };
     // A host can take the view off the page and put it back (a tab switch): the view keeps its renderer then. When it has no renderer
     // (the browser took the WebGL context away), it makes a new one on a new canvas as soon as it is on the page again.
@@ -192,17 +213,36 @@
       const tint = c => mix(c, paper, night ? .35 : .62), deep = c => mix(c, paper, night ? .12 : .3);
       return {night, bg, floor: mix(bg, fg, night ? .07 : .05), shade: mix(ink, [0, 0, 0], .5), line: mix(ink, [0, 0, 0], night ? .7 : .3),
               body: mix(paper, ink, night ? .2 : .12), light: night ? mix(paper, fg, .3) : mix(paper, [1, 1, 1], .35), dark: mix(paper, ink, .4),
-              glass: mix(mix(paper, ink, .45), acc, .12), acc: tint(acc), ok: tint(ok), no: tint(no), up: deep(ok), down: deep(no), side: deep(acc)};
+              glass: mix(mix(paper, ink, .45), acc, .12), acc: tint(acc), ok: tint(ok), no: tint(no), up: deep(ok), down: deep(no), side: deep(acc),
+              glow: mix(acc, [1, 1, 1], .3), mute: mix(paper, ink, .35), ink: mix(paper, ink, .6), lines: {ink: fg, acc, ok, no, dim: mix(fg, bg, .55), mute: mix(fg, bg, .55), glow: mix(acc, [1, 1, 1], .3), light: mix(fg, [1, 1, 1], .5)}};
     }
     const mats = {};
     const col = c => new T.Color().setRGB(c[0], c[1], c[2], T.SRGBColorSpace);
     const LIGHT = {value: null};
-    S.mat = name => mats[name] ??= new T.ShaderMaterial({uniforms: {color: {value: col(pal[name] || pal.body)}, light: LIGHT},
-                                                         vertexShader: TOON_V, fragmentShader: TOON_F});
+    const paint = (m, c) => { if (m.uniforms) m.uniforms.color.value = col(c); else m.color.copy(col(c)); };
+    S.mat = name => mats[name] ??= sky ? new T.MeshStandardMaterial({color: col(pal[name] || pal.body), roughness: .85, metalness: 0})
+                                       : new T.ShaderMaterial({uniforms: {color: {value: col(pal[name] || pal.body)}, light: LIGHT}, vertexShader: TOON_V, fragmentShader: TOON_F});
+    S.col = col; S.paint = paint; S.palette = () => pal;
+    // The colour of a line, a dot or a halo: full strength, from the tone name. It follows the theme.
+    S.lineMat = (tone, opts) => {
+      const m = new T.MeshBasicMaterial({color: col(pal.lines[tone] || pal.lines.ink), ...opts});
+      S.recolors.push(() => paint(m, pal.lines[tone] || pal.lines.ink));
+      return m;
+    };
+    S.recolors = [];   // functions that a part gives to repaint what it made when the theme changes
+    // Lights, for a lit material (a texture, or the sky look): a soft ambient and a sun for the toon look. A glowing body adds its own.
+    S.lights = () => {
+      if (S.lit) return S.lit;
+      S.lit = new T.Group(); S.lit.add(new T.AmbientLight(0xffffff, sky ? .42 : .9));
+      if (!sky) { const d = new T.DirectionalLight(0xffffff, 1.6); d.position.set(-.45, .78, .45); S.lit.add(d); }
+      world.add(S.lit);
+      return S.lit;
+    };
     function recolor() {
       if (!T) return;
       pal = palette();
-      for (const [k, m] of Object.entries(mats)) m.uniforms.color.value = col(pal[k] || pal.body);
+      for (const [k, m] of Object.entries(mats)) paint(m, pal[k] || pal.body);
+      S.recolors.forEach(f => f());
       floor.material.uniforms.color.value = col(pal.floor);
       shadow.material.uniforms.color.value = col(pal.shade);
       post.material.uniforms.ink.value = col(pal.line); post.material.uniforms.bg.value = col(pal.bg);
@@ -254,7 +294,7 @@
         const mid = k => (Math.min(...xs.map(q => q[k])) + Math.max(...xs.map(q => q[k]))) / 2;
         c.addScaledVector(right, mid(0) * D).addScaledVector(up, mid(1) * D);
       }
-      return {az, el: elv, fov: p.fov, dist: fit(), tx: c.x, ty: c.y, tz: c.z};
+      return {az, el: elv, fov: p.fov, dist: fit() * .8 ** user.zoom, tx: c.x, ty: c.y, tz: c.z};
     }
     function aim(to, ms) {
       if (still() || !ms || !W) { Object.assign(view, to); tw = null; }
@@ -348,6 +388,8 @@
     function frame(now) {
       raf = 0;
       if (!stage.isConnected || !gl) { if (over()) gone(); return; }   // only off the page: the context stays for when the view comes back
+      if (!S.anims.size && !tw && running() && now - last < 33) { kick(); return; }   // a steady motion draws at about 30 frames a second
+      last = now;
       for (const [k, a] of S.anims) {
         a.k = a.ease((now - a.t0) / a.ms); a.f(a.k);
         if (now - a.t0 >= a.ms) S.anims.delete(k);
@@ -358,16 +400,19 @@
         view.az = f.az + daz * k;
         if (k >= 1) tw = null;
       }
-      draw();
-      if (S.anims.size || tw) kick();
+      draw(now);
+      if (S.anims.size || tw || running()) kick();
       stage.dataset.rkStill = S.anims.size || tw ? '0' : '1';
     }
-    function draw() {
+    // A part with `run` moves with no change of state (a drift, a spin). Not with reduced motion.
+    const running = () => !still() && parts.some(q => q.impl.run?.(q) && S.live(q.b));
+    function draw(now = performance.now()) {
       if (!W || !H) return;
       place();
       world.updateMatrixWorld(true);
-      for (const q of parts) q.impl.frame?.(q);
+      for (const q of parts) q.impl.frame?.(q, now);
       world.updateMatrixWorld(true);
+      if (sky) { gl.setRenderTarget(null); gl.setClearColor(col(pal.bg), 1); gl.clear(); gl.render(world, cam); layout(); for (const q of parts) q.impl.over?.(q); return; }
       shade();
       LIGHT.value.set(-.45, .78, .45).normalize();
       const flat = [floor, shadow], vis = flat.map(o => o.visible);
@@ -381,7 +426,16 @@
       u.near.value = cam.near; u.far.value = cam.far;
       gl.setRenderTarget(null); gl.render(S.pass, postCam);
       layout();
+      for (const q of parts) q.impl.over?.(q);
     }
+    // Helpers for a part that the learner moves: a screen point of a world point, and the ray under a pointer.
+    S.screen = v => { const p = v.clone().project(cam); return {x: (p.x + 1) / 2 * W, y: (1 - p.y) / 2 * H, on: p.z > -1 && p.z < 1}; };
+    S.ray = (cx, cy) => {
+      const r = stage.getBoundingClientRect(), rc = new T.Raycaster();
+      rc.setFromCamera(new T.Vector2((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height * 2 - 1)), cam);
+      return rc.ray;
+    };
+    S.cam = () => cam;
     function gone() { if (gl) { gl.dispose(); gl.forceContextLoss(); gl = null; } }
     function resize() {
       const pr = Math.min(2, devicePixelRatio || 1);
@@ -390,7 +444,7 @@
       if (!W || !H || !gl) return;
       gl.setPixelRatio(pr); gl.setSize(W, H, false);
       rtC.setSize(W * pr, H * pr); rtN.setSize(W * pr, H * pr);
-      MH = Math.max(8, Math.round(MW * H / W)); rtM.setSize(MW, MH); mask = new Uint8Array(MW * MH * 4);
+      MH = Math.max(8, Math.round(MW * H / W)); rtM.setSize(MW, MH); mask = sky ? null : new Uint8Array(MW * MH * 4);
       post.material.uniforms.texel.value.set(1 / (W * pr), 1 / (H * pr)); post.material.uniforms.w.value = 1.1 * pr;
       aim(frameOf(S.shot), 0);
     }
@@ -399,10 +453,11 @@
     function start(lib) {
       T = S.T = lib;
       if (wired) { const c = cv.cloneNode(); cv.replaceWith(c); cv = c; }   // a canvas whose context is lost cannot give a new one
-      gl = new T.WebGLRenderer({canvas: cv, antialias: false, preserveDrawingBuffer: true, powerPreference: 'low-power'});
+      gl = new T.WebGLRenderer({canvas: cv, antialias: sky, preserveDrawingBuffer: true, powerPreference: 'low-power'});
       LIGHT.value = new T.Vector3();
       pal = palette();
       world = new T.Scene(); S.world = world;
+      if (sky) S.lights();
       cam = new T.PerspectiveCamera(32, 1, .1, 100);
       S.normal = new T.MeshNormalMaterial(); S.white = new T.MeshBasicMaterial({color: 0xffffff});
       rtM = new T.WebGLRenderTarget(MW, MH);
@@ -419,7 +474,7 @@
       floor = new T.Mesh(new T.PlaneGeometry(1, 1), flatMat(FLOOR_F, {color: {value: col(pal.floor)}}));
       floor.rotation.x = -Math.PI / 2; floor.userData.flat = true;
       const c = all.getCenter(new T.Vector3()), r = Math.max(all.max.x - all.min.x, all.max.z - all.min.z, S.size * .5) * 2.4;
-      floor.position.set(c.x, S.floor, c.z); floor.scale.set(r * 1.4, r * 1.4, 1); floor.visible = b.ground !== false;
+      floor.position.set(c.x, S.floor, c.z); floor.scale.set(r * 1.4, r * 1.4, 1); floor.visible = b.ground !== false && !sky;
       world.add(floor);
       const sr = r * .5, fade = S.size * .35;
       shRT = new T.WebGLRenderTarget(512, 512); shRT2 = new T.WebGLRenderTarget(512, 512);
@@ -429,7 +484,7 @@
       shadow = new T.Mesh(new T.PlaneGeometry(2 * sr, 2 * sr),
                           flatMat(SHADOW_F, {color: {value: col(pal.shade)}, alpha: {value: .62}, map: {value: shRT.texture}}));
       shadow.rotation.x = -Math.PI / 2; shadow.position.set(c.x, S.floor + S.size * 1e-3, c.z);
-      shadow.userData.flat = true; shadow.renderOrder = 1; shadow.visible = b.ground !== false;
+      shadow.userData.flat = true; shadow.renderOrder = 1; shadow.visible = b.ground !== false && !sky;
       world.add(shadow);
       const quad = new T.Mesh(new T.PlaneGeometry(2, 2), new T.ShaderMaterial({uniforms: {map: {value: null}, step: {value: new T.Vector2()}},
         vertexShader: POST_V, fragmentShader: BLUR_F, depthTest: false, depthWrite: false}));
@@ -469,7 +524,7 @@
       const now = parts.map(q => S.live(q.b) ? 1 : 0).join('') + name;
       if (now !== sig) {
         const moved = name !== S.shot;
-        if (moved) { user.az = 0; user.el = 0; }
+        if (moved) { user.az = 0; user.el = 0; user.zoom = 0; }
         S.shot = name; stage.dataset.rkShot = name;
         aim(frameOf(name), sig ? (moved ? 1300 : 800) : 0);
         sig = now;

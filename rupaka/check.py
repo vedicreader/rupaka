@@ -142,14 +142,14 @@ def _play(pg, spec) -> tuple:
 
 # %% ../nbs/02_check.ipynb #c020
 CONTROLS = {'slider': ('input', ['ArrowRight', 'ArrowLeft']), 'toggle': ('button', ['Space']), 'choice': ('.opts button[tabindex="0"]', ['ArrowRight', 'ArrowLeft']),
-            'wheel': ('svg', ['ArrowRight']), 'ranklist': ('g.row', ['Alt+ArrowDown']), 'grid': ('svg', ['+']), 'point': (None, ['ArrowRight', 'ArrowLeft'])}
+            'wheel': ('svg', ['ArrowRight']), 'ranklist': ('g.row', ['Alt+ArrowDown']), 'grid': ('svg', ['+']), 'point': (None, ['ArrowRight', 'ArrowLeft']), 'grip': (None, ['ArrowRight', 'ArrowLeft'])}
 
 def _inputs(pg, spec): st = _state(pg); return {k: st.get(k) for k in spec.get('state', {})}
 
 def _keys(pg, spec) -> list:
     errs = []
     for t, (sel, keys) in CONTROLS.items():
-        locs = pg.locator(f'.rk-{t}.drag' if t == 'point' else f'[data-rk-type="{t}"]')
+        locs = pg.locator(f'.rk-{t}.drag' if t == 'point' else '.rk-grip' if t == 'grip' else f'[data-rk-type="{t}"]')
         for j in range(locs.count()):
             loc = locs.nth(j)
             if not loc.is_visible(): continue

@@ -77,3 +77,6 @@
                   border-bottom: 1px solid color-mix(in srgb, var(--rk-fg) 22%, transparent); padding: 4px 2px; }
 .rk-asker input:focus { outline: none; border-bottom-color: var(--rk-acc); }
 .rk-asker input::placeholder { color: var(--rk-mute); font-style: italic; opacity: 1; }
+/* The sky look of a scene: a dark view that keeps its dark in a light page. The chips, the leaders and the grips read these vars. */
+.rk-scene .stage[data-look="sky"] { --rk-bg: #05070e; --rk-fg: #ece7da; --rk-mute: #a9a6b8; --rk-acc: #f5b544; --rk-ok: #5fcfa3; --rk-no: #f08a76;
+  --rk-line: rgba(236, 231, 218, .22); color: var(--rk-fg); background: var(--rk-bg); color-scheme: dark; }

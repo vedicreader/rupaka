@@ -1,0 +1,153 @@
+{
+ "rupaka": 1,
+ "id": "drift-example",
+ "title": "Drift",
+ "ask": "A battery pushes charge round a loop with one resistor. Predict the current.",
+ "state": {
+  "v": 6,
+  "r": 3
+ },
+ "derive": [
+  {
+   "fn": "expr",
+   "expr": "v / r",
+   "out": "i"
+  },
+  {
+   "fn": "expr",
+   "expr": "i / 4",
+   "out": "lap"
+  }
+ ],
+ "blocks": [
+  {
+   "type": "gate",
+   "id": "amps",
+   "prompt": "A {v} V battery drives a {r} ohm resistor. What is the current, in amps?",
+   "options": [
+    1,
+    2,
+    3
+   ],
+   "answer": "i",
+   "context": "For {v} V and {r} ohms:"
+  },
+  {
+   "type": "scene",
+   "label": "A loop of wire with charge moving round it",
+   "look": "sky",
+   "height": 300,
+   "ground": false,
+   "blocks": [
+    {
+     "type": "path",
+     "id": "wire",
+     "pts": [
+      [
+       -3,
+       0,
+       -2
+      ],
+      [
+       3,
+       0,
+       -2
+      ],
+      [
+       3,
+       0,
+       2
+      ],
+      [
+       -3,
+       0,
+       2
+      ]
+     ],
+     "closed": true,
+     "tone": "light"
+    },
+    {
+     "type": "body",
+     "id": "cell",
+     "kind": "box",
+     "size": [
+      0.5,
+      0.9,
+      0.5
+     ],
+     "at": [
+      -3,
+      0,
+      0
+     ],
+     "color": "ok"
+    },
+    {
+     "type": "body",
+     "id": "res",
+     "kind": "box",
+     "size": [
+      1.2,
+      0.4,
+      0.4
+     ],
+     "at": [
+      3,
+      0,
+      0
+     ],
+     "color": "no"
+    },
+    {
+     "type": "drift",
+     "on": "wire",
+     "speed": "lap",
+     "n": 12,
+     "tone": "glow",
+     "after": "amps"
+    },
+    {
+     "type": "label3d",
+     "on": "res",
+     "text": "{r} ohm",
+     "tone": "no",
+     "at": [
+      0,
+      0.5,
+      0
+     ]
+    },
+    {
+     "type": "label3d",
+     "on": "cell",
+     "text": "{v} V",
+     "tone": "ok",
+     "at": [
+      0,
+      0.7,
+      0
+     ]
+    },
+    {
+     "type": "shot",
+     "name": "high"
+    }
+   ]
+  },
+  {
+   "type": "slider",
+   "bind": "v",
+   "label": "Battery volts",
+   "min": 2,
+   "max": 12,
+   "step": 1,
+   "lock": "amps"
+  },
+  {
+   "type": "caption",
+   "after": "amps",
+   "text": "The current is {i} A. Raise the volts and the charge moves faster."
+  }
+ ]
+}
