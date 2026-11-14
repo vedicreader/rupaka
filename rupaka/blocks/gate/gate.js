@@ -9,7 +9,7 @@
 Rupaka.block('gate', (b, ctx) => {
   const {el, fmt, rich, show} = Rupaka, s = ctx.s, id = b.id;
   s.st.gate[id] = 'open';
-  let picked = null, said = '', seen = '';
+  let picked = null, said = '', seen = '', froze = null;   // froze: the prompt as it was at lock-in, kept until the gate opens again
   const opts = () => Array.isArray(b.options) ? b.options : (s.get(b.options.from) || []);
   const ans = (a = b.answer) => a && typeof a === 'object' ? a.is : s.get(a);   // {is: value} or a path in the state
   const done = () => s.get(`gate.${id}`) === 'done', open = () => s.get(`gate.${id}`) === 'open';
@@ -42,11 +42,12 @@ Rupaka.block('gate', (b, ctx) => {
     if (picked == null || !open()) return false;
     const a = ans(), ok = String(picked) === String(a), c = b.context ? fmt(b.context, s.st) : '';
     const detail = {gate: id, picked, ans: a, ok, why: why ? why.value : '', context: c};
+    froze = rich(b.prompt, s.st);
     let settled = false;
     const settle = (saved, message = '') => {
       if (settled) return;
       settled = true;
-      if (!saved) { s.st.gate[id] = 'open'; say(String(message ?? '')); paint(); return; }
+      if (!saved) { s.st.gate[id] = 'open'; froze = null; say(String(message ?? '')); paint(); return; }
       tell(c, ok, a);
       s.st.gate[id] = 'done';
       s.st.log = [...(s.st.log || []), detail];
@@ -61,7 +62,7 @@ Rupaka.block('gate', (b, ctx) => {
   // Open a closed gate again: no pick, no reason, no verdict. One draw hides the blocks that wait for the gate. An open gate does not change.
   const reopen = () => {
     if (!done()) return;
-    picked = null; said = ''; if (why) why.value = ''; verdict.replaceChildren();
+    picked = null; said = ''; froze = null; if (why) why.value = ''; verdict.replaceChildren();
     s.st.gate[id] = 'open'; s.set('_', (s.st._ || 0) + 1);
   };
   again.onclick = () => { reopen(); box.querySelector('button')?.focus(); };   // only the learner's button moves the focus
@@ -69,6 +70,7 @@ Rupaka.block('gate', (b, ctx) => {
   const settle = (p, answer) => {
     const w = b.answer ?? answer;
     if (p != null) picked = p;
+    froze = rich(b.prompt, s.st);
     if (p == null || w == null) { said = ''; say(''); verdict.replaceChildren(); }
     else { const a = ans(w); tell(b.context ? fmt(b.context, s.st) : '', String(p) === String(a), a); }
     s.st.gate[id] = 'done';
@@ -86,7 +88,7 @@ Rupaka.block('gate', (b, ctx) => {
     if (e.target.closest('.opts')) box.children[j].focus();
   });
   s.on(() => {
-    q.replaceChildren(...rich(b.prompt, s.st));
+    q.replaceChildren(...(!open() && froze || rich(b.prompt, s.st)));
     if (!Array.isArray(b.options) && open() && !opts().some(o => o === picked)) picked = null;
     paint();
   });

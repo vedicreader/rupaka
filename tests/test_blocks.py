@@ -38,6 +38,16 @@ def test_gate_again_names_its_inputs(draw):
     d.pg.get_by_role('button', name='Try another').click()
     assert not d.pg.locator('.rk-readout').is_visible() and not d.pg.locator('.verdict').is_visible()
 
+def test_gate_prompt_keeps_the_inputs_of_lock_in_until_try_another(draw):
+    "After lock-in the prompt shows the inputs that the verdict names. Try another shows the inputs of now."
+    d = draw(EX['wheel'])
+    q = d.pg.locator('.rk-gate .q')
+    d.lock(1)
+    d.pg.locator('.rk-wheel svg').focus(); d.pg.keyboard.press('ArrowRight')
+    assert d.st('day') == 'Tue' and 'Mon' in q.inner_text() and d.pg.locator('.verdict').inner_text().startswith('For Mon:')
+    d.pg.get_by_role('button', name='Try another').click()
+    assert 'Tue' in q.inner_text() and d.errors == []
+
 # gate: a host that saves the prediction cancels rk-predict and calls detail.settle
 
 HOLD = "window.__ev = []; document.addEventListener('rk-predict', e => { __ev.push(e.detail); if (window.__hold) e.preventDefault(); })"
