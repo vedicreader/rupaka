@@ -1,0 +1,31 @@
+{
+  "rupaka": 1,
+  "id": "circuit-loop",
+  "concept": "electric-current",
+  "title": "Charge round a loop",
+  "ask": "A battery pushes charge round a loop of wire. A resistor and a lamp sit in the loop. The current is **I = V / R**.",
+  "state": {"V": 6, "R": 3},
+  "derive": [
+    {"fn": "expr", "expr": "V / R", "out": "I"},
+    {"fn": "expr", "expr": "I / 8", "out": "lap"},
+    {"fn": "expr", "expr": "min(1, I / 6)", "out": "bright"}
+  ],
+  "blocks": [
+    {"type": "gate", "id": "g", "prompt": "The battery stays at 6 V. The resistor goes from 3 Ω to 6 Ω. What does the charge do?", "options": ["It moves slower", "It moves faster", "It does not change"], "answer": {"is": "It moves slower"}, "hides": ["I", "lap", "bright"], "why": "Say why, in one line."},
+    {"type": "scene", "label": "A loop of wire with a battery, a resistor and a lamp", "look": "sky", "height": 340, "ground": false, "blocks": [
+      {"type": "path", "id": "wire", "pts": [[-4, 0, -2.5], [4, 0, -2.5], [4, 0, 2.5], [-4, 0, 2.5]], "closed": true, "tone": "dim", "width": 1.4},
+      {"type": "body", "id": "cell", "kind": "cylinder", "size": [0.45, 1.6], "at": [-4, 0, 0], "rot": [90, 0, 0], "color": "ok"},
+      {"type": "body", "id": "res", "kind": "box", "size": [1.8, 0.6, 0.6], "at": [0, 0, -2.5], "color": "no"},
+      {"type": "body", "id": "lamp", "kind": "sphere", "size": [0.5], "at": [4, 0, 0], "color": "glow", "glow": "bright", "after": "g"},
+      {"type": "body", "id": "bulb", "kind": "sphere", "size": [0.52], "at": [4, 0, 0], "color": "glass", "opacity": 0.5},
+      {"type": "drift", "on": "wire", "speed": "lap", "n": 16, "tone": "glow", "after": "g"},
+      {"type": "label3d", "on": "cell", "text": "{V} V", "tone": "ok"},
+      {"type": "label3d", "on": "res", "text": "{R} Ω", "tone": "no"},
+      {"type": "label3d", "on": "bulb", "text": "{I:2} A", "tone": "acc", "after": "g"},
+      {"type": "shot", "name": "high"}]},
+    {"type": "row", "blocks": [
+      {"type": "slider", "bind": "V", "label": "Battery V (volts)", "min": 1, "max": 12, "step": 1, "lock": "g"},
+      {"type": "slider", "bind": "R", "label": "Resistor R (ohms)", "min": 1, "max": 12, "step": 1, "lock": "g"}]},
+    {"type": "caption", "after": "g", "text": "The current is {I:2} A. A larger R gives a smaller current, so the dots move slower and the lamp is dim. Set V to 12 and R to 2. How bright is the lamp?"}
+  ]
+}

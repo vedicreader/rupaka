@@ -1,0 +1,32 @@
+{
+  "rupaka": 1,
+  "id": "attention-arcs",
+  "concept": "self-attention",
+  "title": "Which words does a word look at?",
+  "ask": "In **self-attention**, each word gives a weight to each word of the sentence. The weights of one word add up to 1. A thick arc is a large weight.",
+  "state": {"k": 4, "att": [[0.7, 0.2, 0.05, 0.03, 0.02], [0.25, 0.55, 0.12, 0.04, 0.04], [0.05, 0.5, 0.3, 0.05, 0.1], [0.04, 0.62, 0.1, 0.14, 0.1], [0.03, 0.2, 0.37, 0.25, 0.15]]},
+  "derive": [
+    {"fn": "expr", "expr": "k - 1", "out": "row"},
+    {"fn": "lookup", "table": "words", "key": "row", "out": "word"}
+  ],
+  "tables": {"words": [{"id": 0, "name": "The"}, {"id": 1, "name": "cat"}, {"id": 2, "name": "drank"}, {"id": 3, "name": "its"}, {"id": 4, "name": "milk"}]},
+  "blocks": [
+    {"type": "gate", "id": "g", "prompt": "The word **its** looks at the five words. Which word gets the largest weight?", "options": ["cat", "drank", "milk"], "answer": {"is": "cat"}, "hides": ["att"], "why": "Say why, in one line."},
+    {"type": "scene", "label": "Five words in a row, with arcs from one word to the others", "look": "sky", "height": 320, "ground": false, "blocks": [
+      {"type": "body", "id": "w0", "kind": "box", "size": [1.5, 0.6, 0.6], "at": [-5, 0, 0]},
+      {"type": "body", "id": "w1", "kind": "box", "size": [1.5, 0.6, 0.6], "at": [-2.5, 0, 0]},
+      {"type": "body", "id": "w2", "kind": "box", "size": [1.5, 0.6, 0.6], "at": [0, 0, 0]},
+      {"type": "body", "id": "w3", "kind": "box", "size": [1.5, 0.6, 0.6], "at": [2.5, 0, 0]},
+      {"type": "body", "id": "w4", "kind": "box", "size": [1.5, 0.6, 0.6], "at": [5, 0, 0]},
+      {"type": "label3d", "on": "w0", "text": "The", "at": [0, -0.7, 0]},
+      {"type": "label3d", "on": "w1", "text": "cat", "at": [0, -0.7, 0]},
+      {"type": "label3d", "on": "w2", "text": "drank", "at": [0, -0.7, 0]},
+      {"type": "label3d", "on": "w3", "text": "its", "at": [0, -0.7, 0]},
+      {"type": "label3d", "on": "w4", "text": "milk", "at": [0, -0.7, 0]},
+      {"type": "links", "nodes": ["w0", "w1", "w2", "w3", "w4"], "w": "att", "row": "row", "tone": "acc", "width": 2, "after": "g"},
+      {"type": "shot", "name": "side"}]},
+    {"type": "slider", "bind": "k", "label": "The word that looks (1 to 5)", "min": 1, "max": 5, "step": 1, "lock": "g"},
+    {"type": "readout", "after": "g", "text": "The arcs of {word.name}"},
+    {"type": "caption", "after": "g", "text": "The word its refers to the cat, so cat gets the most weight. Move the slider to word 5. Which word does milk look at most?"}
+  ]
+}

@@ -26,6 +26,20 @@
     return out;
   };
 
+  // A tube through the points P: three rings a leg (at its start, and close to each end), so a corner stays sharp.
+  function tube(T, P, r) {
+    P = P.filter((p, i) => !i || p.distanceTo(P[i - 1]) > 1e-9);
+    const n = P.length - 1, e = i => clamp(r * 1.5 / (P[i + 1].distanceTo(P[i]) || 1), 0, .3);
+    class Poly extends T.Curve {
+      getUtoTmapping(u) { return u; }
+      getPoint(t, o = new T.Vector3()) {
+        const x = clamp(t, 0, 1) * n * 3, j = Math.min(n * 3 - 1, Math.floor(x)), i = Math.floor(j / 3), k = j % 3, f = x - j, w = e(i), at = [0, w, 1 - w, 1];
+        return o.lerpVectors(P[i], P[i + 1], at[k] + (at[k + 1] - at[k]) * f);
+      }
+    }
+    return new T.TubeGeometry(new Poly(), n * 3, r, 8, false);
+  }
+
   Rupaka.block('path', (b, ctx) => {
     const S = ctx.scene;
     if (!S) throw new Error('a path must be inside a scene');
@@ -35,7 +49,7 @@
         const r = S.num(b.circle), c = new T.Vector3(...S.pos(b.about)), [u, v] = S.basis(new T.Vector3(...S.vec(b.axis, [0, 1, 0])).normalize());
         return Array.from({length: 192}, (_, i) => { const a = i / 96 * Math.PI; return c.clone().addScaledVector(u, r * Math.cos(a)).addScaledVector(v, r * Math.sin(a)); });
       }
-      const ps = (b.of ? S.list(b.of).filter(p => p && typeof p === 'object').map(p => Array.isArray(p) ? p : [p.x, p.y, p.z]) : b.pts || [])
+      const ps = (b.of ? S.rows(b.of) : b.pts || [])
         .map(p => new T.Vector3(...S.pos(p)));
       return b.smooth && ps.length > 2 ? new T.CatmullRomCurve3(ps, !!b.closed, 'centripetal').getPoints(ps.length * 16) : ps;
     };
@@ -48,8 +62,7 @@
       const cut = g >= 1 ? full : line(T, trim(full, g), false), ok = cut.P.length > 1 && cut.L > 1e-6;
       P.mesh.visible = ok; P.tip.visible = ok && !!b.arrow;
       if (!ok) { P.mesh.geometry = new T.BufferGeometry(); return; }
-      class Poly extends T.Curve { getPoint(t, o = new T.Vector3()) { return cut.at(t, o); } }
-      P.mesh.geometry = thin ? new T.BufferGeometry().setFromPoints(cut.P) : new T.TubeGeometry(new Poly(), clamp(cut.P.length * 10, 24, 900), r, 6, false);
+      P.mesh.geometry = thin ? new T.BufferGeometry().setFromPoints(cut.P) : tube(T, closed && g >= 1 ? [cut.P[0].clone().lerp(cut.P[1], .5), ...cut.P.slice(1), cut.P[0].clone().lerp(cut.P[1], .5)] : cut.P, r);
       if (!b.arrow) return;
       const e = cut.at(1), d = e.clone().sub(cut.at(.98)).normalize(), h = Math.max(r * 7, (S.unit || 1e-2) * .8);
       P.tip.geometry.dispose(); P.tip.geometry = new T.ConeGeometry(h * .43, h, 16).translate(0, h / 2, 0);

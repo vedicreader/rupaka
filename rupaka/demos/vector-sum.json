@@ -1,0 +1,29 @@
+{
+  "rupaka": 1,
+  "id": "vector-sum",
+  "concept": "vector-addition",
+  "title": "Add two vectors",
+  "ask": "Two arrows start at the same point. Their **sum** is the diagonal of the parallelogram that they make. You add the x parts, and you add the y parts.",
+  "state": {"bx": 1},
+  "derive": [
+    {"fn": "expr", "expr": "3 + bx", "out": "sx"},
+    {"fn": "expr", "expr": "sqrt(sx * sx + 9)", "out": "len"}
+  ],
+  "blocks": [
+    {"type": "gate", "id": "g", "prompt": "**a** is (3, 1) and **b** is (1, 2). What is the x part of a + b?", "options": [2, 3, 4], "answer": {"is": 4}, "hides": ["sx", "len"], "why": "Say why, in one line."},
+    {"type": "scene", "label": "Two arrows a and b from one point, and their sum", "height": 340, "ground": false, "blocks": [
+      {"type": "path", "pts": [[-1, 0, 0], [7, 0, 0]], "tone": "dim", "width": 0.3},
+      {"type": "path", "pts": [[0, -0.5, 0], [0, 4, 0]], "tone": "dim", "width": 0.3},
+      {"type": "path", "pts": [[0, 0, 0], [3, 1, 0]], "tone": "acc", "width": 2, "arrow": true},
+      {"type": "path", "pts": [[0, 0, 0], ["bx", 2, 0]], "tone": "ok", "width": 2, "arrow": true},
+      {"type": "path", "pts": [[3, 1, 0], ["sx", 3, 0], ["bx", 2, 0]], "tone": "dim", "width": 0.3, "after": "g"},
+      {"type": "path", "pts": [[0, 0, 0], ["sx", 3, 0]], "tone": "ink", "width": 2.4, "arrow": true, "after": "g"},
+      {"type": "body", "id": "tip", "kind": "sphere", "size": [0.16], "at": ["bx", 2, 0], "color": "ok", "drag": "x", "to": "bx", "range": [-1, 4], "nudge": 0.5, "label": "The end of b: drag it left and right", "lock": "g"},
+      {"type": "label3d", "at": [3, 1, 0], "text": "a = (3, 1)", "tone": "acc"},
+      {"type": "label3d", "on": "tip", "text": "b = ({bx}, 2)", "tone": "ok"},
+      {"type": "label3d", "at": ["sx", 3, 0], "text": "a + b = ({sx}, 3)", "after": "g"},
+      {"type": "shot", "name": "side"}]},
+    {"type": "readout", "after": "g", "text": "a + b = ({sx}, 3), with a length of {len:2}"},
+    {"type": "caption", "after": "g", "text": "The x parts are 3 and {bx}, so the sum has {sx}. Drag the end of b to the left. Where does the sum stand straight up?"}
+  ]
+}

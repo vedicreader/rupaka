@@ -14,9 +14,9 @@
     void main() { float a = smoothstep(1., 0., length(gl_PointCoord - .5) * 2.); gl_FragColor = vec4(vC, a * a * alpha); }`;
   const css = c => `rgb(${c.map(x => Math.round(x * 255)).join()})`;
   // A name as flat text that faces the viewer: a sprite with no leader line, so a ring of names stays clean.
-  function word(T, text, color) {
+  function word(T, text, color, font, shade) {
     const c = Object.assign(document.createElement('canvas'), {width: 256, height: 64}), g = c.getContext('2d');
-    Object.assign(g, {font: '500 28px Georgia, serif', textAlign: 'center', textBaseline: 'middle', fillStyle: css(color), shadowColor: '#000', shadowBlur: 8});
+    Object.assign(g, {font: `500 28px ${font}`, textAlign: 'center', textBaseline: 'middle', fillStyle: css(color), shadowColor: css(shade), shadowBlur: 8});
     g.fillText(String(text), 128, 32);
     const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace;
     const sp = new T.Sprite(new T.SpriteMaterial({map: t, transparent: true, depthWrite: false})); sp.userData.flat = true;
@@ -33,7 +33,7 @@
       return (k, mid = true) => { const a = rad(off + (k + (mid ? .5 : 0)) * 360 / b.round); return c.clone().addScaledVector(u, r * Math.cos(a)).addScaledVector(v, r * Math.sin(a)); };
     };
     const places = T => b.stars ? [] : b.round ? Array.from({length: b.round}, (_, k) => ring(T)(k))
-      : (b.of ? S.list(b.of).filter(p => p && typeof p === 'object').map(p => Array.isArray(p) ? p : [p.x, p.y, p.z]) : b.pts).map(p => new T.Vector3(...S.pos(p)));
+      : (b.of ? S.rows(b.of) : b.pts).map(p => new T.Vector3(...S.pos(p)));
     const sky = T => { const k = new T.Matrix4().makeRotationX(b.frame === 'equatorial' ? 0 : rad(-OBL));
       return (ra, de) => new T.Vector3(Math.cos(rad(de)) * Math.cos(rad(ra)), Math.sin(rad(de)), -Math.cos(rad(de)) * Math.sin(rad(ra))).applyMatrix4(k); };
     function dots(T) {
@@ -58,9 +58,10 @@
         if (b.stars && b.lines) {
           const at = sky(T), ps = FIGS.flatMap(f => f.slice(2).flatMap((_, i) => i % 2 ? [] : [...at(f[i] / 10, f[i + 1] / 10).toArray(), ...at(f[i + 2] / 10, f[i + 3] / 10).toArray()]));
           const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(ps, 3));
-          const fig = new T.LineSegments(g, new T.LineBasicMaterial({color: 0x8fa3d9, transparent: true, opacity: .13, depthWrite: false})); fig.userData.flat = true; P.cloud.add(fig);
+          const fig = new T.LineSegments(g, new T.LineBasicMaterial({color: S.col(S.palette().lines.dim), transparent: true, opacity: .22, depthWrite: false})); fig.userData.flat = true; P.cloud.add(fig);
+          S.recolors.push(() => S.paint(fig.material, S.palette().lines.dim));
         }
-        P.words = b.round ? (b.names || []).map(n => word(T, n, tone())) : [];
+        P.words = b.round ? (b.names || []).map(n => word(T, n, tone(), S.font(), S.palette().bg)) : [];
         if (P.words.length) P.g.add(...P.words);
         if (!b.round) (b.names || []).forEach((name, i) => {   // names of free places are chips, so the scene keeps them apart
           const pb = {type: 'label3d', tone: b.tone, after: b.after, step: b.step, show: b.show};

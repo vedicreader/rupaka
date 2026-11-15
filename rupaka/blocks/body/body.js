@@ -94,13 +94,13 @@
   // A soft round sprite of `stops` [[at, rgba]], for a halo.
   function sprite(T, stops, s) {
     const c = Object.assign(document.createElement('canvas'), {width: 128, height: 128}), g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-    stops.forEach(([a, v]) => r.addColorStop(a, v)); g.fillStyle = r; g.fillRect(0, 0, 128, 128);
-    const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace;
-    const sp = new T.Sprite(new T.SpriteMaterial({map: t, ...add, blending: T.AdditiveBlending})); sp.userData = {flat: true, s};
+    stops.forEach(([a, v]) => r.addColorStop(a, `rgba(255,255,255,${v})`)); g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+    const sp = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(c), ...add, blending: T.AdditiveBlending})); sp.userData = {flat: true, s};
     return sp;
   }
-  const HALO = [[[0, 'rgba(255,236,190,1)'], [.16, 'rgba(255,190,90,.75)'], [.4, 'rgba(255,130,30,.2)'], [1, 'rgba(255,90,0,0)']],
-                [[0, 'rgba(255,200,120,.35)'], [.5, 'rgba(255,150,60,.08)'], [1, 'rgba(255,120,0,0)']]];
+  // Two white falloffs, a core and a wide veil; the sprite colour tints them, so a halo has the colour of its body.
+  const HALO = [[[0, 1], [.16, .7], [.4, .18], [1, 0]], [[0, .3], [.5, .07], [1, 0]]];
+  const warm = (c, k) => c.map(x => x + (1 - x) * k);
   // N thin spokes across a ring: the edges of its slices, as on a dial.
   function spokes(T, S, [r0, r1], n) {
     const ps = Array.from({length: n}, (_, i) => { const a = i / n * 2 * Math.PI, c = Math.cos(a), s = -Math.sin(a); return [r0 * c, 0, r0 * s, r1 * c, 0, r1 * s]; }).flat();
@@ -162,7 +162,7 @@
     return g;
   }
 
-  R.block('body', (b, ctx) => {
+  Rupaka.block('body', (b, ctx) => {
     const S = ctx.scene;
     if (!S) throw new Error('a body must be inside a scene');
     if (!Object.hasOwn(SIZE, b.kind)) throw new Error(`"${b.kind}" is not a body kind; use one of: ${Object.keys(SIZE).join(', ')}`);
@@ -178,7 +178,7 @@
       return new S.T.Vector3(...S.pos(b.about)).addScaledVector(u, r * Math.cos(a)).addScaledVector(v, r * Math.sin(a)).toArray();
     };
     const put = P => {   // the place now: on a path, on an orbit, or at `at`; `pivot` is the point that rot turns about
-      const at = b.along ? S.paths[b.along]?.at(S.num(b.t)).toArray() ?? [0, 0, 0] : b.orbit != null ? onOrbit() : S.pos(b.at ?? mid()), pv = b.pivot ? S.pos(b.pivot) : at;
+      const at = b.along ? S.paths[b.along]?.at(S.num(b.t)).toArray() ?? [0, 0, 0] : b.orbit != null ? onOrbit() : S.pos(b.at ?? (b.kind === 'map' ? mid() : null)), pv = b.pivot ? S.pos(b.pivot) : at;
       P.outer.position.set(...pv); P.frame.position.set(at[0] - pv[0], at[1] - pv[1], at[2] - pv[2]);
       if (b.scale) P.frame.scale.set(...S.vec(b.scale, [1, 1, 1]).map(x => Math.max(1e-3, x)));
     };
@@ -190,8 +190,11 @@
           frame.add(P.mesh = new T.Mesh(shape(T, b, arc()), material(T, S, b)));
           const r = size();
           if ((b.texture ?? (b.kind === 'globe' ? 'earth' : 0)) === 'earth' && ['sphere', 'globe'].includes(b.kind)) frame.add(new T.Mesh(new T.SphereGeometry(r * 1.07, 64, 48), new T.ShaderMaterial({...AIR, ...add, side: T.BackSide, blending: T.AdditiveBlending})));
+          const hue = () => b.texture === 'sun' ? [1, .62, .22] : S.palette()[b.color || 'glow'] || S.palette().glow;
           if (b.glow != null) frame.add(...(P.halos = HALO.map((st, i) => sprite(T, st, r * (i ? 18 : 6)))));
-          if (b.light) { frame.add(new T.PointLight(0xfff4e0, 3.4, 0, 0)); S.lights(); S.lamp(); }
+          if (b.light) { frame.add(P.lamp = new T.PointLight(0xffffff, 3.4, 0, 0)); S.lights(); S.lamp(); }
+          const tint = () => { P.halos?.forEach(h => h.material.color.copy(S.col(hue()))); P.lamp?.color.copy(S.col(warm(hue(), .8))); };
+          tint(); S.recolors.push(tint);
           if (b.ticks && b.kind === 'ring') frame.add(spokes(T, S, Object.assign([...SIZE.ring], b.size || []), b.ticks));
         }
         if (!b.along || S.paths[b.along]) put(P);

@@ -1,0 +1,24 @@
+{
+  "rupaka": 1,
+  "id": "flight-route",
+  "concept": "route-distance",
+  "title": "Where is the plane?",
+  "ask": "A plane flies from London to Dubai, then to Singapore, then to Sydney. The three legs are about **5500 km**, **5800 km** and **6300 km** long.",
+  "state": {"t": 0.5},
+  "derive": [
+    {"fn": "expr", "expr": "round(t * 17600 / 100) * 100", "out": "km"}
+  ],
+  "blocks": [
+    {"type": "gate", "id": "g", "prompt": "The plane has done half of the full distance. On which leg is it?", "options": ["London to Dubai", "Dubai to Singapore", "Singapore to Sydney"], "answer": {"is": "Dubai to Singapore"}, "hides": ["km"], "why": "Say why, in one line."},
+    {"type": "scene", "label": "A map of the world with the route of the plane", "look": "sky", "coords": "geo", "height": 330, "ground": false, "blocks": [
+      {"type": "body", "id": "world", "kind": "map", "uv": [-40, -60, 180, 75]},
+      {"type": "path", "id": "route", "pts": [[0, 51.5, 1], [55.3, 25.3, 1], [103.8, 1.4, 1], [151.2, -33.9, 1]], "tone": "light", "width": 0.3, "opacity": 0.7},
+      {"type": "path", "pts": [[0, 51.5, 1], [55.3, 25.3, 1], [103.8, 1.4, 1], [151.2, -33.9, 1]], "grow": "t", "tone": "acc", "width": 1.6, "after": "g"},
+      {"type": "points", "pts": [[0, 51.5, 1], [55.3, 25.3, 1], [103.8, 1.4, 1], [151.2, -33.9, 1]], "names": ["London", "Dubai", "Singapore", "Sydney"], "tone": "glow", "size": 9},
+      {"type": "body", "id": "plane", "kind": "sphere", "size": [2.4], "along": "route", "t": "t", "color": "glow", "glow": 0.2, "after": "g"},
+      {"type": "label3d", "on": "plane", "text": "{km} km", "tone": "acc", "after": "g"},
+      {"type": "shot", "name": "top"}]},
+    {"type": "slider", "bind": "t", "label": "Share of the route", "min": 0, "max": 1, "step": 0.05, "lock": "g"},
+    {"type": "caption", "after": "g", "text": "Half of 17 600 km is 8800 km. The first leg ends at 5500 km and the second at 11 300 km. Move the slider. Where does the third leg start?"}
+  ]
+}

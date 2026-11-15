@@ -7,6 +7,8 @@
   "parent": "scene",
   "props": {
     "name": {"type": "str", "doc": "wide, high, side, front, top or close:<body id>; side faces the x-y plane, front the z-y plane, top the x-z plane; high looks down at the x-z plane at an angle of 40 degrees"},
+    "turn": {"type": "num", "min": -180, "max": 180, "default": 0, "doc": "degrees that the camera goes round the picture from the named shot; 90 is a quarter of the way round"},
+    "tilt": {"type": "num", "min": -60, "max": 60, "default": 0, "doc": "degrees that the camera goes up from the named shot"},
     "bind": {"type": "key", "doc": "a state key that holds the shot name; the board's cam operation sets it"},
     "step": {"type": "int", "min": 1, "doc": "the shot starts at this step of the scene"}
   },

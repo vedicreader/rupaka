@@ -11,6 +11,12 @@
 - New shot `high`, and the keys R/F zoom a scene.
 - The demo `panchangam-sky` shows the Sun and the Moon round the ring of the 27 nakshatras. `tools/live_author.py` asks a real Claude model for demos on five topics and checks them.
 - The three.js bundle carries the two textures (about 120 KB).
+- Six more gallery demos use the scene parts in other fields: `circuit-loop` (current), `attention-arcs` (self-attention), `sun-over-earth` (time zones on a globe), `flight-route` (a route on a map), `vector-sum` (a grip in the toon look) and `throw-angle` (the curve of a formula as a path).
+- A `shot` takes `turn` and `tilt`, so the camera can face a picture from any side.
+- A `path` and `points` with `of` take the `{x, y}` rows of `expr` with `over` and of `sample`. A closed path has no seam, and a corner of a path is sharp.
+- A sky scene with no lamp body has a key light, so plain bodies have shade. A halo and a lamp take the colour of their body. The star figures and the ring names take the theme colours and the page font.
+- `links` with a full matrix draws the arc from j to i on the other side from the arc from i to j. An arc between two bodies that stand one above the other bends to the side.
+- In `globe` coords, a body, a circle and an orbit with no place are at the centre of the ball. The name of a place on the far side of the ball does not show. The names of `points` show at once.
 
 ## 0.0.18
 

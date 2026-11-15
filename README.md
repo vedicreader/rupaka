@@ -232,7 +232,7 @@ Each block has a manifest (`rupaka/blocks/<name>/block.json`) and an example. [`
 
 ## The gallery
 
-`rupaka/demos/` holds hand-made demos: vowel sandhi, reciprocal rank fusion, softmax and temperature, nakṣatra and pāda, a parabola and diffusion noise. [`gallery()`](https://vedicreader.github.io/rupaka/spec.html#gallery) gives them by id, and the [gallery page](https://vedicreader.github.io/rupaka/gallery.html) shows them.
+`rupaka/demos/` holds hand-made demos: vowel sandhi, reciprocal rank fusion, softmax and temperature, nakṣatra and pāda, a parabola and diffusion noise. Seven of them are 3D scenes: the panchangam sky, a circuit, attention arcs, the Sun over a globe, a flight route on a map, a vector sum and the angle of a throw. [`gallery()`](https://vedicreader.github.io/rupaka/spec.html#gallery) gives them by id, and the [gallery page](https://vedicreader.github.io/rupaka/gallery.html) shows them.
 
 | softmax and temperature | nakṣatra and pāda | reciprocal rank fusion |
 |----|----|----|

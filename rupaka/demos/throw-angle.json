@@ -1,0 +1,28 @@
+{
+  "rupaka": 1,
+  "id": "throw-angle",
+  "concept": "projectile-range",
+  "title": "The angle of a throw",
+  "ask": "A ball leaves the ground at 20 m/s. Gravity bends its path into an arc. The **range** is how far away it lands.",
+  "state": {"a": 30, "t": 0.5},
+  "derive": [
+    {"fn": "expr", "expr": "400 * sin(2 * pi * a / 180) / 9.8", "out": "range"},
+    {"fn": "expr", "expr": "max(0, x * tan(pi * a / 180) - 9.8 * x * x / (800 * cos(pi * a / 180) ^ 2))", "over": {"x": [0, 41, 83]}, "out": "arc"},
+    {"fn": "expr", "expr": "a - 90", "out": "tilt"}
+  ],
+  "blocks": [
+    {"type": "gate", "id": "g", "prompt": "The ball leaves at 30° and lands 35 m away. Which other angle gives the same range?", "options": [45, 60, 75], "answer": {"is": 60}, "hides": ["range"], "why": "Say why, in one line."},
+    {"type": "scene", "label": "A ball that flies along an arc above the ground", "height": 340, "blocks": [
+      {"type": "body", "id": "pad", "kind": "box", "size": [44, 0.3, 5], "at": [20.5, -0.15, 0], "color": "light"},
+      {"type": "body", "id": "gun", "kind": "cylinder", "size": [0.6, 3.5], "at": [0, 0, 0], "rot": [0, 0, "tilt"], "color": "dark"},
+      {"type": "path", "id": "arc", "of": "arc", "tone": "acc", "width": 1.2},
+      {"type": "body", "id": "ball", "kind": "sphere", "size": [0.8], "along": "arc", "t": "t", "color": "no"},
+      {"type": "label3d", "on": "gun", "text": "{a}°"},
+      {"type": "label3d", "at": ["range", 0, 0], "text": "{range:1} m", "tone": "acc", "after": "g"},
+      {"type": "shot", "name": "side"}]},
+    {"type": "row", "blocks": [
+      {"type": "slider", "bind": "a", "label": "Angle (degrees)", "min": 10, "max": 80, "step": 5, "lock": "g"},
+      {"type": "slider", "bind": "t", "label": "Share of the flight", "min": 0, "max": 1, "step": 0.05}]},
+    {"type": "caption", "after": "g", "text": "The range is {range:1} m. The angles 30° and 60° give the same range, because sin of 60° and sin of 120° are equal. Which angle gives the longest throw?"}
+  ]
+}

@@ -107,8 +107,9 @@
     S.part = (pb, impl, node) => { parts.push({b: pb, impl, node}); return node; };
     S.num = (v, d = 0) => { const n = typeof v === 'number' ? v : +s.get(v); return Number.isFinite(n) ? n : d; };   // a bad value is d, so one key cannot blank the view
     S.list = k => { const v = s.get(k); return Array.isArray(v) ? v : []; };
+    S.rows = k => S.list(k).filter(p => p && typeof p === 'object').map(p => Array.isArray(p) ? p : [p.x, p.y, p.z]).map(p => [0, 1, 2].map(i => typeof p[i] === 'number' ? p[i] : 0));
     S.vec = (v, d = [0, 0, 0]) => Array.isArray(v) ? v.map((x, i) => { const n = S.num(x); return Number.isFinite(n) ? n : d[i]; }) : d;
-    S.pos = (v, d) => (FLAT[b.coords] || (a => a))(S.vec(v, d));   // a place: at, pivot and pts go through the coords
+    S.pos = (v, d) => v == null ? d ?? [0, 0, 0] : (FLAT[b.coords] || (a => a))(S.vec(v, d));   // a place: at, pivot and pts go through the coords
     S.sky = sky; S.paths = {};   // id -> {at(t), length()}: a path, for the parts that ride it
     S.step = () => b.bind ? (+s.get(b.bind) || 1) : Infinity;
     const own = pb => ctx.live(pb.after) && (pb.step == null || S.step() >= pb.step) && (pb.show == null || !!s.get(pb.show));
@@ -120,7 +121,8 @@
     // A chip: a label in screen space with a leader line to its point. Its text fills {path} from the state.
     S.chip = (pb, tpl, tone) => {
       const t = el('span', {class: 'txt'}), n = el('div', {class: 'rk-chip off', 'data-tone': pb.tone || tone || 'ink'}, t);
-      s.on(() => { t.textContent = fmt(tpl, s.st); });
+      const fill = () => { t.textContent = fmt(tpl, s.st); };
+      s.on(fill); if (S.T) fill();   // a chip that a part makes late (a name of points) has its text at once
       return n;
     };
     // An animation of one thing (`key`). A new one for the same key takes its place. f(k) gets k from 0 to 1.
@@ -225,7 +227,7 @@
     const paint = (m, c) => { if (m.uniforms) m.uniforms.color.value = col(c); else m.color.copy(col(c)); };
     S.mat = name => mats[name] ??= sky ? new T.MeshStandardMaterial({color: col(pal[name] || pal.body), roughness: .85, metalness: 0})
                                        : new T.ShaderMaterial({uniforms: {color: {value: col(pal[name] || pal.body)}, light: LIGHT, alpha: {value: 1}}, vertexShader: TOON_V, fragmentShader: TOON_F});
-    S.col = col; S.paint = paint; S.palette = () => pal;
+    S.col = col; S.paint = paint; S.palette = () => pal; S.font = () => getComputedStyle(stage).fontFamily || 'serif';
     // The colour of a line, a dot or a halo: full strength, from the tone name. It follows the theme.
     S.lineMat = (tone, opts) => {
       const m = new T.MeshBasicMaterial({color: col(pal.lines[tone] || pal.lines.ink), ...opts});
@@ -236,9 +238,9 @@
     // Lights for lit materials: an ambient, and a sun in the toon look. A lamp body dims the ambient, so its far side goes dark.
     S.lights = () => {
       if (S.lit?.parent === world) return S.lit;
-      S.lit = new T.Group(); S.lit.add(S.amb = new T.AmbientLight(0xffffff, sky ? .7 : .9));
-      S.lamp = () => { S.amb.intensity = sky ? .09 : .5; };
-      if (!sky) { const d = new T.DirectionalLight(0xffffff, 1.6); d.position.set(-.45, .78, .45); S.lit.add(d); }
+      S.lit = new T.Group(); S.lit.add(S.amb = new T.AmbientLight(0xffffff, sky ? .55 : .9));
+      const key = new T.DirectionalLight(0xffffff, sky ? 2.2 : 1.6); key.position.set(-.45, .78, .45); S.lit.add(key);
+      S.lamp = () => { S.amb.intensity = sky ? .09 : .5; if (sky) key.intensity = 0; };   // a lamp body is the only light of a sky
       world.add(S.lit);
       return S.lit;
     };
@@ -284,7 +286,7 @@
         return out;
       });
       if (!pts.length) pts.push(new T.Vector3(-1, -1, -1), new T.Vector3(1, 1, 1));
-      const az = p.az + user.az, elv = clamp(p.el + user.el, -10, 89), a = rad(az), e = rad(elv);
+      const sb = S.cur?.b || {}, az = p.az + (sb.turn || 0) + user.az, elv = clamp(p.el + (sb.tilt || 0) + user.el, -10, 89), a = rad(az), e = rad(elv);
       const c = pts.reduce((m, x) => m.add(x), new T.Vector3()).divideScalar(pts.length);
       const dir = new T.Vector3(Math.cos(e) * Math.sin(a), Math.sin(e), Math.cos(e) * Math.cos(a));
       const right = new T.Vector3().crossVectors(new T.Vector3(0, 1, 0), dir).normalize(), up = new T.Vector3().crossVectors(dir, right);
@@ -337,13 +339,17 @@
     const lead = (it, bx) => [[it.x, it.y], [clamp(it.x, bx.x, bx.x + bx.w), clamp(it.y, bx.y, bx.y + bx.h)]];
     const side = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
     const cross = ([a, b], [c, d]) => side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0;
+    // In globe coords: a point near the ball that the ball hides from the camera.
+    const behind = a => { if (b.coords !== 'globe' || a.length() > GLOBE * 1.5) return false;
+      const d = cam.position.clone().sub(a), t = -a.dot(d) / d.lengthSq();
+      return t > 1e-3 && t < 1 && a.clone().addScaledVector(d, t).length() < GLOBE * .995; };
     function layout() {
       const placed = [], items = [], segs = [];
       for (const q of parts) {
         if (!q.node.classList.contains('rk-chip')) continue;
         const a = q.node.hidden || !S.live(q.b) ? null : q.impl.anchor?.(q);
         let it = null;
-        if (a) {
+        if (a && !behind(a)) {
           const v = a.clone().project(cam);
           if (v.z > -1 && v.z < 1) it = {q, x: (v.x + 1) / 2 * W, y: (1 - v.y) / 2 * H, w: q.node.offsetWidth, h: q.node.offsetHeight};
         }
@@ -527,7 +533,7 @@
       for (const q of shots) { const v = S.live(q.b) ? q.impl.name() : null; if (v !== q.was && v != null) S.cur = q; q.was = v; }
       if (!S.cur || !S.live(S.cur.b)) S.cur = shots.findLast(q => S.live(q.b));
       const shot = S.cur?.impl.name(), name = isShot(shot, ids) ? shot : (S.shot || 'wide');
-      const now = parts.map(q => S.live(q.b) ? 1 : 0).join('') + name;
+      const now = parts.map(q => S.live(q.b) ? 1 : 0).join('') + name + parts.indexOf(S.cur);
       if (now !== sig) {
         const moved = name !== S.shot;
         if (moved) { user.az = 0; user.el = 0; user.zoom = 0; }
