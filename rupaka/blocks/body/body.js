@@ -110,13 +110,19 @@
     return new T.LineSegments(g, m);
   }
 
-  // The grip of a body with `drag`: a button over the body. Drag it, or press A/D or ←/→ (⇧ for ten nudges). A locked grip does nothing.
-  // The maths runs in the frame of the parent body, so a nested body and the geo and globe coords drag the right way.
+  // The grip of a body with `drag`: a button over the body. Drag it, or press A/D or ←/→ (⇧ for ten nudges). A locked grip moves nothing
+  // and says for two seconds why. The maths runs in the frame of the parent body, so a nested body and the geo and globe coords drag the right way.
+  // An orbit with no range writes its angle in [0, 360), so a slider on the same key keeps up; the drag counts the laps itself, so it does not jump.
   function grip(S, b, ctx, P) {
     const orbit = b.drag === 'orbit', ix = {x: 0, y: 1, z: 2}[b.drag], [lo, hi] = b.range || [-Infinity, Infinity], step = b.nudge ?? (orbit ? 1 : .1);
     const g = R.el('button', {type: 'button', class: 'rk-grip', role: 'slider', 'aria-label': b.label || `Move ${b.id}`});
-    S.gripBox.append(g);
-    const cur = () => S.num(b.to), put = v => ctx.put(b, b.to, +clamp(v, lo, hi).toFixed(4));
+    const note = R.el('div', {class: 'rk-note rk-gripnote', role: 'status', hidden: true, text: 'Lock in your prediction first.'});
+    S.gripBox.append(g, note);
+    let quiet = 0;
+    const tell = () => { note.hidden = false; clearTimeout(quiet); quiet = setTimeout(() => { note.hidden = true; }, 2000); };
+    const snap = v => b.nudge ? Math.round(v / b.nudge) * b.nudge : v;   // a drag stops on a whole number of nudges, as the keys do
+    const fit = orbit && !b.range ? v => +((snap(v) % 360 + 360) % 360).toFixed(4) % 360 : v => +clamp(snap(v), lo, hi).toFixed(4);
+    const cur = () => S.num(b.to), put = v => ctx.put(b, b.to, fit(v));
     const V = (...a) => new S.T.Vector3(...a), par = () => P.outer.parent;
     const world = v => par().localToWorld(v.clone()), local = v => par().worldToLocal(v.clone());
     // Orbit: the plane of the circle. Slide: the plane through the body that holds the axis and faces the camera most.
@@ -137,7 +143,7 @@
     };
     let k = null, from = 0, v0 = 0;
     g.addEventListener('pointerdown', e => {
-      if (!ctx.live(b.lock)) return;
+      if (!ctx.live(b.lock)) { tell(); return; }
       k = setup(); from = hit(e, k); v0 = cur(); if (from == null) { k = null; return; }
       g.setPointerCapture(e.pointerId); g.classList.add('held'); e.preventDefault();
     });
@@ -151,7 +157,8 @@
     g.addEventListener('keydown', e => {
       const d = {ArrowRight: 1, d: 1, ArrowLeft: -1, a: -1}[e.key.length === 1 ? e.key.toLowerCase() : e.key];
       if (!d || e.metaKey || e.ctrlKey || e.altKey) return;
-      e.preventDefault(); e.stopPropagation(); put(cur() + d * step * (e.shiftKey ? 10 : 1));
+      e.preventDefault(); e.stopPropagation();
+      if (!ctx.live(b.lock)) tell(); else put(cur() + d * step * (e.shiftKey ? 10 : 1));
     });
     const sync = () => {
       g.setAttribute('aria-valuenow', String(+cur().toFixed(2))); g.toggleAttribute('data-locked', !ctx.live(b.lock));
@@ -159,6 +166,7 @@
       if (Number.isFinite(hi)) g.setAttribute('aria-valuemax', hi);
     };
     ctx.s.on(sync); sync();
+    g.note = note;
     return g;
   }
 
@@ -187,7 +195,7 @@
         const outer = new T.Group(), frame = new T.Group();
         outer.add(frame); Object.assign(P, {outer, frame});
         if (b.kind !== 'group') {
-          frame.add(P.mesh = new T.Mesh(shape(T, b, arc()), material(T, S, b)));
+          frame.add(P.mesh = new T.Mesh(shape(T, b, arc()), material(T, S, b))); P.arcK = arc().join();
           const r = size();
           if ((b.texture ?? (b.kind === 'globe' ? 'earth' : 0)) === 'earth' && ['sphere', 'globe'].includes(b.kind)) frame.add(new T.Mesh(new T.SphereGeometry(r * 1.07, 64, 48), new T.ShaderMaterial({...AIR, ...add, side: T.BackSide, blending: T.AdditiveBlending})));
           const hue = () => b.texture === 'sun' ? [1, .62, .22] : S.palette()[b.color || 'glow'] || S.palette().glow;
@@ -216,14 +224,23 @@
       run: () => !!b.spin || b.texture === 'sun',
       frame(P, now = 0) {
         if (dyn) put(P);
-        if (live && P.ver !== S.ver) { P.ver = S.ver; P.mesh.geometry.dispose(); P.mesh.geometry = shape(S.T, b, arc()); }
-        if (b.spin && P.mesh) P.mesh.rotation.y = rad(b.spin * now / 1000);
-        if (b.texture === 'sun') P.mesh.material.uniforms.time.value = now / 1000;
+        if (live && P.mesh) { const a = arc(), k = a.join(); if (k !== P.arcK) { P.arcK = k; P.mesh.geometry.dispose(); P.mesh.geometry = shape(S.T, b, a); } }   // a new shape only when the arc moves
+        const t = S.still() ? 0 : now / 1000;   // with reduced motion a spin and a sun surface stand still, also when the view draws again
+        if (b.spin && P.mesh) P.mesh.rotation.y = rad(b.spin * t);
+        if (b.texture === 'sun') P.mesh.material.uniforms.time.value = t;
       },
       over(P) {
         if (!P.grip) return;
-        const v = S.screen(P.frame.getWorldPosition(new S.T.Vector3()));
-        P.grip.hidden = !(S.live(b) && S.seen(b.id) && v.on); P.grip.style.transform = `translate(${v.x.toFixed(1)}px, ${v.y.toFixed(1)}px)`;
+        const V = () => new S.T.Vector3(), c = P.frame.getWorldPosition(V()), v = S.screen(c);
+        let disc = 0;   // the width on screen of the body, so a press anywhere on it takes the grip
+        if (P.mesh) {
+          const geo = P.mesh.geometry, w = P.mesh.getWorldScale(V()); geo.boundingSphere ?? geo.computeBoundingSphere();
+          const e = S.screen(c.clone().addScaledVector(V().setFromMatrixColumn(S.cam().matrixWorld, 0), geo.boundingSphere.radius * Math.max(w.x, w.y, w.z)));
+          disc = 2 * Math.hypot(e.x - v.x, e.y - v.y) || 0;
+        }
+        const at = `translate(${v.x.toFixed(1)}px, ${v.y.toFixed(1)}px)`;
+        P.grip.hidden = !(S.live(b) && S.seen(b.id) && v.on); P.grip.style.transform = at; P.grip.style.setProperty('--disc', `${disc.toFixed(1)}px`);
+        P.grip.note.style.transform = `${at} translate(24px, -50%)`; if (P.grip.hidden) P.grip.note.hidden = true;
       },
     }, R.el('li', {text: `${b.id}: a ${b.kind}${b.drag ? ', with a grip' : ''}`}));
   });

@@ -6,7 +6,7 @@
   "ask": "We keep Earth still and move the Sun, as the sky shows it. The Sun goes round Earth one time in 24 hours. That is **15° of longitude each hour**.",
   "state": {"lon": 90},
   "derive": [
-    {"fn": "expr", "expr": "lon / 15", "out": "hours"}
+    {"fn": "expr", "expr": "lon / 15 - 24 * floor(lon / 360)", "out": "hours"}
   ],
   "blocks": [
     {"type": "gate", "id": "g", "prompt": "It is noon in Dhaka, at 90° east. London is at 0°. How many hours pass before noon comes to London?", "options": [4, 6, 9], "answer": {"is": 6}, "hides": ["hours"], "why": "Say why, in one line."},
@@ -14,7 +14,7 @@
       {"type": "points", "stars": true},
       {"type": "body", "id": "earth", "kind": "globe"},
       {"type": "path", "circle": 24, "tone": "glow", "width": 0.3, "opacity": 0.3},
-      {"type": "body", "id": "sun", "kind": "sphere", "size": [1.6], "texture": "sun", "glow": 0.6, "light": true, "orbit": 24, "angle": "lon", "drag": "orbit", "to": "lon", "range": [-180, 180], "label": "Sun: drag it round Earth", "lock": "g"},
+      {"type": "body", "id": "sun", "kind": "sphere", "size": [1.6], "texture": "sun", "glow": 0.6, "light": true, "orbit": 24, "angle": "lon", "drag": "orbit", "to": "lon", "range": [-180, 180], "nudge": 15, "label": "Sun: drag it round Earth", "lock": "g"},
       {"type": "points", "pts": [[90, 23.8, 0.15], [0, 51.5, 0.15], [139.7, 35.7, 0.15], [31.2, 30, 0.15]], "names": ["Dhaka", "London", "Tokyo", "Cairo"], "tone": "acc", "size": 7},
       {"type": "label3d", "on": "sun", "text": "Noon at {lon}°", "tone": "acc"},
       {"type": "shot", "name": "wide", "turn": 105}]},

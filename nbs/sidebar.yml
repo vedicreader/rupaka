@@ -6,6 +6,7 @@ website:
       - 01_render.ipynb
       - 02_check.ipynb
       - 03_agent.ipynb
+      - scenes.md
       - 04_gallery.ipynb
       - 05_poll.ipynb
       - 06_board.ipynb

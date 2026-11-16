@@ -17,6 +17,14 @@
 - A sky scene with no lamp body has a key light, so plain bodies have shade. A halo and a lamp take the colour of their body. The star figures and the ring names take the theme colours and the page font.
 - `links` with a full matrix draws the arc from j to i on the other side from the arc from i to j. An arc between two bodies that stand one above the other bends to the side.
 - In `globe` coords, a body, a circle and an orbit with no place are at the centre of the ball. The name of a place on the far side of the ball does not show. The names of `points` show at once.
+- `validate` gives an error, not a crash, for a `uv` that is not a list and for a grip whose `at` is short. A name of `points` has at most 24 characters. The think rule follows a chain of parts, so `links` to a body that rides a path wait for the gate as the body does.
+- A ring or a disc makes a new shape only when a key of its `arc` changes. With reduced motion, a `spin` and the `sun` surface stand still when the view draws again. When the host cannot save a prediction, the gate prompt shows the current state.
+- Demo fixes: `vector-sum` lets the grip reach the point that its caption asks for. In `throw-angle` the ball flies to where it lands at every angle. In `flight-route` the plane is at each city when the label shows the distance to it. `sun-over-earth` gives 18 hours, not -6, for a Sun west of London. `panchangam-sky` names tithi 30 Amavasya and counts the nakshatras from 1.
+- An orbit grip with no `range` writes an angle from 0 to under 360, so a slider on the same key does not stop at its end. A press anywhere on the disc of a body takes its grip. A press or a key on a locked grip shows "Lock in your prediction first." beside it.
+- In the sky look a chip has a dark panel, so it reads over a bright body. `check` measures a chip over a scene against the pixels under it, in the light and the dark mode.
+- `throw-angle` is a 2D demo: the flight is a `plot` on an `axis`, and the last throw stays faint. The flight stops where the ball lands. `panchangam-sky` has a days slider that moves the Sun about 1 degree and the Moon about 13 degrees a day. It no longer shows the 12 rashis or the star figures, and its intro says how tithis are numbered.
+- A drag on a body with `nudge` stops on a whole number of nudges. In `sun-over-earth` a nudge is one hour (15 degrees), and in `vector-sum` it is 1. `circuit-loop` says that R is the resistor and that the lamp's small resistance is left out.
+- The block manifests and `demo_sp` say when to use a scene and how to make it easy to read. The new docs page `scenes.md` collects these rules.
 
 ## 0.0.18
 

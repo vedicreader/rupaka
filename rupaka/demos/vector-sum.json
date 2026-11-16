@@ -12,13 +12,13 @@
   "blocks": [
     {"type": "gate", "id": "g", "prompt": "**a** is (3, 1) and **b** is (1, 2). What is the x part of a + b?", "options": [2, 3, 4], "answer": {"is": 4}, "hides": ["sx", "len"], "why": "Say why, in one line."},
     {"type": "scene", "label": "Two arrows a and b from one point, and their sum", "height": 340, "ground": false, "blocks": [
-      {"type": "path", "pts": [[-1, 0, 0], [7, 0, 0]], "tone": "dim", "width": 0.3},
+      {"type": "path", "pts": [[-4, 0, 0], [7, 0, 0]], "tone": "dim", "width": 0.3},
       {"type": "path", "pts": [[0, -0.5, 0], [0, 4, 0]], "tone": "dim", "width": 0.3},
       {"type": "path", "pts": [[0, 0, 0], [3, 1, 0]], "tone": "acc", "width": 2, "arrow": true},
       {"type": "path", "pts": [[0, 0, 0], ["bx", 2, 0]], "tone": "ok", "width": 2, "arrow": true},
       {"type": "path", "pts": [[3, 1, 0], ["sx", 3, 0], ["bx", 2, 0]], "tone": "dim", "width": 0.3, "after": "g"},
       {"type": "path", "pts": [[0, 0, 0], ["sx", 3, 0]], "tone": "ink", "width": 2.4, "arrow": true, "after": "g"},
-      {"type": "body", "id": "tip", "kind": "sphere", "size": [0.16], "at": ["bx", 2, 0], "color": "ok", "drag": "x", "to": "bx", "range": [-1, 4], "nudge": 0.5, "label": "The end of b: drag it left and right", "lock": "g"},
+      {"type": "body", "id": "tip", "kind": "sphere", "size": [0.16], "at": ["bx", 2, 0], "color": "ok", "drag": "x", "to": "bx", "range": [-4, 4], "nudge": 1, "label": "The end of b: drag it left and right", "lock": "g"},
       {"type": "label3d", "at": [3, 1, 0], "text": "a = (3, 1)", "tone": "acc"},
       {"type": "label3d", "on": "tip", "text": "b = ({bx}, 2)", "tone": "ok"},
       {"type": "label3d", "at": ["sx", 3, 0], "text": "a + b = ({sx}, 3)", "after": "g"},

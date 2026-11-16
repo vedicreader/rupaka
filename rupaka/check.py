@@ -64,14 +64,32 @@ CONTRAST_JS = r"""() => {
   const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
   const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
   const base = parse(getComputedStyle(document.body).backgroundColor) || [255, 255, 255, 1];
-  const bgOf = e => { const st = [];
-    for (let n = e; n && n.nodeType === 1; n = n.parentElement) { const c = parse(getComputedStyle(n).backgroundColor); if (c && c[3] > 0) { st.push(c); if (c[3] >= 1) break; } }
-    let col = base[3] >= 1 ? base : [255, 255, 255, 1]; for (let i = st.length - 1; i >= 0; i--) col = over(st[i], col);
+  const grabs = new Map();
+  const grab = c => { if (!grabs.has(c)) { const x = Object.assign(document.createElement('canvas'), {width: c.width, height: c.height}).getContext('2d', {willReadFrequently: true});
+    x.drawImage(c, 0, 0); grabs.set(c, x); } return grabs.get(c); };
+  // The canvas pixels under the box r, each over the colour `back` behind the canvas.
+  const under = (c, r, back) => { const q = c.getBoundingClientRect(); if (!c.width || !c.height || !q.width || !q.height) return [];
+    const sx = c.width / q.width, sy = c.height / q.height;
+    const x0 = Math.max(0, Math.floor((r.left - q.left) * sx)), x1 = Math.min(c.width, Math.ceil((r.right - q.left) * sx));
+    const y0 = Math.max(0, Math.floor((r.top - q.top) * sy)), y1 = Math.min(c.height, Math.ceil((r.bottom - q.top) * sy));
+    if (x1 <= x0 || y1 <= y0) return [];
+    const px = grab(c).getImageData(x0, y0, x1 - x0, y1 - y0).data, out = [];
+    for (let i = 0; i < px.length; i += 4) out.push(over([px[i], px[i + 1], px[i + 2], px[i + 3] / 255], back));
+    return out; };
+  // The backgrounds of e: one colour, or the pixels of a scene canvas under it when no opaque fill of its own covers the canvas.
+  const bgOf = e => { const st = []; let k = -1, cv = null;
+    for (let n = e; n && n.nodeType === 1; n = n.parentElement) {
+      if (!cv && n !== e && (cv = n.querySelector(':scope > canvas.gl'))) k = st.length;
+      const c = parse(getComputedStyle(n).backgroundColor); if (c && c[3] > 0) { st.push(c); if (c[3] >= 1) break; } }
+    const lay = (col, a, z) => { for (let i = a; i >= z; i--) col = over(st[i], col); return col; };
+    let cols = [lay(base[3] >= 1 ? base : [255, 255, 255, 1], st.length - 1, Math.max(k, 0))];
+    if (cv) { const px = under(cv, e.getBoundingClientRect(), cols[0]); if (px.length) cols = px; }
+    if (k > 0) cols = cols.map(c => lay(c, k - 1, 0));
     if (e instanceof SVGElement) { const r = e.getBoundingClientRect(), cx = r.x + r.width / 2, cy = r.y + r.height / 2;
       for (const s of e.parentElement.children) { if (s === e || !['circle', 'rect', 'path'].includes(s.tagName)) continue;
         const q = s.getBoundingClientRect(); if (cx < q.left || cx > q.right || cy < q.top || cy > q.bottom) continue;
-        const f = parse(getComputedStyle(s).fill); if (f && f[3] > 0) col = over(f, col); } }
-    return col; };
+        const f = parse(getComputedStyle(s).fill); if (f && f[3] > 0) cols = cols.map(c => over(f, c)); } }
+    return cols; };
   const out = [];
   document.querySelectorAll('.rk *').forEach(e => {
     if (![...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) return;
@@ -79,8 +97,11 @@ CONTRAST_JS = r"""() => {
     const r = e.getBoundingClientRect(); if (!r.width || !r.height) return;
     const cs = getComputedStyle(e), fg0 = parse(e instanceof SVGElement ? cs.fill : cs.color); if (!fg0) return;
     let op = 1; for (let n = e; n && n.nodeType === 1; n = n.parentElement) op *= +getComputedStyle(n).opacity;
-    const bg = bgOf(e), fg = over([fg0[0], fg0[1], fg0[2], fg0[3] * op], bg), px = parseFloat(cs.fontSize), big = px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700);
-    out.push({text: e.textContent.trim().slice(0, 40), ratio: +ratio(fg, bg).toFixed(2), need: big ? 3 : 4.5});
+    // Over a scene the ratio is the one that a quarter of the pixels fall below: a clash over a quarter of the box hides letters,
+    // and a part that only touches the end of a word (a tenth of the box or so) does not.
+    const rs = bgOf(e).map(bg => ratio(over([fg0[0], fg0[1], fg0[2], fg0[3] * op], bg), bg)).sort((a, b) => a - b);
+    const px = parseFloat(cs.fontSize), big = px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700);
+    out.push({text: e.textContent.trim().slice(0, 40), ratio: +rs[Math.floor(rs.length * .25)].toFixed(2), need: big ? 3 : 4.5});
   });
   return out;
 }"""
@@ -179,17 +200,30 @@ def _check(b, spec, shots=None, modes=('light', 'dark'), play=True, width=720):
         if ready != '1':
             e.append(pg.locator('.rk-err').inner_text() if pg.locator('.rk-err').count() else 'the demo did not draw')
         else:
-            e += _boxes(pg) + _parity(pg, spec) + [f'contrast: "{t}" is {r}:1, it needs {n}:1' for t, r, n in contrast(pg)]
+            e += _rest(pg) + _boxes(pg) + _parity(pg, spec) + [f'contrast: "{t}" is {r}:1, it needs {n}:1' for t, r, n in contrast(pg)]
             if shots: files.append(_shot(pg, shots, spec, mode, 'before'))
             if play:
                 pe, info[mode] = _play(pg, spec)
-                e += pe + [f'contrast after the reveal: "{t}" is {r}:1, it needs {n}:1' for t, r, n in contrast(pg)]
+                e += pe + _rest(pg) + [f'contrast after the reveal: "{t}" is {r}:1, it needs {n}:1' for t, r, n in contrast(pg)]
                 e += _keys(pg, spec) + _parity(pg, spec)
             info[f'{mode}_height'] = pg.evaluate("document.querySelector('.rk').getBoundingClientRect().height")
             if shots: files.append(_shot(pg, shots, spec, mode, 'after'))
         errs += [f'{mode}: {x}' for x in dict.fromkeys(e + log)]
         pg.close()
     return AttrDict(ok=not errs, errors=errs, info=info, shots=files)
+
+# Each scene has drawn and stands still, and its chips have grown in and kept their places for 8 frames (the test polls each frame).
+_REST_JS = r"""() => { const ss = [...document.querySelectorAll('.rk-scene .stage')], cs = [...document.querySelectorAll('.rk-scene .rk-chip')];
+  const sig = cs.map(c => c.className + c.style.transform).join(), w = window.__rkRest ??= {sig: null, n: 0};
+  w.n = sig === w.sig ? w.n + 1 : 0; w.sig = sig;
+  return ss.every(s => s.dataset.rkGl === 'error' || (s.dataset.rkGl === 'ready' && s.dataset.rkStill === '1'))
+    && cs.every(c => !c.getAnimations().length) && w.n >= 8; }"""
+
+def _rest(pg, ms=5000) -> list:
+    "Wait until each scene has drawn and stands still, so that the contrast check reads what a person sees."
+    pg.evaluate('delete window.__rkRest')
+    try: pg.wait_for_function(_REST_JS, timeout=ms); return []
+    except Exception: return [f'scene: the 3D view did not come to rest in {ms / 1000:g} s']
 
 def _shot(pg, d, spec, mode, stage):
     pg.wait_for_timeout(350)   # let the bars slide into place

@@ -635,14 +635,18 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
     return errs
 
 def _scene_reads(spec, reads):
-    "A part that rides a path or joins bodies shows what they read: add their reads to its own, for the think rule."
+    "A part that rides a path or joins bodies shows what they read: add their reads to its own, for the think rule. The reads pass along a chain (links to a body on a path), so this repeats until no set grows."
     for p, b, _ in _walk(spec['blocks']):
         if not isinstance(b, dict) or b.get('type') != 'scene': continue
         kids = {f'{p}.blocks[{i}]': k for i, k in enumerate(b.get('blocks') or []) if isinstance(k, dict)}
-        by = {(k.get('type'), k.get('id')): reads.get(q, set()) for q, k in kids.items()}
-        for q, k in kids.items():
-            use = [('path', k.get('on'))] if k.get('type') == 'drift' else [('path', k.get('along'))] if k.get('along') else [('body', x) for x in k.get('nodes') or []] if k.get('type') == 'links' else []
-            for u in use: reads[q] = reads.get(q, set()) | by.get(u, set())
+        by = {(k.get('type'), k.get('id')): q for q, k in kids.items()}
+        grew = True
+        while grew:
+            grew = False
+            for q, k in kids.items():
+                use = [('path', k.get('on'))] if k.get('type') == 'drift' else [('path', k.get('along'))] if k.get('along') else [('body', x) for x in k.get('nodes') or []] if k.get('type') == 'links' else []
+                new = reads.get(q, set()).union(*(reads.get(by[u], set()) for u in use if u in by))
+                if new != reads.get(q, set()): reads[q], grew = new, True
 
 def _step_err(b, m, learn, st):
     "Why the reveal `step` of block `b` is bad, or None. An explainer shows the part from that value of the state key `step`."
@@ -739,15 +743,16 @@ def _check_scene(p, b, st, st0, err):
         if t == 'points' and k.get('names') and k.get('round') and len(k['names']) != k['round']: err(f'{q}.names', f'needs {k["round"]} names, one for each place')
         if t == 'points' and k.get('names') and not (k.get('round') or isinstance(k.get('pts'), list)): err(f'{q}.names', 'goes with round or pts')
         if t == 'points' and k.get('names') and k.get('pts') and len(k['names']) != len(k['pts']): err(f'{q}.names', f'needs {len(k["pts"])} names, one for each point')
+        if t == 'points' and isinstance(k.get('names'), list) and any(len(str(x)) > 24 for x in k['names']): err(f'{q}.names', 'a name of a point has at most 24 characters')
         if t == 'path' and isinstance(k.get('of'), str) and not _pts_ok(get(st0, k['of'])): err(f'{q}.of', f'"{k["of"]}" must start as a list of points [x, y, z]')
         if t == 'links' and isinstance(k.get('w'), str) and not _weights_ok(get(st0, k['w']), len(k.get('nodes') or [])):
             err(f'{q}.w', f'"{k["w"]}" must start as a list of numbers, or a matrix of numbers, with at most {len(k.get("nodes") or [])} rows and columns')
         if t == 'body':
             if k.get('along') and 't' not in k: err(f'{q}.t', 'a body with along needs t, its place on the path from 0 to 1')
-            if k.get('uv') is not None and not (len(k['uv']) == 4 and all(isinstance(x, (int, float)) for x in k['uv'])): err(f'{q}.uv', 'must be four numbers [lon0, lat0, lon1, lat1]')
+            if k.get('uv') is not None and not (isinstance(k['uv'], list) and len(k['uv']) == 4 and all(map(_isnum, k['uv']))): err(f'{q}.uv', 'must be four numbers [lon0, lat0, lon1, lat1]')
             if k.get('drag') == 'orbit' and k.get('orbit') is None: err(f'{q}.drag', 'an orbit grip needs a body on an orbit: give it orbit and angle, with angle the key of to')
             if k.get('drag') == 'orbit' and k.get('orbit') is not None and k.get('angle') != k.get('to'): err(f'{q}.to', 'an orbit grip writes the angle, so to and angle must be the same key')
-            if k.get('drag') in ('x', 'y', 'z') and (not isinstance(k.get('at'), list) or k['at'][{'x': 0, 'y': 1, 'z': 2}[k['drag']]] != k.get('to')):
+            if k.get('drag') in ('x', 'y', 'z') and (not isinstance(k.get('at'), list) or len(k['at']) != 3 or k['at'][{'x': 0, 'y': 1, 'z': 2}[k['drag']]] != k.get('to')):
                 err(f'{q}.to', f'a {k["drag"]} grip moves the {k["drag"]} item of at, so that item must be the key of to')
             if k.get('drag') and k.get('in'): err(f'{q}.drag', 'a body with a grip is not in another body; put it in the scene')
             if k.get('along') is not None and k['along'] not in pids: err(f'{q}.along', f'"{k["along"]}" is not a path in this scene' + (f'; use one of: {", ".join(pids)}' if pids else '; give a path an id'))

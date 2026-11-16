@@ -47,7 +47,7 @@ Rupaka.block('gate', (b, ctx) => {
     const settle = (saved, message = '') => {
       if (settled) return;
       settled = true;
-      if (!saved) { s.st.gate[id] = 'open'; froze = null; say(String(message ?? '')); paint(); return; }
+      if (!saved) { s.st.gate[id] = 'open'; froze = null; q.replaceChildren(...rich(b.prompt, s.st)); say(String(message ?? '')); paint(); return; }
       tell(c, ok, a);
       s.st.gate[id] = 'done';
       s.st.log = [...(s.st.log || []), detail];

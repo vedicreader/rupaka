@@ -1,7 +1,7 @@
 {
   "name": "path",
   "since": "0.0.19",
-  "purpose": "A line in a scene, drawn as a thin tube: through points, round a circle, or through a state list. With grow it draws part of its length.",
+  "purpose": "A line in a scene, drawn as a thin tube: through points, round a circle, or through a state list. With grow it draws part of its length. Use a path for every trajectory, orbit, route or wire, not a row of small bodies.",
   "binds": "pts, circle, about, grow: numbers or state keys; of: a state list of [x, y, z]",
   "keys": "none",
   "parent": "scene",

@@ -110,7 +110,7 @@
     S.rows = k => S.list(k).filter(p => p && typeof p === 'object').map(p => Array.isArray(p) ? p : [p.x, p.y, p.z]).map(p => [0, 1, 2].map(i => typeof p[i] === 'number' ? p[i] : 0));
     S.vec = (v, d = [0, 0, 0]) => Array.isArray(v) ? v.map((x, i) => { const n = S.num(x); return Number.isFinite(n) ? n : d[i]; }) : d;
     S.pos = (v, d) => v == null ? d ?? [0, 0, 0] : (FLAT[b.coords] || (a => a))(S.vec(v, d));   // a place: at, pivot and pts go through the coords
-    S.sky = sky; S.paths = {};   // id -> {at(t), length()}: a path, for the parts that ride it
+    S.sky = sky; S.paths = {}; S.still = still;   // paths: id -> {at(t), length()}, for the parts that ride it; still: reduced motion is on
     S.step = () => b.bind ? (+s.get(b.bind) || 1) : Infinity;
     const own = pb => ctx.live(pb.after) && (pb.step == null || S.step() >= pb.step) && (pb.show == null || !!s.get(pb.show));
     S.seen = id => !!specs[id] && own(specs[id]) && (!specs[id].in || S.seen(specs[id].in));   // a body and each body that holds it

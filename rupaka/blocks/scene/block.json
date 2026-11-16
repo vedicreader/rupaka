@@ -1,13 +1,13 @@
 {
   "name": "scene",
   "since": "0.0.8",
-  "purpose": "A 3D view drawn with three.js. Put body, force, label3d, shot, path, links, points and drift blocks inside it. With bind, it builds one step at a time. With look sky it is a dark, lit view for space, circuits, networks and maps.",
+  "purpose": "A 3D view drawn with three.js. Put body, force, label3d, shot, path, links, points and drift blocks inside it. With bind, it builds one step at a time. With look sky it is a dark, lit view for space, circuits, networks and maps. Use a scene only when depth is part of the idea: a tilt, a turn about an axis, a globe, an orbit seen from Earth, a shape in space. An idea that happens in one plane (a lever, a throw, a sum of vectors) is clearer on an axis. Each step adds one new thing. When the idea compares cases, show the cases together in one step.",
   "binds": "number: the step, an int from 1 (optional)",
   "keys": "A/D or ←/→ back and next step, 1-9 go to a step, Q/E turn the view, W/S tilt it, R/F zoom in and out; drag to turn; a grip has its own keys",
   "lockable": true,
   "props": {
     "bind": {"type": "key", "doc": "the state key of the step, an int from 1; a part with step n shows from step n"},
-    "steps": {"type": "texts", "doc": "one line for each step, under the view; {path} takes a state value; at most 8 lines of at most 200 characters"},
+    "steps": {"type": "texts", "doc": "one line for each step, under the view; {path} takes a state value; at most 8 lines of at most 200 characters; each line says what is new in its step"},
     "label": {"type": "str", "doc": "what the scene shows, above it and for screen readers"},
     "height": {"type": "num", "default": 380, "min": 200, "max": 900, "doc": "the height of the view in pixels"},
     "scale": {"type": "num", "min": 0, "doc": "the arrow length for a mag of 1; if left out, the largest force is 0.3 of the scene size"},
