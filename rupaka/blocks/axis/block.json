@@ -12,7 +12,8 @@
     "xlog": {"type": "bool", "default": false, "doc": "x holds the log10 of a value (decades); the ticks show 1, 10, 100, 1k, and so on. A plot or point gives log10 of its x"},
     "xlabel": {"type": "str"},
     "ylabel": {"type": "str"},
-    "height": {"type": "num", "default": 360},
+    "yaxis": {"type": "bool", "default": true, "doc": "false hides the y numbers, the y grid and the vertical axis line, for a side view of a thing such as a lever, where y has no meaning"},
+    "height": {"type": "num", "default": 360, "doc": "the height in SVG units; the width is 600. For a picture where one unit across must be one unit up, such as vectors, set the height so that both scales match"},
     "label": {"type": "str"},
     "blocks": {"type": "blocks", "req": true, "doc": "point, plot and arrow blocks only. An arrow shows a vector, a force or a velocity from one place to another", "only": ["point", "plot", "arrow"]}
   }

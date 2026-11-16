@@ -56,6 +56,14 @@ def test_plot_rows_draw_a_path(draw):
     d = draw(s); settled(d.pg)
     assert not d.errors and tones(d.pg)['colours'] > 1
 
+def test_a_lamp_body_makes_the_look_sky(draw):
+    "With no look, a scene with a lamp body is in the sky look, so the lamp alone makes the day and night halves. A plain scene stays toon."
+    sun = body('s', 'sphere', [1], at=[8, 0, 0], texture='sun', light=True)
+    for parts, look in (((body('m', 'sphere', [1], texture='moon'), sun), 'sky'), ((body('p', 'box', [1, 1, 1]),), 'toon')):
+        s = world(*parts, look=None); assert validate(s) == []
+        d = draw(s); settled(d.pg)
+        assert d.pg.locator('.rk-scene .stage').get_attribute('data-look') == look and not d.errors
+
 def test_sky_body_has_shade_with_no_lamp(draw):
     "A sky scene with no lamp body has a key light, so the faces of a box differ."
     d = draw(world(body('p', 'box', [2, 2, 2], round=0))); settled(d.pg)
@@ -105,11 +113,16 @@ def test_gate_prompt_follows_the_state_when_the_host_refuses(draw):
     assert q.inner_text() == 'What is 5 + 1?' and not d.errors
 
 def test_vector_sum_can_stand_straight_up(draw):
-    "The caption asks where the sum stands straight up: that is b = (-3, 2), so the grip reaches it."
-    d = draw(gallery()['vector-sum']); settled(d.pg); d.lock(); settled(d.pg)
-    g = grip(d, 0); g.focus()
-    for _ in range(4): d.pg.keyboard.press('a')
-    assert d.st('bx') == -3 and d.st('sx') == 0 and not d.errors
+    "A 2D demo: the sum arrow shows after the gate. The caption asks where it stands straight up, at b = (-3, 2), and the point reaches it."
+    d = draw(gallery()['vector-sum']); settled(d.pg)
+    s = d.pg.locator('.rk-arrow').filter(has_text='a + b')
+    assert not s.is_visible()
+    d.lock(); settled(d.pg)
+    d.pg.locator('.rk-point').focus()
+    for _ in range(4): d.pg.keyboard.press('ArrowLeft')
+    tip = s.evaluate("g => +g.querySelector('path.hd').getAttribute('d').match(/^M\\s*(-?[\\d.]+)/)[1]")
+    x0 = s.evaluate("g => +g.querySelector('line.ln').getAttribute('x1')")
+    assert d.st('bx') == -3 and d.st('sx') == 0 and abs(tip - x0) < 0.05 and not d.errors
 
 def test_throw_ball_is_in_the_air_half_way(draw):
     "Half way through the flight the ball is half way to where it lands, and above the ground, at any angle."

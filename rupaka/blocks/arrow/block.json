@@ -1,0 +1,18 @@
+{
+  "name": "arrow",
+  "since": "0.0.20",
+  "purpose": "A straight arrow on its axis, from one place to another: a vector, a force on a lever or a velocity.",
+  "binds": "two numbers or state keys for each end",
+  "keys": "none",
+  "parent": "axis",
+  "props": {
+    "from": {"type": "numkeys", "least": 2, "most": 2, "default": [0, 0], "doc": "[x, y] of the tail; an item can be a state key"},
+    "to": {"type": "numkeys", "least": 2, "most": 2, "req": true, "doc": "[x, y] of the head; an item can be a state key. When to is the same as from, or show is false, the arrow does not show"},
+    "label": {"type": "text", "doc": "the text past the head, or at the middle of a bar; {path} or {path:2} takes a state value"},
+    "tone": {"type": "str", "of": ["acc", "mute", "ok", "no", "ink"], "default": "acc", "doc": "the colour of the arrow; ink is the colour of the text, for a beam or a rod"},
+    "width": {"type": "num", "min": 1, "max": 8, "default": 2.5, "doc": "the width of the line; the head grows with it"},
+    "dash": {"type": "bool", "default": false, "doc": "a dashed line, for a guide; the head stays solid"},
+    "head": {"type": "bool", "default": true, "doc": "false draws a plain bar with no head, for a beam, a rod or a distance"},
+    "show": {"type": "key", "doc": "a state key; the arrow shows when its value is true"}
+  }
+}

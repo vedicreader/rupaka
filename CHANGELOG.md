@@ -2,6 +2,17 @@
 
 <!-- do not remove -->
 
+## 0.0.20
+
+- New block `arrow` inside an `axis`: a straight arrow from `from` to `to` (numbers or state keys), for a vector, a force or a velocity. It has a filled head, a `label` that takes state values, `tone`, `width` and `dash`. With `head` false it is a plain bar, for a beam or a distance.
+- `vector-sum` is a 2D demo: arrows for a, b and their sum on an axis, dashed copies that close the parallelogram after the gate, and a point that moves the end of b.
+- A scene with no `look` is in the sky look when a body has `light`. The lamp alone then lights each body, so its day and night halves show, and there is no floor.
+- `demo_sp` asks the model to draw a thing in the world, such as a lever, before the gate: a beam, a pivot, the forces and the distances, each distance on its own row. A force arrow has a length in proportion to its size, and the maths uses exact values.
+- An `axis` with `yaxis` false has no y numbers, no y grid and no vertical axis line, for a side view. A bar (`arrow` with `head` false) has its label at its middle, and an arrow can take the tone `ink`.
+- `check` does not call an arrow of zero length or a level bar an empty box.
+- The docs of `tone` say that `no` (red) is only for a wrong idea, and the scene `label` must hold for every shot.
+- `vector-sum` has equal units across and up, and its readout and caption say which b the prediction was for.
+
 ## 0.0.19
 
 - A scene can now show space, circuits, networks and maps. `look: "sky"` gives a dark, lit view with no floor. `coords: "geo"` and `"globe"` read places as longitude and latitude.

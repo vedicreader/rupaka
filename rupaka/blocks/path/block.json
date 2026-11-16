@@ -15,7 +15,7 @@
     "closed": {"type": "bool", "default": false, "doc": "with pts: join the last point to the first"},
     "smooth": {"type": "bool", "default": false, "doc": "with pts: round the corners into a curve"},
     "grow": {"type": "numkey", "doc": "the share of the length that shows, 0 to 1; a slider can walk the path"},
-    "tone": {"type": "str", "of": ["ink", "acc", "ok", "no", "dim", "mute", "glow", "light"], "default": "ink", "doc": "the colour"},
+    "tone": {"type": "str", "of": ["ink", "acc", "ok", "no", "dim", "mute", "glow", "light"], "default": "ink", "doc": "the colour; no (red) is only for a wrong idea"},
     "width": {"type": "num", "default": 1, "min": 0.2, "max": 3, "doc": "the thickness, in units of a thin line; under 0.5 it is a hairline, as for an orbit or a guide"},
     "arrow": {"type": "bool", "default": false, "doc": "an arrow head at the end"},
     "opacity": {"type": "num", "min": 0.05, "max": 1, "doc": "how solid the line is; 1 if left out"},

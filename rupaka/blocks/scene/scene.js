@@ -102,7 +102,8 @@
     }`;
 
   Rupaka.block('scene', (b, ctx) => {
-    const sky = b.look === 'sky', s = ctx.s, parts = [], specs = Object.fromEntries((b.blocks || []).filter(k => k.type === 'body').map(k => [k.id, k]));
+    // With no look, a lamp body gives the sky look: the toon key light would light the night side of every body.
+    const look = b.look || ((b.blocks || []).some(k => k.type === 'body' && k.light) ? 'sky' : 'toon'), sky = look === 'sky', s = ctx.s, parts = [], specs = Object.fromEntries((b.blocks || []).filter(k => k.type === 'body').map(k => [k.id, k]));
     const pathSpec = Object.fromEntries((b.blocks || []).filter(k => k.type === 'path' && k.id).map(k => [k.id, k])), ids = new Set(Object.keys(specs)), S = {b, s, ids, bodies: {}, anims: new Map()};
     S.part = (pb, impl, node) => { parts.push({b: pb, impl, node}); return node; };
     S.num = (v, d = 0) => { const n = typeof v === 'number' ? v : +s.get(v); return Number.isFinite(n) ? n : d; };   // a bad value is d, so one key cannot blank the view
@@ -158,7 +159,7 @@
     const leads = sv('svg', {class: 'leads', 'aria-hidden': 'true'});
     const msg = el('p', {class: 'rk-note msg', hidden: true});
     const stage = el('div', {class: 'stage', tabindex: 0, role: 'group', 'aria-roledescription': '3D scene',
-                             'aria-label': b.label || 'A 3D scene', 'data-look': b.look || 'toon', style: `height: ${b.height ?? 380}px`}, cv, leads, chips, S.gripBox, msg);
+                             'aria-label': b.label || 'A 3D scene', 'data-look': look, style: `height: ${b.height ?? 380}px`}, cv, leads, chips, S.gripBox, msg);
     const sr = el('ul', {class: 'rk-sr'});
     nodes.forEach(n => (n.classList.contains('rk-chip') ? chips : sr).append(n));
 

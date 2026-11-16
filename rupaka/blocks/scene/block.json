@@ -8,13 +8,13 @@
   "props": {
     "bind": {"type": "key", "doc": "the state key of the step, an int from 1; a part with step n shows from step n"},
     "steps": {"type": "texts", "doc": "one line for each step, under the view; {path} takes a state value; at most 8 lines of at most 200 characters; each line says what is new in its step"},
-    "label": {"type": "str", "doc": "what the scene shows, above it and for screen readers"},
+    "label": {"type": "str", "doc": "what the scene shows, above it and for screen readers. It stays the same for every step and shot, so do not name one view, such as from above"},
     "height": {"type": "num", "default": 380, "min": 200, "max": 900, "doc": "the height of the view in pixels"},
     "scale": {"type": "num", "min": 0, "doc": "the arrow length for a mag of 1; if left out, the largest force is 0.3 of the scene size"},
     "floor": {"type": "num", "doc": "the height (y) of the floor; the lowest point of the bodies if left out"},
     "ground": {"type": "bool", "default": true, "doc": "false hides the floor and the shadow"},
     "blocks": {"type": "blocks", "req": true, "doc": "body, force, label3d, shot, path, links, points and drift blocks only", "only": ["body", "force", "label3d", "shot", "path", "links", "points", "drift"]},
-    "look": {"type": "str", "of": ["toon", "sky"], "default": "toon", "doc": "toon: flat colour with ink lines on a floor, for objects and forces; sky: a dark, lit view with no floor, for space, circuits, networks and maps"},
+    "look": {"type": "str", "of": ["toon", "sky"], "doc": "toon: flat colour with ink lines on a floor, for objects and forces; sky: a dark, lit view with no floor, for space, circuits, networks and maps. With no look, a scene with a body that has light is sky, so the lamp alone lights each body and its day and night halves show; any other scene is toon"},
     "coords": {"type": "str", "of": ["xyz", "geo", "globe"], "default": "xyz", "doc": "how at, pivot and pts read their three numbers: xyz (y is up); geo: [lon, lat, height] on a flat map, one unit is one degree; globe: [lon, lat, height] on a ball of radius 10"}
   }
 }

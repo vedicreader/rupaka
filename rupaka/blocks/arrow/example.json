@@ -1,0 +1,16 @@
+{
+  "rupaka": 1, "id": "arrow-example", "title": "Arrow",
+  "ask": "The arrow v goes 3 across and 4 up. Predict its length. Then move the ends with the sliders.",
+  "state": {"vx": 3, "vy": 4},
+  "derive": [{"fn": "expr", "expr": "sqrt(vx^2 + vy^2)", "out": "len"}],
+  "blocks": [
+    {"type": "gate", "id": "len", "prompt": "How long is the arrow v?", "options": [5, 7, 12], "answer": "len", "context": "For {vx} across and {vy} up:"},
+    {"type": "slider", "bind": "vx", "label": "across", "min": -5, "max": 5, "step": 1, "lock": "len"},
+    {"type": "slider", "bind": "vy", "label": "up", "min": -5, "max": 5, "step": 1, "lock": "len"},
+    {"type": "axis", "x": [-6, 6], "y": [-6, 6], "xstep": 1, "ystep": 1, "blocks": [
+      {"type": "arrow", "to": ["vx", 0], "tone": "mute", "dash": true, "width": 1.5},
+      {"type": "arrow", "from": ["vx", 0], "to": ["vx", "vy"], "tone": "mute", "dash": true, "width": 1.5},
+      {"type": "arrow", "to": ["vx", "vy"], "label": "v"}]},
+    {"type": "readout", "after": "len", "text": "The length of v is {len:2}."}
+  ]
+}

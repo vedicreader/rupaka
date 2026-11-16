@@ -1,0 +1,5 @@
+.rk-arrow { --ac: var(--rk-acc); pointer-events: none; }
+.rk-arrow.t-mute { --ac: var(--rk-mute); } .rk-arrow.t-ok { --ac: var(--rk-ok); } .rk-arrow.t-no { --ac: var(--rk-no); } .rk-arrow.t-ink { --ac: var(--rk-fg); }
+.rk-arrow .ln { stroke: var(--ac); stroke-linecap: butt; fill: none; }
+.rk-arrow .hd { fill: var(--ac); stroke: var(--ac); stroke-width: 1; stroke-linejoin: round; }
+.rk-arrow text.al { font-size: 14px; fill: var(--rk-fg); paint-order: stroke; stroke: var(--rk-bg); stroke-width: 4px; stroke-linejoin: round; }

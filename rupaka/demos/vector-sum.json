@@ -6,24 +6,19 @@
   "ask": "Two arrows start at the same point. Their **sum** is the diagonal of the parallelogram that they make. You add the x parts, and you add the y parts.",
   "state": {"bx": 1},
   "derive": [
-    {"fn": "expr", "expr": "3 + bx", "out": "sx"},
-    {"fn": "expr", "expr": "sqrt(sx * sx + 9)", "out": "len"}
+    {"fn": "expr", "expr": "2 + 0 * bx", "out": "by"},
+    {"fn": "expr", "expr": "3 + bx", "out": "sx"}
   ],
   "blocks": [
-    {"type": "gate", "id": "g", "prompt": "**a** is (3, 1) and **b** is (1, 2). What is the x part of a + b?", "options": [2, 3, 4], "answer": {"is": 4}, "hides": ["sx", "len"], "why": "Say why, in one line."},
-    {"type": "scene", "label": "Two arrows a and b from one point, and their sum", "height": 340, "ground": false, "blocks": [
-      {"type": "path", "pts": [[-4, 0, 0], [7, 0, 0]], "tone": "dim", "width": 0.3},
-      {"type": "path", "pts": [[0, -0.5, 0], [0, 4, 0]], "tone": "dim", "width": 0.3},
-      {"type": "path", "pts": [[0, 0, 0], [3, 1, 0]], "tone": "acc", "width": 2, "arrow": true},
-      {"type": "path", "pts": [[0, 0, 0], ["bx", 2, 0]], "tone": "ok", "width": 2, "arrow": true},
-      {"type": "path", "pts": [[3, 1, 0], ["sx", 3, 0], ["bx", 2, 0]], "tone": "dim", "width": 0.3, "after": "g"},
-      {"type": "path", "pts": [[0, 0, 0], ["sx", 3, 0]], "tone": "ink", "width": 2.4, "arrow": true, "after": "g"},
-      {"type": "body", "id": "tip", "kind": "sphere", "size": [0.16], "at": ["bx", 2, 0], "color": "ok", "drag": "x", "to": "bx", "range": [-4, 4], "nudge": 1, "label": "The end of b: drag it left and right", "lock": "g"},
-      {"type": "label3d", "at": [3, 1, 0], "text": "a = (3, 1)", "tone": "acc"},
-      {"type": "label3d", "on": "tip", "text": "b = ({bx}, 2)", "tone": "ok"},
-      {"type": "label3d", "at": ["sx", 3, 0], "text": "a + b = ({sx}, 3)", "after": "g"},
-      {"type": "shot", "name": "side"}]},
-    {"type": "readout", "after": "g", "text": "a + b = ({sx}, 3), with a length of {len:2}"},
-    {"type": "caption", "after": "g", "text": "The x parts are 3 and {bx}, so the sum has {sx}. Drag the end of b to the left. Where does the sum stand straight up?"}
+    {"type": "gate", "id": "g", "prompt": "**a** is (3, 1) and **b** is (1, 2). What is the x part of a + b?", "options": [2, 3, 4], "answer": {"is": 4}, "hides": ["sx"], "why": "Say why, in one line."},
+    {"type": "axis", "x": [-4, 7], "y": [-1, 4], "xstep": 1, "ystep": 1, "height": 287, "label": "Two arrows a and b from one point, and their sum", "blocks": [
+      {"type": "arrow", "to": [3, 1], "tone": "mute", "label": "a = (3, 1)"},
+      {"type": "arrow", "to": ["bx", "by"], "tone": "ok", "label": "b = ({bx}, 2)"},
+      {"type": "arrow", "from": [3, 1], "to": ["sx", 3], "tone": "ok", "dash": true, "width": 1.5, "after": "g"},
+      {"type": "arrow", "from": ["bx", "by"], "to": ["sx", 3], "tone": "mute", "dash": true, "width": 1.5, "after": "g"},
+      {"type": "arrow", "to": ["sx", 3], "width": 3.5, "label": "a + b = ({sx}, 3)", "after": "g"},
+      {"type": "point", "x": "bx", "y": "by", "along": true, "step": 1, "show": false, "lock": "g"}]},
+    {"type": "readout", "after": "g", "text": "Now b = ({bx}, 2), and a + b = ({sx}, 3)"},
+    {"type": "caption", "after": "g", "text": "Your prediction was for b = (1, 2), where 3 + 1 = 4. Now the x parts are 3 and {bx}, so the sum has {sx}. The dashed arrows show b moved to the end of a, and a moved to the end of b. Drag the end of b to the left. Where does the sum stand straight up?"}
   ]
 }

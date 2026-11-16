@@ -132,8 +132,8 @@ VIS = "const vis = e => { if (!e.checkVisibility()) return false; for (let n = e
 
 def _boxes(pg) -> list:
     r = pg.evaluate("() => { " + VIS + """ return [...document.querySelectorAll('.rk-b')].map(e => { const b = e.getBoundingClientRect();
-        return {type: e.dataset.rkType, after: e.dataset.rkAfter || '', vis: vis(e), w: b.width, h: b.height}; }); }""")
-    return ([f'{x["type"]}: the block is visible, but its box is empty' for x in r if x['vis'] and not x['after'] and (x['w'] < 1 or x['h'] < 1)] +
+        return {type: e.dataset.rkType, after: e.dataset.rkAfter || '', vis: vis(e), empty: e.hasAttribute('data-rk-empty'), svg: e instanceof SVGElement, w: b.width, h: b.height}; }); }""")
+    return ([f'{x["type"]}: the block is visible, but its box is empty' for x in r if x['vis'] and not x['after'] and not x['empty'] and ((x['w'] < 1 and x['h'] < 1) if x['svg'] else (x['w'] < 1 or x['h'] < 1))] +
             [f'{x["type"]}: the block waits for gate "{x["after"]}", but it shows before the prediction' for x in r if x['after'] and x['vis']])
 
 # %% ../nbs/02_check.ipynb #c018

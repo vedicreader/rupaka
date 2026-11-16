@@ -273,13 +273,40 @@ def test_arrow_label_fills_the_state(draw):
     d.pg.evaluate("document.querySelector('[data-rupaka]').rupaka.set('bx', 3)")
     assert t.text_content() == 'v = 3' and d.errors == []
 
+def test_arrow_with_no_head_is_a_bar(draw):
+    "With head false the arrow is a plain bar, for a beam or a distance: no head, the line runs to `to`, and the label sits at the middle, as on a drawing."
+    d = draw(arrow_spec(head=False, label='2 m'))
+    g = d.pg.locator('.rk-arrow')
+    assert not d.pg.locator('.rk-arrow path.hd').is_visible()
+    assert g.evaluate(LINE)[2:] == pytest.approx([AX(2), AY(1)], abs=0.05)
+    t = d.pg.locator('.rk-arrow text.al'); x, y = float(t.get_attribute('x')), float(t.get_attribute('y'))
+    assert abs(x - (AX(0) + AX(2)) / 2) < 10 and y < (AY(0) + AY(1)) / 2 and d.errors == []   # beside the middle, on the upper side
+
+def test_axis_with_no_y_axis(draw):
+    "A side view of a thing has no y numbers, no y grid and no vertical axis line: only the x scale."
+    s = arrow_spec(); s['blocks'][1]['yaxis'] = False
+    d = draw(s)
+    assert d.pg.locator('.rk-axis line.main').count() == 1
+    flat = d.pg.evaluate("() => [...document.querySelectorAll('.rk-axis .grid line')].filter(l => l.getAttribute('y1') === l.getAttribute('y2') && !l.classList.contains('main')).length")
+    assert flat == 0 and d.errors == []
+    nums = d.pg.locator('.rk-axis text.num').all_text_contents()
+    assert nums and all(float(d.pg.locator('.rk-axis text.num').nth(i).get_attribute('y')) > 300 for i in range(len(nums)))
+
 def test_arrow_of_zero_length_draws_nothing(draw):
     "An arrow from a point to the same point draws no line and no head, and it gives no error."
     spec = arrow_spec(label='none')
     spec['blocks'][1]['blocks'][0]['from'] = ['bx', 'by']
     d = draw(spec)
-    assert d.pg.locator('.rk-arrow').count() == 1 and not d.pg.locator('.rk-arrow path.hd').is_visible()
-    assert not d.pg.locator('.rk-arrow line.ln').is_visible() and d.errors == []
+    g = d.pg.locator('.rk-arrow')
+    assert g.count() == 1 and not g.is_visible() and g.get_attribute('data-rk-empty') is not None and d.errors == []
+    d.pg.evaluate("document.querySelector('[data-rupaka]').rupaka.set('bx', 3)")
+    assert not g.is_visible()
+    spec['blocks'][1]['blocks'][0]['from'] = [0, 0]
+    d = draw(spec); d.pg.evaluate("document.querySelector('[data-rupaka]').rupaka.set('bx', 0)")
+    d.pg.evaluate("document.querySelector('[data-rupaka]').rupaka.set('by', 0)")
+    assert not d.pg.locator('.rk-arrow').is_visible()
+    d.pg.evaluate("document.querySelector('[data-rupaka]').rupaka.set('bx', 2)")
+    assert d.pg.locator('.rk-arrow').is_visible() and d.errors == []
 
 # grid
 
