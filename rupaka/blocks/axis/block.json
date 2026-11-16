@@ -1,7 +1,7 @@
 {
   "name": "axis",
   "since": "0.0.1",
-  "purpose": "A number line (give only x) or x/y axes with ticks. Put point and plot blocks inside it; they share its scale.",
+  "purpose": "A number line (give only x) or x/y axes with ticks. Put point, plot and arrow blocks inside it; they share its scale.",
   "binds": "none",
   "keys": "none",
   "props": {
@@ -14,6 +14,6 @@
     "ylabel": {"type": "str"},
     "height": {"type": "num", "default": 360},
     "label": {"type": "str"},
-    "blocks": {"type": "blocks", "req": true, "doc": "point and plot blocks only", "only": ["point", "plot"]}
+    "blocks": {"type": "blocks", "req": true, "doc": "point, plot and arrow blocks only. An arrow shows a vector, a force or a velocity from one place to another", "only": ["point", "plot", "arrow"]}
   }
 }

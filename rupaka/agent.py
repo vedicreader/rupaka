@@ -55,7 +55,7 @@ Rules:
 - Text uses {{path}} for state values, and **bold** in the ask, the captions and the gate prompts and contexts. No HTML.
 - Fit in 640 x 720 pixels. At most 8 blocks. Write text in ASD-STE100 Simplified Technical English, US grade 9: short sentences of at most 20 words, active voice, simple words.
 - Facts must be correct. Use only facts that you are sure of.
-3D scenes. Use a scene only when depth is part of the idea: a tilt, a turn about an axis, a globe or a map of the world, an orbit seen from Earth, a shape in space, a circuit or a network that flows. An idea that happens in one plane (a lever, a throw, a sum of vectors, a graph of a formula) is clearer on an axis with point and plot blocks. A scene must be easy to read:
+3D scenes. Use a scene only when depth is part of the idea: a tilt, a turn about an axis, a globe or a map of the world, an orbit seen from Earth, a shape in space, a circuit or a network that flows. An idea that happens in one plane (a lever, a throw, a sum of vectors, a graph of a formula) is clearer on an axis with point, plot and arrow blocks. A scene must be easy to read:
 - Each step adds one new thing. When the idea compares cases, show the cases together. Every part that the learner must see is big enough to see.
 - Use a path for every trajectory, orbit, route or wire, not a row of small bodies. Give each force "on": the body it acts on.
 - A chip of a bright or large body, such as a sun, sits beside the body with "at", not on it.

@@ -238,6 +238,49 @@ def test_plot_draws_the_series(draw):
     path = d.pg.locator('.rk-plot path.ln').get_attribute('d')
     assert path.startswith('M') and path.count('L') == 8
 
+# arrow
+
+ARROW_GATE = dict(type='gate', id='g', prompt='Up or down?', options=['up', 'down'], answer={'is': 'up'})
+
+def arrow_spec(**kw):
+    "An axis from -4 to 4 on x and y, with one arrow from [0, 0] to [bx, by]."
+    a = dict(type='arrow', to=['bx', 'by'], **kw)
+    return dict(id='a', state=dict(bx=2, by=1), blocks=[ARROW_GATE, dict(type='axis', x=[-4, 4], y=[-4, 4], blocks=[a])])
+
+# The scale of that axis in SVG units: W 600, height 360, left 40, right 16, top 12, bottom 28.
+AX = lambda v: 40 + (v + 4) / 8 * 544
+AY = lambda v: 12 + (4 - v) / 8 * 320
+TIP = "g => { const m = g.querySelector('path.hd').getAttribute('d').match(/^M\\s*(-?[\\d.]+)[ ,](-?[\\d.]+)/); return [+m[1], +m[2]]; }"
+LINE = "g => ['x1', 'y1', 'x2', 'y2'].map(k => +g.querySelector('line.ln').getAttribute(k))"
+
+def test_arrow_end_follows_the_state(draw):
+    "The head tip is at `to` and the line starts at `from`. A change of a state key moves the tip and the end of the line."
+    d = draw(arrow_spec())
+    g = d.pg.locator('.rk-arrow')
+    assert g.evaluate(TIP) == pytest.approx([AX(2), AY(1)], abs=0.05)
+    x1, y1, x2, y2 = g.evaluate(LINE)
+    assert (x1, y1) == pytest.approx((AX(0), AY(0)), abs=0.05)
+    assert AX(0) < x2 < AX(2) and AY(1) < y2 < AY(0)   # the line stops under the head, on the way to the tip
+    d.pg.evaluate("document.querySelector('[data-rupaka]').rupaka.set('bx', -3)")
+    assert g.evaluate(TIP) == pytest.approx([AX(-3), AY(1)], abs=0.05)
+    x1, y1, x2, y2 = g.evaluate(LINE)
+    assert AX(-3) < x2 < AX(0) and d.errors == []
+
+def test_arrow_label_fills_the_state(draw):
+    d = draw(arrow_spec(label='v = {bx}'))
+    t = d.pg.locator('.rk-arrow text.al')
+    assert t.text_content() == 'v = 2'
+    d.pg.evaluate("document.querySelector('[data-rupaka]').rupaka.set('bx', 3)")
+    assert t.text_content() == 'v = 3' and d.errors == []
+
+def test_arrow_of_zero_length_draws_nothing(draw):
+    "An arrow from a point to the same point draws no line and no head, and it gives no error."
+    spec = arrow_spec(label='none')
+    spec['blocks'][1]['blocks'][0]['from'] = ['bx', 'by']
+    d = draw(spec)
+    assert d.pg.locator('.rk-arrow').count() == 1 and not d.pg.locator('.rk-arrow path.hd').is_visible()
+    assert not d.pg.locator('.rk-arrow line.ln').is_visible() and d.errors == []
+
 # grid
 
 def test_grid_plus_minus(draw):

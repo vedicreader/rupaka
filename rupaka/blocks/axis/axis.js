@@ -1,4 +1,4 @@
-/* axis: a number line (no y) or x/y axes with ticks. Child blocks (point, plot) draw on its shared scale. */
+/* axis: a number line (no y) or x/y axes with ticks. Child blocks (point, plot, arrow) draw on its shared scale. */
 (() => {
   let seq = 0;
   const nice = (lo, hi, want) => { const raw = (hi - lo) / want, p = 10 ** Math.floor(Math.log10(raw)), m = raw / p;

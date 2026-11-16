@@ -8,9 +8,9 @@ Docs: https://vedicreader.github.io/rupaka/spec.html.md"""
 __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'EASE', 'MAX_WORDS', 'MAX_GRADE', 'VAGUE', 'NICKNAMES',
            'TOP', 'MODES', 'SHOTS', 'FLOW', 'NODE_ID', 'UPGRADES', 'manifests', 'fn_manifests', 'from_', 'is_', 'demo',
            'gate', 'readout', 'caption', 'row', 'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel',
-           'ranklist', 'bars', 'axis', 'point', 'plot', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d', 'shot',
-           'path', 'links', 'points', 'drift', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft', 'field',
-           'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'noise', 'ease', 'keyframes', 'run',
+           'ranklist', 'bars', 'axis', 'point', 'plot', 'arrow', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d',
+           'shot', 'path', 'links', 'points', 'drift', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft',
+           'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'noise', 'ease', 'keyframes', 'run',
            'long_sentences', 'syllables', 'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate', 'shot_error',
            'shots', 'append', 'upgrade', 'examples', 'gallery']
 
@@ -76,6 +76,7 @@ def bars(bind, label=None, **kw): return _b('bars', bind=bind, label=label, **kw
 def axis(x, *blocks, y=None, **kw): return _b('axis', x=list(x), y=list(y) if y else None, blocks=list(blocks), **kw)
 def point(bind=None, **kw): return _b('point', bind=bind, **kw)
 def plot(series, **kw): return _b('plot', series=series, **kw)
+def arrow(to, frm=None, **kw): return _b('arrow', to=list(to), **{'from': list(frm) if frm else None}, **kw)
 def grid(bind, label=None, **kw): return _b('grid', bind=bind, label=label, **kw)
 def pixels(bind, label=None, **kw): return _b('pixels', bind=bind, label=label, **kw)
 def scene(*blocks, bind=None, steps=None, **kw): return _b('scene', bind=bind, steps=list(steps) if steps else None, blocks=list(blocks), **kw)
