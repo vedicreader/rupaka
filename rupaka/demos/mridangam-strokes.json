@@ -1,0 +1,84 @@
+{
+  "rupaka": 1,
+  "id": "mridangam-strokes",
+  "title": "Nam and Tha",
+  "ask": "Predict first. Then compare two sample-free sounds.",
+  "state": {},
+  "blocks": [
+    {
+      "type": "gate",
+      "id": "nam",
+      "prompt": "Is nam a vibrating (ringing) stroke or a non-vibrating (damped) one?",
+      "options": [
+        "vibrating",
+        "non-vibrating"
+      ],
+      "answer": {
+        "is": "vibrating"
+      },
+      "again": true
+    },
+    {
+      "type": "sound",
+      "label": "Nam",
+      "after": "nam",
+      "voice": {
+        "kind": "strike",
+        "frequency": 138.59,
+        "decay": 1.2,
+        "gain": 0.6,
+        "partials": [
+          {
+            "ratio": 1,
+            "gain": 1
+          },
+          {
+            "ratio": 2,
+            "gain": 0.4
+          },
+          {
+            "ratio": 3,
+            "gain": 0.2
+          }
+        ],
+        "noise": 0.08,
+        "bend": 20
+      },
+      "ref": {
+        "url": "https://www.mrithang.com/mridangam-tour/",
+        "title": "Mridangam tour"
+      }
+    },
+    {
+      "type": "sound",
+      "label": "Tha",
+      "after": "nam",
+      "voice": {
+        "kind": "strike",
+        "frequency": 180,
+        "decay": 0.035,
+        "gain": 0.5,
+        "partials": [
+          {
+            "ratio": 1,
+            "gain": 0.3
+          },
+          {
+            "ratio": 2.7,
+            "gain": 0.15
+          }
+        ],
+        "noise": 0.8
+      },
+      "ref": {
+        "url": "https://www.mrithang.com/mridangam-tour/",
+        "title": "Mridangam tour"
+      }
+    },
+    {
+      "type": "caption",
+      "after": "nam",
+      "text": "Nam is a vibrating tone on the outer layer of the right side. Tha is a non-vibrating tone on the left side. Source: https://www.mrithang.com/mridangam-tour/ . These sounds are approximations, not recordings. Which sound has the longer ring?"
+    }
+  ]
+}

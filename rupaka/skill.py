@@ -85,6 +85,19 @@ A block with `step: n` shows from step `n` of an explainer that has the state ke
 
 A `choice` with `resets`, for example `{"tick": 0}`, sets those state keys back when the pick changes. Use it when a control such as a step bar belongs to the picked case.
 
+## Sound
+
+A `sound` block plays a sample-free `strike` only on a click of Play, or W on that button.
+It never plays on mount, state change, gate restore or reveal. Use `after` to wait for a gate.
+Opening that gate again stops audio and disables Play. The visible text labels synthesis as an approximation.
+Optional `ref: {url, title}` links to a real lesson or recording; it never plays the link.
+Use `voice: {kind: "strike", frequency: 138.59, decay: 1.2, gain: 0.6, partials: [{ratio: 1, gain: 1}], noise: 0.08}`.
+Frequency is 20–8000 Hz, decay is 0.01–5 seconds, and gains and noise are 0–1.
+Use one to eight partials with ratio 0.0025–400 and gain 0–1. Each partial stays at 20–8000 Hz.
+Optional `bend` is -1200–1200 cents; the bent frequency must also stay in range.
+Voice fields cannot contain URLs, samples or code. `tone` is reserved for later, not supported.
+See `examples()['sound']` for the sourced Nam and Tha comparison.
+
 ## 3D scenes
 
 ```python

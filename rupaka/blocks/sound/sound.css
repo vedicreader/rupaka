@@ -1,0 +1,4 @@
+.rk-sound { padding: 12px 0; border-top: 1px solid var(--rk-line); }
+.rk-sound-acts { display: flex; align-items: center; gap: 16px; margin: 8px 0; }
+.rk-sound a { color: var(--rk-mute); font-size: .85em; }
+.rk-sound .rk-note { display: block; color: var(--rk-mute); }

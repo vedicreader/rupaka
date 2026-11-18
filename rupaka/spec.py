@@ -612,6 +612,44 @@ def validate(spec) -> L:
     except Exception as e: err('derive', f'the opening state does not compute: {e}'); return errs
     return errs + _check_blocks(spec, st, st0, known, deps, tables)
 
+# %% ../nbs/00_spec.ipynb #13d739b7
+def _check_sound(p, b, err):
+    def number(path, x, lo, hi):
+        ok = isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and lo <= x <= hi
+        if not ok: err(path, f'must be a finite number from {lo} to {hi}')
+        return ok
+    def fields(path, x, allowed, required):
+        if not isinstance(x, dict): err(path, 'must be an object'); return False
+        for k in x.keys() - set(allowed): err(f'{path}.{k}', 'is not an allowed field')
+        for k in set(required) - x.keys(): err(f'{path}.{k}', 'is required')
+        return True
+    q, v = f'{p}.voice', b.get('voice')
+    if fields(q, v, ('kind', 'frequency', 'decay', 'gain', 'partials', 'noise', 'bend'), ('kind', 'frequency', 'decay', 'gain', 'partials')):
+        if v.get('kind') != 'strike': err(f'{q}.kind', 'must be strike; tone is not supported yet')
+        freq = number(f'{q}.frequency', v.get('frequency'), 20, 8000)
+        number(f'{q}.decay', v.get('decay'), .01, 5)
+        number(f'{q}.gain', v.get('gain'), 0, 1)
+        number(f'{q}.noise', v.get('noise', 0), 0, 1)
+        bend = number(f'{q}.bend', v.get('bend', 0), -1200, 1200)
+        ps = v.get('partials')
+        if not isinstance(ps, list) or not 1 <= len(ps) <= 8: err(f'{q}.partials', 'needs one to eight partials')
+        if isinstance(ps, list):
+            for i, part in enumerate(ps):
+                r = f'{q}.partials[{i}]'
+                if not fields(r, part, ('ratio', 'gain'), ('ratio', 'gain')): continue
+                ratio = number(f'{r}.ratio', part.get('ratio'), .0025, 400)
+                number(f'{r}.gain', part.get('gain'), 0, 1)
+                if freq and ratio and bend:
+                    f = v['frequency'] * part['ratio']
+                    if not all(20 <= x <= 8000 for x in (f, f * 2 ** (v.get('bend', 0) / 1200))):
+                        err(f'{r}.ratio', 'the partial and its bent frequency must stay from 20 to 8000 Hz')
+    if 'ref' in b:
+        r, ref = f'{p}.ref', b['ref']
+        if fields(r, ref, ('url', 'title'), ('url', 'title')):
+            if not isinstance(ref.get('url'), str) or not re.fullmatch(r'https?://[^\s/]+(?:/[^\s]*)?', ref['url']): err(f'{r}.url', 'needs an http or https URL')
+            if not isinstance(ref.get('title'), str) or not ref['title'].strip(): err(f'{r}.title', 'needs a title')
+
+
 # %% ../nbs/00_spec.ipynb #c058
 def _check_blocks(spec, st, st0, known, deps, tables) -> L:
     errs, ms = L(), manifests()
@@ -631,6 +669,7 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
         if (e := _step_err(b, m, learn, st)): err(f'{p}.step', e)
         if 'lock' in b and not m.get('lockable'): err(f'{p}.lock', f'a {m.name} has no controls to lock')
         if b['type'] == 'scene': _check_scene(p, b, st, st0, err)
+        if b['type'] == 'sound': _check_sound(p, b, err)
         if b['type'] == 'flow': _check_flow(p, b, err)
         if b['type'] in ('layer', 'timeline'): _check_stage(p, b, st, err)
         if b['type'] == 'choice' and isinstance(b.get('resets'), dict): [err(f'{p}.resets', f'"{k}" is not a state key; a choice resets only input keys') for k in b['resets'] if k not in st]
