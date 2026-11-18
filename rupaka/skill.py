@@ -64,6 +64,7 @@ The learner predicts, locks in with Cmd+Return, sees the result, then moves the 
 | `field`, `sample`, `dft` | a grid of values for `pixels`; the points of a formula in time; a spectrum |
 | `ease`, `keyframes` | a number along a curve; the value at a time |
 | `ids`, `pick`, `sort` | the ids of rows; one field of each row; a sorted copy |
+| `bubble` | one step of a bubble sort: the list, `bars` with the compared pair marked, `comps`, `swaps`, the code `line` and a `mark` per line |
 
 ## Blocks
 
@@ -81,6 +82,8 @@ The learner predicts, locks in with Cmd+Return, sees the result, then moves the 
 | `scene`, `body`, `force`, `label3d`, `shot` | a 3D view, its parts, its arrows, its labels and its cameras |
 
 A block with `step: n` shows from step `n` of an explainer that has the state key `step`.
+
+A `choice` with `resets`, for example `{"tick": 0}`, sets those state keys back when the pick changes. Use it when a control such as a step bar belongs to the picked case.
 
 ## 3D scenes
 

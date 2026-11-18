@@ -88,6 +88,25 @@ def test_dft_finds_the_sines():
     for k, v in {0: 1, 3: 2, 7: 0.5}.items(): assert math.isclose(sp[k]['value'], v, abs_tol=1e-9), k
     assert all(x['value'] < 1e-9 for k, x in enumerate(sp) if k not in (0, 3, 7))
 
+# bubble
+
+SET = "k => Rupaka.set(document.querySelector('[data-rupaka]'), {at: k})"
+
+@pytest.mark.parametrize('xs, swaps', [([4, 3, 2, 1], 6), ([1, 2, 3, 4], 0), ([3, 1, 4, 2], 3)])
+def test_bubble_matches_python_at_each_step(draw, xs, swaps):
+    spec = dict(state=dict(xs=xs, at=0), derive=[dict(fn='bubble', at='at', out='r', **{'from': 'xs'})])
+    d = draw({**spec, 'id': 'b', 'blocks': [dict(type='readout', text='x')]})
+    for at in (0, 1, 2, 3, 4, 5, 6, 2.7, 99, -3):
+        d.pg.evaluate(SET, at)
+        assert d.st('r') == run(spec, dict(xs=xs, at=at))['r'], at
+    end = run(spec, dict(xs=xs, at=6))['r']
+    assert (end['comps'], end['swaps'], end['list'], end['step'], end['last']) == (6, swaps, [1, 2, 3, 4], 6, 6)
+
+def test_bubble_first_step_of_the_reversed_list():
+    r = run(dict(state=dict(xs=[4, 3, 2, 1], at=1), derive=[dict(fn='bubble', at='at', out='r', **{'from': 'xs'})]))['r']
+    assert (r['list'], r['j'], r['swap'], r['line'], r['cmp'], r['mark']) == ([3, 4, 2, 1], 0, True, 4, '4 > 3', ['·', '·', '·', '▶'])
+    assert [b['parts'] for b in r['bars']] == [[3, 0], [4, 0], [0, 2], [0, 1]]
+
 def test_sample_alias_has_the_same_points(draw):
     at = lambda f: [p['y'] for p in js_run(draw, dict(state=dict(f=f), derive=[dict(fn='sample', expr='sin(2*pi*f*t)', over=dict(t=[0, 1]), rate=8, out='d')]))['d']]
     assert all(abs(a + b) < 1e-9 for a, b in zip(at(5), at(3)))

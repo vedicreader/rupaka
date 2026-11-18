@@ -142,6 +142,18 @@ def test_choice_keys(draw):
     d.pg.keyboard.press('1'); assert d.st('shape') == 'triangle'
     d.pg.keyboard.press('a'); assert d.st('shape') == 'triangle'   # no move past the first
 
+def test_choice_resets_keys_on_a_new_pick(draw):
+    d = draw(dict(id='r', mode='learn', state=dict(pick='a', t=3), blocks=[dict(type='choice', bind='pick', options=['a', 'b'], resets=dict(t=0))]))
+    bs = d.pg.locator('.rk-choice button')
+    bs.nth(0).click(); assert d.st('t') == 3                     # the same pick resets nothing
+    bs.nth(1).click(); assert (d.st('pick'), d.st('t')) == ('b', 0)
+    d.pg.evaluate("Rupaka.set(document.querySelector('[data-rupaka]'), {t: 5})")
+    bs.nth(1).focus(); d.pg.keyboard.press('1'); assert (d.st('pick'), d.st('t')) == ('a', 0)   # keys reset too
+
+def test_choice_resets_only_state_keys():
+    sp = dict(id='r', mode='learn', state=dict(pick='a'), blocks=[dict(type='choice', bind='pick', options=['a', 'b'], resets=dict(t=0))])
+    assert validate(sp) == ['blocks[0].resets: "t" is not a state key; a choice resets only input keys']
+
 # wheel
 
 def test_wheel_keys(draw):

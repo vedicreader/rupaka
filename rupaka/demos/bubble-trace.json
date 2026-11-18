@@ -1,0 +1,44 @@
+{
+  "rupaka": 1,
+  "id": "bubble-trace",
+  "concept": "bubble-sort",
+  "title": "Bubble sort, one step at a time",
+  "ask": "Predict the swaps on a sorted list. Then step through each list and watch the counts.",
+  "state": {"pick": "sorted [1, 2, 3, 4]", "tick": 0},
+  "tables": {
+    "inputs": [
+      {"id": "reversed [4, 3, 2, 1]", "name": "reversed", "list": [4, 3, 2, 1]},
+      {"id": "sorted [1, 2, 3, 4]", "name": "sorted", "list": [1, 2, 3, 4]},
+      {"id": "mixed [3, 1, 4, 2]", "name": "mixed", "list": [3, 1, 4, 2]}
+    ],
+    "moves": [
+      {"id": "start", "text": "No pair is compared yet. Move the step bar to start."},
+      {"id": "swap", "text": "is true, so the two values change places."},
+      {"id": "keep", "text": "is true, so the two values stay."}
+    ]
+  },
+  "derive": [
+    {"fn": "lookup", "table": "inputs", "key": "pick", "out": "input"},
+    {"fn": "bubble", "from": "input.list", "at": "tick", "out": "at"},
+    {"fn": "lookup", "table": "moves", "key": "at.did", "out": "move"}
+  ],
+  "blocks": [
+    {"type": "gate", "id": "g", "prompt": "How many swaps will bubble sort make on the sorted list [1, 2, 3, 4]?",
+     "options": [0, 3, 6], "answer": {"is": 0}, "hides": ["at"], "why": "Say why in one line."},
+    {"type": "choice", "bind": "pick", "label": "Input list", "lock": "g", "resets": {"tick": 0},
+     "options": ["reversed [4, 3, 2, 1]", "sorted [1, 2, 3, 4]", "mixed [3, 1, 4, 2]"]},
+    {"type": "timeline", "bind": "tick", "label": "Step", "min": 0, "max": 6, "step": 1, "speed": 1, "lock": "g",
+     "markers": [{"t": 0, "label": "Start"}, {"t": 3, "label": "Pass 1 ends"}, {"t": 5, "label": "Pass 2 ends"}, {"t": 6, "label": "Sorted"}]},
+    {"type": "stack", "after": "g", "blocks": [
+      {"type": "readout", "label": "Run and counts at this step", "text": "{input.name}: {at.comps} of {at.last} compares, {at.swaps} swaps"},
+      {"type": "bars", "bind": "at.bars", "label": "The list at this step", "parts": ["Compared at this step", "Not compared"], "max": 4, "digits": 0},
+      {"type": "stack", "blocks": [
+        {"type": "caption", "label": "Code, with ▶ at the line that runs", "text": "{at.mark.0} 1\u00a0\u00a0for i in range(n - 1):"},
+        {"type": "caption", "text": "{at.mark.1} 2\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0for j in range(n - 1 - i):"},
+        {"type": "caption", "text": "{at.mark.2} 3\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0if a[j] > a[j + 1]:"},
+        {"type": "caption", "text": "{at.mark.3} 4\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0a[j], a[j + 1] = a[j + 1], a[j]"}
+      ]},
+      {"type": "caption", "text": "**Step {at.step} of {at.last}**. {at.cmp} {move.text} A list of 4 always takes 6 compares, but the swaps depend on the order. Which list makes the most swaps?"}
+    ]}
+  ]
+}

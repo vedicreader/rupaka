@@ -10,9 +10,9 @@ __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'EASE', 
            'gate', 'readout', 'caption', 'row', 'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel',
            'ranklist', 'bars', 'axis', 'point', 'plot', 'arrow', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d',
            'shot', 'path', 'links', 'points', 'drift', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft',
-           'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'noise', 'ease', 'keyframes', 'run',
-           'long_sentences', 'syllables', 'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate', 'shot_error',
-           'shots', 'append', 'upgrade', 'examples', 'gallery']
+           'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'noise', 'ease', 'keyframes',
+           'bubble', 'run', 'long_sentences', 'syllables', 'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate',
+           'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
 import math, re
@@ -360,6 +360,27 @@ FNS.update(ease=_ease, keyframes=_keyframes)
 def ease(src, out, kind=None, over=None): return _drop(dict(fn='ease', **{'in': src}, kind=kind, over=over, out=out))
 def keyframes(src, keys, out, ease=None): return _drop(dict(fn='keyframes', **{'in': src}, keys=[list(k) for k in keys], ease=ease, out=out))
 
+# %% ../nbs/00_spec.ipynb #bub02
+def _bubble(d, st, spec):
+    a = list(get(st, d['from']) or []); n = len(a); last = n * (n - 1) // 2
+    x = _num(d, st, 'at', 0)
+    k = min(last, max(0, math.floor(x))) if math.isfinite(x) else 0
+    comps = swaps = 0; j, left, right, swap = -1, None, None, False
+    for i in range(n - 1):
+        for q in range(n - 1 - i):
+            if comps >= k: break
+            comps += 1; j, left, right = q, a[q], a[q + 1]; swap = left > right
+            if swap: a[q], a[q + 1] = right, left; swaps += 1
+    line = 1 if comps == 0 else 4 if swap else 3
+    return dict(step=k, last=last, list=a, bars=[dict(id=f'a[{i}]', value=v, parts=[v, 0] if j >= 0 and i in (j, j + 1) else [0, v]) for i, v in enumerate(a)],
+                j=j, left=left, right=right, swap=swap, did='start' if comps == 0 else 'swap' if swap else 'keep',
+                cmp='' if comps == 0 else f'{js_str(left)} {">" if swap else "≤"} {js_str(right)}', comps=comps, swaps=swaps, line=line,
+                mark=['▶' if l == line else '·' for l in range(1, 5)])
+
+FNS.update(bubble=_bubble)
+
+def bubble(src, at, out): return dict(fn='bubble', **{'from': src}, at=at, out=out)
+
 # %% ../nbs/00_spec.ipynb #c039
 def _walk(bs, path='blocks', parent=None):
     for i, b in enumerate(bs or []):
@@ -612,6 +633,7 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
         if b['type'] == 'scene': _check_scene(p, b, st, st0, err)
         if b['type'] == 'flow': _check_flow(p, b, err)
         if b['type'] in ('layer', 'timeline'): _check_stage(p, b, st, err)
+        if b['type'] == 'choice' and isinstance(b.get('resets'), dict): [err(f'{p}.resets', f'"{k}" is not a state key; a choice resets only input keys') for k in b['resets'] if k not in st]
         for k, t in ((k, m.props[k]['type']) for k in b if k in m.props):
             for x in (b[k] if t == 'texts' else [b[k]] if t in _TEXT_TYPES else []):
                 for s in long_sentences(x): err(f'{p}.{k}', f'this sentence has more than {MAX_WORDS} words: "{s}"')

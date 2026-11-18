@@ -1,0 +1,10 @@
+{
+  "name": "bubble", "since": "0.0.21",
+  "purpose": "One step of a bubble sort of a list: the list after k compares, the pair it compares, the swap, the counts so far and the code line. Each view reads this one row, so all views show the same run.",
+  "returns": "{step, last, list, bars, j, left, right, swap, did, cmp, comps, swaps, line, mark}. bars is a list for the bars block, with the compared pair in the first (strong) part and the other values in the second part. did is start, swap or keep. line is 1 at the start, 3 for a compare with no swap and 4 for a swap. mark has ▶ at that line and · at the other three.",
+  "props": {
+    "from": {"type": "path", "req": true, "doc": "the path of the list of numbers"},
+    "at": {"type": "numkey", "req": true, "doc": "the step, a number or a key: 0 is the list as given, a fraction rounds down, and a step past the end gives the last step"}
+  },
+  "example": {"fn": "bubble", "from": "input.list", "at": "tick", "out": "at"}
+}

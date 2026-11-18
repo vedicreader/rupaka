@@ -8,6 +8,7 @@
   "props": {
     "bind": {"type": "key", "req": true, "doc": "the state key of the picked option"},
     "options": {"type": "list", "req": true, "doc": "the options, two to nine"},
-    "label": {"type": "str"}
+    "label": {"type": "str"},
+    "resets": {"type": "dict", "doc": "state keys and the values they go back to when the pick changes, for example {\"step\": 0}, so no view shows a value from the last pick"}
   }
 }

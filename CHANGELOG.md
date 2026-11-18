@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.0.21
+
+- New fn `bubble`: one step of a bubble sort of the list at `from`, at step `at`. It gives the list, the bars with the compared pair marked, the compare and swap counts, the active code line and a `mark` per line. A fractional step rounds down. A step out of range goes to the nearest end.
+- A `choice` takes `resets`, a dict of state keys and values. A new pick sets those keys back in the same change as the pick. `validate` refuses a `resets` key that is not a state key.
+- The demo `bubble-trace` asks for the swaps on a sorted list before it shows the run. The bars, the counts, the code line and the caption read one `bubble` row, so they always show the same run at the same step.
+
 ## 0.0.20
 
 - New block `arrow` inside an `axis`: a straight arrow from `from` to `to` (numbers or state keys), for a vector, a force or a velocity. It has a filled head, a `label` that takes state values, `tone`, `width` and `dash`. With `head` false it is a plain bar, for a beam or a distance.
