@@ -1,8 +1,10 @@
 /* sound: voices are data. Only the local Play click creates or resumes audio. */
 Rupaka.block('sound', (b, ctx) => {
-  const {el} = Rupaka, v = b.voice;
+  const {el} = Rupaka, web = u => typeof u === 'string' && /^https?:\/\//i.test(u);
+  const prof = b.play ? ctx.spec.profiles?.[b.play.profile] : null, data = prof?.data || {}, tech = data.techniques?.[b.play?.technique];
+  const v = b.voice || tech?.voice;
   const play = el('button', {type: 'button'}, 'Play', el('kbd', {text: 'W'}));
-  const note = el('span', {class: 'rk-note', text: 'Synthesised approximation; a real drum sounds different.'});
+  const note = el('span', {class: 'rk-note', text: v ? 'Synthesised approximation; a real instrument sounds different.' : 'This technique has no sound.'});
   const status = el('span', {class: 'rk-note', 'aria-live': 'polite'});
   let audio, active = [], epoch = 0;
   const allowed = () => ctx.live(b.after) && ctx.live(b.lock);
@@ -52,9 +54,25 @@ Rupaka.block('sound', (b, ctx) => {
     if (e.key.toLowerCase() !== 'w' || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
     e.preventDefault(); play.click();
   });
-  const ref = b.ref && /^https?:\/\//i.test(b.ref.url) ? el('a', {href: b.ref.url, title: b.ref.title, target: '_blank', rel: 'noopener noreferrer', text: 'Hear it played'}) : null;
-  const root = el('div', {}, el('span', {class: 'rk-lbl', text: b.label || 'Sound'}), el('div', {class: 'rk-sound-acts'}, play, ref), note, status);
-  const sync = () => { play.disabled = !allowed(); if (play.disabled) stop(); };
+  const ref = b.ref && web(b.ref.url) ? el('a', {href: b.ref.url, title: b.ref.title, target: '_blank', rel: 'noopener noreferrer', text: 'Hear it played'}) : null;
+  // A fact with no school holds for all schools. A per-school key shows only the embed school, never another school, else unknown.
+  const schools = data.schools || {}, school = prof?.school, facts = tech?.facts || [], used = new Set(tech?.sources || []);
+  const lines = [...new Set(facts.map(f => f.key))].map(k => {
+    const fs = facts.filter(f => f.key === k), all = fs.find(f => f.school == null);
+    const f = all || (school != null ? fs.find(x => x.school === school) : null);
+    (f?.sources || []).forEach(s => used.add(s));
+    const who = all ? '' : ` (${schools[school]?.label || 'no school chosen'})`;
+    return el('li', {text: `${k}${who}: ${f ? String(f.value) : 'unknown'}`});
+  });
+  const parts = (tech?.parts || []).map(p => data.parts?.[p]?.label).filter(Boolean);
+  const chips = [...used].map(s => data.sources?.[s]).filter(s => s && web(s.url))
+    .map(s => el('a', {class: 'rk-sound-src', href: s.url, title: s.passage, target: '_blank', rel: 'noopener noreferrer', text: s.title}));
+  const about = tech ? el('div', {class: 'rk-sound-about'},
+    parts.length ? el('span', {class: 'rk-note', text: `Played on: ${parts.join(', ')}`}) : null,
+    lines.length ? el('ul', {class: 'rk-sound-facts'}, ...lines) : null,
+    chips.length ? el('div', {class: 'rk-sound-srcs'}, el('span', {class: 'rk-note', text: 'Sources:'}), ...chips) : null) : null;
+  const root = el('div', {}, el('span', {class: 'rk-lbl', text: b.label || tech?.label || 'Sound'}), el('div', {class: 'rk-sound-acts'}, play, ref), about, note, status);
+  const sync = () => { play.disabled = !v || !allowed(); if (play.disabled) stop(); };
   ctx.s.on(sync); sync();
   return root;
 });

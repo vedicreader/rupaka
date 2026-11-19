@@ -1,7 +1,7 @@
 {
   "name": "sound",
   "since": "0.0.36",
-  "purpose": "Play one sample-free strike on request. This is an approximation, not a real instrument.",
+  "purpose": "Play one sample-free strike on request: an inline voice, or a technique of an embedded profile with its facts and sources. This is an approximation, not a real instrument.",
   "keys": "W plays when the Play button has focus; Enter or Space clicks Play",
   "props": {
     "label": {
@@ -10,12 +10,16 @@
     },
     "voice": {
       "type": "dict",
-      "req": true,
       "doc": "A strike object only: kind=\"strike\", frequency 20\u20138000 Hz, decay 0.01\u20135 seconds, gain 0\u20131, partials (1\u20138 objects with ratio 0.0025\u2013400 and gain 0\u20131), optional noise 0\u20131 and bend -1200\u20131200 cents. Each partial, including its bent frequency, must stay at 20\u20138000 Hz. No URLs, samples, code or other fields. tone is reserved, not supported."
+    },
+    "play": {
+      "type": "dict",
+      "doc": "{profile: an alias in profiles, technique: a technique id of that profile}. The block shows the technique facts and source links. A technique with no voice has no sound, so Play stays disabled."
     },
     "ref": {
       "type": "dict",
       "doc": "Optional link only: {url: an https or http lesson or recording URL, title: its name}. Shown as Hear it played; never loaded as audio."
     }
-  }
+  },
+  "one_of": [["voice", "play"]]
 }

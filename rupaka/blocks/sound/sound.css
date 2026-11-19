@@ -2,3 +2,6 @@
 .rk-sound-acts { display: flex; align-items: center; gap: 16px; margin: 8px 0; }
 .rk-sound a { color: var(--rk-mute); font-size: .85em; }
 .rk-sound .rk-note { display: block; color: var(--rk-mute); }
+.rk-sound-facts { margin: 4px 0; padding-left: 18px; }
+.rk-sound-srcs { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.rk-sound-srcs .rk-note { display: inline; }

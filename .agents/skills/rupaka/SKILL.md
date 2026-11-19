@@ -101,6 +101,15 @@ Optional `bend` is -1200–1200 cents; the bent frequency must also stay in rang
 Voice fields cannot contain URLs, samples or code. `tone` is reserved for later, not supported.
 See `examples()['sound']` for the sourced Nam and Tha comparison.
 
+A spec can embed profiles: `profiles: {alias: {id, revision, school, data}}`, with `revision` equal to `profile_hash(data)`.
+Check `data` with `profile_errors`. A clean result means good structure and attribution, not true facts.
+A sound has `voice` or `play: {profile, technique}`, never both. A `play` technique with no voice shows its facts and sources, and Play stays disabled.
+A sound with `play` shows the parts, facts and source links of its technique when the block shows.
+A fact with no `school` shows for all schools. A per-school fact shows only for the embed `school`. With no fact for that school, the value shows as unknown.
+A gate names a technique that gives its answer away in `hides`: `profiles.<alias>.techniques.<id>`. Then each sound that plays it must wait for that gate.
+This is a declared guard, not a detector: a sound that no gate names can play before any gate. The raw spec is in the page, so a hidden block is not a secret.
+See `gallery()['mridangam-profile']`.
+
 ## 3D scenes
 
 ```python

@@ -32,7 +32,8 @@ SHAPE = '''{"rupaka": 1, "id": "short-slug", "title": str, "ask": str,
  "state": {key: value},            # the inputs
  "derive": [{"fn": name, ..., "out": key}],   # computed in order after each change
  "blocks": [{"type": name, ...}],
- "tables": {name: [rows]}}         # data for rules and lookup'''
+ "tables": {name: [rows]},         # data for rules and lookup
+ "profiles": {alias: {"id": str, "revision": "sha256:...", "school": id, "data": {...}}}}   # only a validated profile from the prompt'''
 
 def demo_sp() -> str:
     "The system prompt of the demo agent."
@@ -56,7 +57,7 @@ Rules:
 - Wrong options in a gate each match one named misconception. Use "rules" with "alts" when the concept is a rule system.
 - Text uses {{path}} for state values, and **bold** in the ask, the captions and the gate prompts and contexts. No HTML.
 - Fit in 640 x 720 pixels. At most 8 blocks. Write text in ASD-STE100 Simplified Technical English, US grade 9: short sentences of at most 20 words, active voice, simple words.
-- A sound block plays only when the learner clicks Play. Its strike voice is bounded data, never a URL or code. Label the sound as an approximation. Use after for a result and ref for a real lesson link.
+- A sound block plays only when the learner clicks Play. Its strike voice is bounded data, never a URL or code. Label the sound as an approximation. Use after for a result and ref for a real lesson link. When the prompt gives a validated profile, put it in "profiles" as given and use "play": {{"profile": alias, "technique": id}} instead of a voice. Do not change the profile or add facts to it. When a technique gives the answer away, add "profiles.<alias>.techniques.<id>" to that gate's "hides" and give the sound "after".
 - Facts must be correct. Use only facts that you are sure of.
 3D scenes. Use a scene only when depth is part of the idea: a tilt, a turn about an axis, a globe or a map of the world, an orbit seen from Earth, a shape in space, a circuit or a network that flows. An idea that happens in one plane (a lever, a throw, a sum of vectors, a graph of a formula) is clearer on an axis with point, plot and arrow blocks. A scene must be easy to read:
 - Each step adds one new thing. When the idea compares cases, show the cases together. Every part that the learner must see is big enough to see.

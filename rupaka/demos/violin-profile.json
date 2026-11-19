@@ -1,0 +1,59 @@
+{
+  "rupaka": 1,
+  "id": "violin-profile",
+  "title": "Open Pa on the Carnatic violin",
+  "ask": "Predict first. Then read the facts and their sources.",
+  "state": {},
+  "profiles": {
+    "violin": {
+      "id": "violin-karunattu",
+      "revision": "sha256:86116cc093d616f337d783333117575c8c30e35232f52f4496322cfb75a83ffc",
+      "data": {
+        "label": "Carnatic violin (vayalin)",
+        "sources": {
+          "tuning": {
+            "url": "https://karunattu.com/practice/instruments/violin",
+            "title": "Vayalin - Karunattu",
+            "passage": "String 4 (lowest) = low Sa. String 3 = low Pa. String 2 = middle Sa. String 1 (highest) = middle Pa."
+          },
+          "open-pa": {
+            "url": "https://karunattu.com/practice/instruments/violin",
+            "title": "Vayalin - Karunattu",
+            "passage": "A perfect fifth above. Draw the bow the same length."
+          }
+        },
+        "parts": {
+          "string-4": {"kind": "string", "label": "String 4 (low Sa)", "sources": ["tuning"]},
+          "string-3": {"kind": "string", "label": "String 3 (low Pa)", "sources": ["tuning"]}
+        },
+        "techniques": {
+          "open-sa": {
+            "label": "Open Sa",
+            "sources": ["tuning"],
+            "parts": ["string-4"],
+            "facts": [{"key": "string", "value": "string 4, the lowest", "sources": ["tuning"]}]
+          },
+          "open-pa": {
+            "label": "Open Pa",
+            "sources": ["tuning", "open-pa"],
+            "parts": ["string-3"],
+            "facts": [{"key": "interval", "value": "a perfect fifth above open Sa", "sources": ["open-pa"]}]
+          }
+        }
+      }
+    }
+  },
+  "blocks": [
+    {
+      "type": "gate",
+      "id": "pa",
+      "prompt": "In Carnatic tuning, which violin string is tuned to low Pa?",
+      "options": ["string 4", "string 3", "string 2", "string 1"],
+      "answer": {"is": "string 3"},
+      "hides": ["profiles.violin.techniques.open-pa"],
+      "why": "Say why, in one line.",
+      "again": true
+    },
+    {"type": "sound", "after": "pa", "play": {"profile": "violin", "technique": "open-pa"}}
+  ]
+}

@@ -6,16 +6,17 @@ Docs: https://vedicreader.github.io/rupaka/spec.html.md"""
 
 # %% auto #0
 __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'EASE', 'MAX_WORDS', 'MAX_GRADE', 'VAGUE', 'NICKNAMES',
-           'TOP', 'MODES', 'SHOTS', 'FLOW', 'NODE_ID', 'UPGRADES', 'manifests', 'fn_manifests', 'from_', 'is_', 'demo',
-           'gate', 'readout', 'caption', 'row', 'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel',
-           'ranklist', 'bars', 'axis', 'point', 'plot', 'arrow', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d',
-           'shot', 'path', 'links', 'points', 'drift', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft',
-           'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value', 'fmt_text', 'noise', 'ease', 'keyframes',
-           'bubble', 'run', 'long_sentences', 'syllables', 'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate',
-           'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
+           'TOP', 'MODES', 'PROFILE_LIMITS', 'PART_KINDS', 'SHOTS', 'FLOW', 'NODE_ID', 'UPGRADES', 'manifests',
+           'fn_manifests', 'from_', 'is_', 'demo', 'gate', 'readout', 'caption', 'row', 'stack', 'flow', 'pair',
+           'slider', 'toggle', 'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot', 'arrow', 'grid',
+           'pixels', 'scene', 'body', 'force', 'label3d', 'shot', 'path', 'links', 'points', 'drift', 'rules', 'rrf',
+           'softmax', 'lookup', 'expr', 'sample', 'dft', 'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value',
+           'fmt_text', 'noise', 'ease', 'keyframes', 'bubble', 'run', 'long_sentences', 'syllables', 'grade',
+           'plain_why', 'plain_errors', 'has_bold', 'validate', 'profile_hash', 'profile_errors', 'shot_error', 'shots',
+           'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
-import math, re
+import hashlib, json, math, re
 from copy import deepcopy
 from decimal import Decimal, Context, ROUND_HALF_UP
 from pathlib import Path
@@ -416,6 +417,7 @@ def _type_err(t, v, tables):
           'pts': lambda: isinstance(v, list) and all(isinstance(p, list) and len(p) == 3 and all(num(x) or isinstance(x, str) for x in p) for p in v),
           'texts': lambda: isinstance(v, list) and all(isinstance(x, str) for x in v),
           'keys': lambda: isinstance(v, list) and all(isinstance(x, str) for x in v),
+          'hides': lambda: isinstance(v, list) and all(isinstance(x, str) for x in v),
           'numkey': lambda: num(v) or isinstance(v, str),
           'options': lambda: (isinstance(v, list) and len(v) >= 2) or (isinstance(v, dict) and set(v) == {'from'}),
           'answer': lambda: isinstance(v, str) or (isinstance(v, dict) and set(v) == {'is'}),
@@ -436,6 +438,7 @@ def _reads(t, v) -> set:
     "The root keys that a prop value of type `t` reads."
     if t in ('key', 'path'): return {_root(v)}
     if t == 'keys': return {_root(x) for x in v}
+    if t == 'hides': return {_root(x) for x in v if _root(x) != 'profiles'}
     if t == 'numkey': return {v} if isinstance(v, str) else set()
     if t == 'text': return {_root(m[1]) for m in _TPL.finditer(v)}
     if t == 'texts': return {_root(m[1]) for x in v for m in _TPL.finditer(x)}
@@ -487,10 +490,15 @@ def _reach(xs, nxt):
             if r not in out: out.add(r); todo.append(r)
     return out
 
+def _hides(g):
+    "The strings in the `hides` list of gate `g`."
+    hs = g.get('hides')
+    return {h for h in hs if isinstance(h, str)} if isinstance(hs, list) else set()
+
 def _taint(g, deps, state_keys):
     "The keys that give away the answer of gate `g`."
-    a = g.get('answer')
-    roots = {_root(a)} if isinstance(a, str) else set(g.get('hides') or [])
+    a, hs = g.get('answer'), _hides(g)
+    roots = ({_root(a)} if isinstance(a, str) else hs) | {h for h in hs if _root(h) == 'profiles'}
     up = _reach(roots, lambda k: [r for r in deps.get(k, ()) if r not in state_keys])
     return _reach(up, lambda x: [k for k, rs in deps.items() if x in rs])
 
@@ -570,7 +578,7 @@ def plain_errors(spec, terms=()) -> L:
     return errs
 
 # %% ../nbs/00_spec.ipynb #c056
-TOP = ('rupaka', 'id', 'mode', 'concept', 'title', 'ask', 'askable', 'state', 'derive', 'blocks', 'tables')
+TOP = ('rupaka', 'id', 'mode', 'concept', 'title', 'ask', 'askable', 'state', 'derive', 'blocks', 'tables', 'profiles')
 MODES = ('predict', 'learn')   #: the default mode first
 _TEXT_TYPES = ('str', 'text')
 _BOLD = re.compile(r'\*\*[^*\n]+\*\*')
@@ -593,6 +601,7 @@ def validate(spec) -> L:
     st, tables = spec.get('state') or {}, spec.get('tables') or {}
     if not isinstance(st, dict): err('state', 'must be an object'); st = {}
     if not isinstance(tables, dict): err('tables', 'must be an object'); tables = {}
+    errs.extend(_check_profiles(spec.get('profiles', {})))
     if not isinstance(spec.get('blocks'), list) or not spec['blocks']: err('blocks', 'needs a list of blocks'); return errs
     for k in ('ask', 'title'):
         for s in long_sentences(spec.get(k, '')): err(k, f'this sentence has more than {MAX_WORDS} words: "{s}"')
@@ -613,40 +622,56 @@ def validate(spec) -> L:
     return errs + _check_blocks(spec, st, st0, known, deps, tables)
 
 # %% ../nbs/00_spec.ipynb #13d739b7
-def _check_sound(p, b, err):
-    def number(path, x, lo, hi):
-        ok = isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and lo <= x <= hi
-        if not ok: err(path, f'must be a finite number from {lo} to {hi}')
-        return ok
-    def fields(path, x, allowed, required):
-        if not isinstance(x, dict): err(path, 'must be an object'); return False
-        for k in x.keys() - set(allowed): err(f'{path}.{k}', 'is not an allowed field')
-        for k in set(required) - x.keys(): err(f'{path}.{k}', 'is required')
-        return True
-    q, v = f'{p}.voice', b.get('voice')
-    if fields(q, v, ('kind', 'frequency', 'decay', 'gain', 'partials', 'noise', 'bend'), ('kind', 'frequency', 'decay', 'gain', 'partials')):
-        if v.get('kind') != 'strike': err(f'{q}.kind', 'must be strike; tone is not supported yet')
-        freq = number(f'{q}.frequency', v.get('frequency'), 20, 8000)
-        number(f'{q}.decay', v.get('decay'), .01, 5)
-        number(f'{q}.gain', v.get('gain'), 0, 1)
-        number(f'{q}.noise', v.get('noise', 0), 0, 1)
-        bend = number(f'{q}.bend', v.get('bend', 0), -1200, 1200)
-        ps = v.get('partials')
-        if not isinstance(ps, list) or not 1 <= len(ps) <= 8: err(f'{q}.partials', 'needs one to eight partials')
-        if isinstance(ps, list):
-            for i, part in enumerate(ps):
-                r = f'{q}.partials[{i}]'
-                if not fields(r, part, ('ratio', 'gain'), ('ratio', 'gain')): continue
-                ratio = number(f'{r}.ratio', part.get('ratio'), .0025, 400)
-                number(f'{r}.gain', part.get('gain'), 0, 1)
-                if freq and ratio and bend:
-                    f = v['frequency'] * part['ratio']
-                    if not all(20 <= x <= 8000 for x in (f, f * 2 ** (v.get('bend', 0) / 1200))):
-                        err(f'{r}.ratio', 'the partial and its bent frequency must stay from 20 to 8000 Hz')
+_URL = re.compile(r'https?://[^\s/]+(?:/[^\s]*)?')
+def _at(p, k): return f'{p}.{k}' if p else str(k)
+
+def _number(path, x, lo, hi, err):
+    "True when `x` is a finite number from `lo` to `hi`, else an error at `path`."
+    ok = isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and lo <= x <= hi
+    if not ok: err(path, f'must be a finite number from {lo} to {hi}')
+    return ok
+
+def _fields(path, x, allowed, required, err):
+    "True when `x` is an object. Each field not in `allowed` and each missing `required` field is an error."
+    if not isinstance(x, dict): err(path or 'profile', 'must be an object'); return False
+    for k in x.keys() - set(allowed): err(_at(path, k), 'is not an allowed field')
+    for k in set(required) - x.keys(): err(_at(path, k), 'is required')
+    return True
+
+def _check_strike(q, v, err):
+    "Check the strike voice `v` at path `q`: closed fields and bounded numbers."
+    num = lambda path, x, lo, hi: _number(path, x, lo, hi, err)
+    if not _fields(q, v, ('kind', 'frequency', 'decay', 'gain', 'partials', 'noise', 'bend'), ('kind', 'frequency', 'decay', 'gain', 'partials'), err): return
+    if v.get('kind') != 'strike': err(f'{q}.kind', 'must be strike; tone is not supported yet')
+    freq = num(f'{q}.frequency', v.get('frequency'), 20, 8000)
+    num(f'{q}.decay', v.get('decay'), .01, 5)
+    num(f'{q}.gain', v.get('gain'), 0, 1)
+    num(f'{q}.noise', v.get('noise', 0), 0, 1)
+    bend = num(f'{q}.bend', v.get('bend', 0), -1200, 1200)
+    ps = v.get('partials')
+    if not isinstance(ps, list) or not 1 <= len(ps) <= 8: err(f'{q}.partials', 'needs one to eight partials')
+    if isinstance(ps, list):
+        for i, part in enumerate(ps):
+            r = f'{q}.partials[{i}]'
+            if not _fields(r, part, ('ratio', 'gain'), ('ratio', 'gain'), err): continue
+            ratio = num(f'{r}.ratio', part.get('ratio'), .0025, 400)
+            num(f'{r}.gain', part.get('gain'), 0, 1)
+            if freq and ratio and bend:
+                f = v['frequency'] * part['ratio']
+                if not all(20 <= x <= 8000 for x in (f, f * 2 ** (v.get('bend', 0) / 1200))):
+                    err(f'{r}.ratio', 'the partial and its bent frequency must stay from 20 to 8000 Hz')
+
+def _check_sound(p, b, err, profs):
+    if 'voice' in b: _check_strike(f'{p}.voice', b['voice'], err)
+    if 'play' in b:
+        q, pl = f'{p}.play', b['play']
+        if _fields(q, pl, ('profile', 'technique'), ('profile', 'technique'), err):
+            t = _technique(profs, pl.get('profile'), pl.get('technique'))
+            if t is None: err(q, f'"{pl.get("technique")}" is not a technique of the profile "{pl.get("profile")}" in profiles')
     if 'ref' in b:
         r, ref = f'{p}.ref', b['ref']
-        if fields(r, ref, ('url', 'title'), ('url', 'title')):
-            if not isinstance(ref.get('url'), str) or not re.fullmatch(r'https?://[^\s/]+(?:/[^\s]*)?', ref['url']): err(f'{r}.url', 'needs an http or https URL')
+        if _fields(r, ref, ('url', 'title'), ('url', 'title'), err):
+            if not isinstance(ref.get('url'), str) or not _URL.fullmatch(ref['url']): err(f'{r}.url', 'needs an http or https URL')
             if not isinstance(ref.get('title'), str) or not ref['title'].strip(): err(f'{r}.title', 'needs a title')
 
 
@@ -654,7 +679,7 @@ def _check_sound(p, b, err):
 def _check_blocks(spec, st, st0, known, deps, tables) -> L:
     errs, ms = L(), manifests()
     err = lambda p, m: errs.append(f'{p}: {m}')
-    learn = spec.get('mode') == 'learn'
+    learn, profs = spec.get('mode') == 'learn', _profiles(spec)
     gates, waits, controls = {}, {}, []      # gate id -> (path, block); gate id -> gates it waits for; (path, block, keys it writes)
     reads = {}
     for p, b, parent in _walk(spec['blocks']):
@@ -666,10 +691,12 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
         if only: [err(f'{p}.blocks[{j}]', f'a {m.name} holds only {", ".join(only)}') for j, c in enumerate(b.get('blocks') or []) if c.get('type') not in only]
         skip = ('type', 'after', 'blocks') + (('lock',) if m.get('lockable') else ()) + (('step',) if 'step' not in m.props else ())
         reads[p] = _props(m, b, p, known, tables, err, skip=skip)
+        if b['type'] == 'sound' and (r := _play_ref(b.get('play'))): reads[p].add(r)
+        if b['type'] == 'gate': [err(f'{p}.hides', e) for e in _hides_errs(b.get('hides'), profs)]
         if (e := _step_err(b, m, learn, st)): err(f'{p}.step', e)
         if 'lock' in b and not m.get('lockable'): err(f'{p}.lock', f'a {m.name} has no controls to lock')
         if b['type'] == 'scene': _check_scene(p, b, st, st0, err)
-        if b['type'] == 'sound': _check_sound(p, b, err)
+        if b['type'] == 'sound': _check_sound(p, b, err, profs)
         if b['type'] == 'flow': _check_flow(p, b, err)
         if b['type'] in ('layer', 'timeline'): _check_stage(p, b, st, err)
         if b['type'] == 'choice' and isinstance(b.get('resets'), dict): [err(f'{p}.resets', f'"{k}" is not a state key; a choice resets only input keys') for k in b['resets'] if k not in st]
@@ -737,7 +764,7 @@ def _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads) -> L:
     elif not isinstance(opts, list): err(f'{p}.options', f'"{g["options"]["from"]}" is not a list on the opening state')
     elif js_str(ans) not in [js_str(o) for o in opts]: err(f'{p}.answer', f'the answer "{js_str(ans)}" is not one of the options {[js_str(o) for o in opts]}')
     taint = _taint(g, deps, set(st))
-    if (reads.get(p, set()) - _reads('options', g['options']) - _reads('answer', a) - _reads('text', g.get('context', '')) - set(g.get('hides') or [])) & taint:
+    if (reads.get(p, set()) - _reads('options', g['options']) - _reads('answer', a) - _reads('text', g.get('context', '')) - _hides(g)) & taint:
         err(f'{p}.prompt', 'the prompt shows a value that gives the answer away')
     for q, b in allp.items():
         if q == p: continue
@@ -749,6 +776,131 @@ def _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads) -> L:
         for q, b, ks in controls:
             if ks & need: err(f'{p}.context', f'the {b["type"]} at {q} changes the answer, so name the inputs, for example "For {{{sorted(ks & need)[0]}}}:"'); break
     return errs
+
+# %% ../nbs/00_spec.ipynb #0592e259
+PROFILE_LIMITS = dict(bytes=32768, profiles=4, sources=16, schools=8, parts=32, techniques=64, voices=16, facts=12, refs=8)   #: the size limits of profiles
+PART_KINDS = ('region', 'string', 'key')
+_ID = re.compile(r'[a-z0-9][a-z0-9_-]{0,31}')
+_REF = re.compile(r'profiles\.([^.]+)\.techniques\.([^.]+)')
+
+def _canon(data): return json.dumps(data, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()
+def _text(x, n): return isinstance(x, str) and bool(x.strip()) and len(x) <= n
+
+def profile_hash(data:dict) -> str:
+    "The revision of profile `data`: `sha256:` and the SHA-256 of its canonical JSON. Raises `ValueError` for NaN or infinity."
+    return 'sha256:' + hashlib.sha256(_canon(data)).hexdigest()
+
+# %% ../nbs/00_spec.ipynb #9d7b5eca
+def _value(v): return isinstance(v, bool) or (isinstance(v, (int, float)) and math.isfinite(v)) or _text(v, 200)
+
+def profile_errors(data) -> L:
+    "The errors of profile `data`, each as `path: sentence`. An empty list means good structure and attribution, not true facts."
+    errs, lim = L(), PROFILE_LIMITS
+    err = lambda p, m: errs.append(f'{p}: {m}')
+    if not _fields('', data, ('label', 'sources', 'schools', 'parts', 'techniques'), ('label', 'sources', 'parts', 'techniques'), err): return errs
+    try: n = len(_canon(data))
+    except (ValueError, TypeError): n = 0; err('profile', 'must be plain JSON with finite numbers')
+    if n > lim['bytes']: err('profile', f'has {n} bytes of canonical JSON, more than {lim["bytes"]} (32 KB)')
+    if 'label' in data and not _text(data['label'], 80): err('label', 'needs a name of 1 to 80 characters')
+    def table(k, most):
+        t = data.get(k, {})
+        if not isinstance(t, dict): err(k, 'must be an object of id: entry'); return {}
+        if len(t) > most: err(k, f'has {len(t)} entries, more than {most}')
+        for i in t:
+            if not (isinstance(i, str) and _ID.fullmatch(i)): err(f'{k}.{i}', 'needs an id of a-z, 0-9, - and _, at most 32 characters')
+        return t
+    def cites(q, xs, known, what):
+        if not isinstance(xs, list) or not 1 <= len(xs) <= lim['refs'] or not all(isinstance(x, str) for x in xs):
+            return err(q, f'needs a list of 1 to {lim["refs"]} ids of {what}')
+        for x in xs:
+            if x not in known: err(q, f'"{x}" is not one of the {what}')
+        if len(set(xs)) < len(xs): err(q, f'names one of the {what} twice')
+    def named(q, x, allowed=(), required=()):
+        if not _fields(q, x, ('label', 'sources', *allowed), ('label', 'sources', *required), err): return False
+        if 'label' in x and not _text(x['label'], 80): err(f'{q}.label', 'needs a name of 1 to 80 characters')
+        if 'sources' in x: cites(f'{q}.sources', x['sources'], srcs, 'sources')
+        return True
+    srcs = table('sources', lim['sources'])
+    for i, s in srcs.items():
+        q = f'sources.{i}'
+        if not _fields(q, s, ('url', 'title', 'passage'), ('url', 'title', 'passage'), err): continue
+        if 'url' in s and not (isinstance(s['url'], str) and _URL.fullmatch(s['url'])): err(f'{q}.url', 'needs an http or https URL')
+        if 'title' in s and not _text(s['title'], 200): err(f'{q}.title', 'needs a title of 1 to 200 characters')
+        if 'passage' in s and not _text(s['passage'], 600): err(f'{q}.passage', 'needs the words of the source that support the facts, 1 to 600 characters')
+    schools = table('schools', lim['schools'])
+    for i, s in schools.items(): named(f'schools.{i}', s)
+    parts = table('parts', lim['parts'])
+    for i, x in parts.items():
+        if named(f'parts.{i}', x, ('kind',), ('kind',)) and 'kind' in x and x['kind'] not in PART_KINDS:
+            err(f'parts.{i}.kind', f'"{x["kind"]}" is not one of: {", ".join(PART_KINDS)}')
+    def facts(q, fs):
+        if not isinstance(fs, list): return err(q, 'must be a list of facts')
+        if len(fs) > lim['facts']: err(q, f'has {len(fs)} facts, more than {lim["facts"]}')
+        seen = set()
+        for j, f in enumerate(fs):
+            r = f'{q}[{j}]'
+            if not _fields(r, f, ('key', 'value', 'school', 'sources'), ('key', 'value', 'sources'), err): continue
+            k, sc = f.get('key'), f.get('school')
+            if 'value' in f and not _value(f['value']): err(f'{r}.value', 'must be text of 1 to 200 characters, a finite number, or true or false')
+            if 'sources' in f: cites(f'{r}.sources', f['sources'], srcs, 'sources')
+            if 'school' in f and (not isinstance(sc, str) or sc not in schools): err(f'{r}.school', f'"{sc}" is not one of the schools'); continue
+            if not (isinstance(k, str) and _ID.fullmatch(k)): err(f'{r}.key', 'needs a key of a-z, 0-9, - and _, at most 32 characters'); continue
+            if (k, sc) in seen: err(r, f'the key "{k}" is given twice' + (f' for the school "{sc}"' if sc else ''))
+            seen.add((k, sc))
+        for k in sorted({k for k, sc in seen if sc} & {k for k, sc in seen if not sc}):
+            err(q, f'the key "{k}" is both general and per school; use one or the other')
+    techs, voices = table('techniques', lim['techniques']), 0
+    for i, t in techs.items():
+        q = f'techniques.{i}'
+        if not named(q, t, ('parts', 'voice', 'facts'), ('parts',)): continue
+        if 'parts' in t: cites(f'{q}.parts', t['parts'], parts, 'parts')
+        if 'voice' in t: voices += 1; _check_strike(f'{q}.voice', t['voice'], err)
+        facts(f'{q}.facts', t.get('facts', []))
+    if voices > lim['voices']: err('techniques', f'has {voices} voices, more than {lim["voices"]}')
+    return errs
+
+def _check_profiles(ps) -> L:
+    "The errors of the embedded profiles `ps`: alias -> `{id, revision, school, data}`."
+    errs = L()
+    err = lambda p, m: errs.append(f'{p}: {m}')
+    if not isinstance(ps, dict): return L(['profiles: must be an object of alias: profile'])
+    if len(ps) > PROFILE_LIMITS['profiles']: err('profiles', f'has {len(ps)} profiles, more than {PROFILE_LIMITS["profiles"]}')
+    for a, e in ps.items():
+        q = f'profiles.{a}'
+        if not (isinstance(a, str) and _ID.fullmatch(a)): err(q, 'needs an alias of a-z, 0-9, - and _, at most 32 characters')
+        if not _fields(q, e, ('id', 'revision', 'school', 'data'), ('id', 'revision', 'data'), err): continue
+        if 'id' in e and not _text(e['id'], 120): err(f'{q}.id', 'needs the profile id, 1 to 120 characters')
+        d = e.get('data')
+        if 'data' in e: errs.extend(f'{q}.data' + (x[7:] if x.startswith('profile:') else '.' + x) for x in profile_errors(d))
+        try: h = profile_hash(d) if 'data' in e else None
+        except (ValueError, TypeError): h = None
+        if h and e.get('revision') != h: err(f'{q}.revision', f'must be {h}, the profile_hash of data')
+        schools = d.get('schools') if isinstance(d, dict) and isinstance(d.get('schools'), dict) else {}
+        if 'school' in e and (not isinstance(e['school'], str) or e['school'] not in schools): err(f'{q}.school', f'"{e["school"]}" is not one of the schools in data')
+    return errs
+
+def _profiles(spec) -> dict:
+    "The `data` of each embedded profile of `spec` that is an object, by alias."
+    ps = spec.get('profiles')
+    return {a: e['data'] for a, e in ps.items() if isinstance(e, dict) and isinstance(e.get('data'), dict)} if isinstance(ps, dict) else {}
+
+def _technique(profs, a, t):
+    "The technique `t` of the profile with alias `a`, or None."
+    ts = profs.get(a, {}).get('techniques') if isinstance(a, str) else None
+    return ts[t] if isinstance(ts, dict) and isinstance(t, str) and isinstance(ts.get(t), dict) else None
+
+def _play_ref(pl):
+    "The full reference `profiles.<alias>.techniques.<id>` that a sound `play` reads, or None."
+    if isinstance(pl, dict) and all(isinstance(pl.get(k), str) for k in ('profile', 'technique')): return f'profiles.{pl["profile"]}.techniques.{pl["technique"]}'
+
+def _hides_errs(hs, profs):
+    "The errors of the profile references in the gate `hides` list `hs`."
+    out = []
+    for h in hs if isinstance(hs, list) else []:
+        if not isinstance(h, str) or _root(h) != 'profiles': continue
+        if not (m := _REF.fullmatch(h)): out.append(f'"{h}" must be profiles.<alias>.techniques.<id>')
+        elif _technique(profs, *m.groups()) is None: out.append(f'"{h}" is not a technique of an embedded profile')
+    return out
 
 # %% ../nbs/00_spec.ipynb #s3d102
 SHOTS = ('wide', 'high', 'side', 'front', 'top')
