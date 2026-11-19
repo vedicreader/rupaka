@@ -6,14 +6,14 @@ Docs: https://vedicreader.github.io/rupaka/spec.html.md"""
 
 # %% auto #0
 __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'EASE', 'MAX_WORDS', 'MAX_GRADE', 'VAGUE', 'NICKNAMES',
-           'TOP', 'MODES', 'PROFILE_LIMITS', 'PART_KINDS', 'SHOTS', 'FLOW', 'NODE_ID', 'UPGRADES', 'manifests',
-           'fn_manifests', 'from_', 'is_', 'demo', 'gate', 'readout', 'caption', 'row', 'stack', 'flow', 'pair',
-           'slider', 'toggle', 'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot', 'arrow', 'grid',
-           'pixels', 'scene', 'body', 'force', 'label3d', 'shot', 'path', 'links', 'points', 'drift', 'rules', 'rrf',
-           'softmax', 'lookup', 'expr', 'sample', 'dft', 'field', 'fmt', 'parse_expr', 'get', 'js_str', 'show_value',
-           'fmt_text', 'noise', 'ease', 'keyframes', 'bubble', 'run', 'long_sentences', 'syllables', 'grade',
-           'plain_why', 'plain_errors', 'has_bold', 'validate', 'profile_hash', 'profile_errors', 'shot_error', 'shots',
-           'append', 'upgrade', 'examples', 'gallery']
+           'TOP', 'MODES', 'PROFILE_LIMITS', 'PART_KINDS', 'MEDIA_EXTS', 'MEDIA_CLIP', 'SHOTS', 'FLOW', 'NODE_ID',
+           'UPGRADES', 'manifests', 'fn_manifests', 'from_', 'is_', 'demo', 'gate', 'readout', 'caption', 'row',
+           'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot',
+           'arrow', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d', 'shot', 'path', 'links', 'points', 'drift',
+           'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft', 'field', 'fmt', 'parse_expr', 'get', 'js_str',
+           'show_value', 'fmt_text', 'noise', 'ease', 'keyframes', 'bubble', 'run', 'long_sentences', 'syllables',
+           'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate', 'profile_hash', 'profile_errors', 'shot_error',
+           'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
 import hashlib, json, math, re
@@ -778,8 +778,12 @@ def _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads) -> L:
     return errs
 
 # %% ../nbs/00_spec.ipynb #0592e259
-PROFILE_LIMITS = dict(bytes=32768, profiles=4, sources=16, schools=8, parts=32, techniques=64, voices=16, facts=12, refs=8)   #: the size limits of profiles
+PROFILE_LIMITS = dict(bytes=32768, profiles=4, sources=16, schools=8, parts=32, techniques=64, voices=16, facts=12, refs=8, media=16)   #: the size limits of profiles
 PART_KINDS = ('region', 'string', 'key')
+MEDIA_EXTS = dict(audio=('mp3', 'm4a', 'ogg', 'wav', 'webm'), video=('mp4', 'webm'), image=('jpg', 'jpeg', 'png', 'webp'))   #: the file types of each media kind
+MEDIA_CLIP = 120   #: the longest YouTube clip, in seconds
+_ASSET = re.compile(r'asset:([0-9a-f]{64})\.([a-z0-9]+)')
+_YOUTUBE = re.compile(r'youtube:([A-Za-z0-9_-]{11})')
 _ID = re.compile(r'[a-z0-9][a-z0-9_-]{0,31}')
 _REF = re.compile(r'profiles\.([^.]+)\.techniques\.([^.]+)')
 
@@ -793,11 +797,46 @@ def profile_hash(data:dict) -> str:
 # %% ../nbs/00_spec.ipynb #9d7b5eca
 def _value(v): return isinstance(v, bool) or (isinstance(v, (int, float)) and math.isfinite(v)) or _text(v, 200)
 
+def _check_media(q, m, err):
+    "Check the media record `m` at path `q`: its kind, a local asset or a YouTube clip, its seek window, `alt` and `credit`."
+    if not _fields(q, m, ('kind', 'src', 'credit', 'start', 'end', 'alt', 'sources'), ('kind', 'src', 'credit'), err): return
+    k, src = m.get('kind'), m.get('src')
+    if not (isinstance(k, str) and k in MEDIA_EXTS): return err(f'{q}.kind', f'"{k}" is not one of: {", ".join(MEDIA_EXTS)}')
+    a = _ASSET.fullmatch(src) if isinstance(src, str) else None
+    yt = k == 'video' and isinstance(src, str) and bool(_YOUTUBE.fullmatch(src))
+    if 'src' in m and not (yt or (a and a[2] in MEDIA_EXTS[k])):
+        err(f'{q}.src', f'needs asset:<sha256>.<{"|".join(MEDIA_EXTS[k])}>' + (' or youtube:<11-character id>' if k == 'video' else '') + '; no other URL is loaded')
+    if 'alt' in m and not _text(m['alt'], 300): err(f'{q}.alt', 'needs a text of 1 to 300 characters that says what the media shows')
+    if k == 'image':
+        if 'alt' not in m: err(f'{q}.alt', 'is required for an image')
+        for x in ('start', 'end'):
+            if x in m: err(f'{q}.{x}', 'is for audio and video only')
+    if yt:
+        for x in ('start', 'end'):
+            if x not in m: err(f'{q}.{x}', 'is required for a YouTube clip')
+    if k != 'image':
+        ok = [x not in m or _number(f'{q}.{x}', m[x], 0, 86400, err) for x in ('start', 'end')]
+        if all(ok) and 'start' in m and 'end' in m:
+            if m['end'] <= m['start']: err(f'{q}.end', 'must be more than start')
+            elif yt and m['end'] - m['start'] > MEDIA_CLIP: err(f'{q}.end', f'must be at most {MEDIA_CLIP} seconds after start')
+    c, r = m.get('credit'), f'{q}.credit'
+    if 'credit' in m and _fields(r, c, ('who', 'license', 'url'), ('who', 'license', 'url'), err):
+        if 'who' in c and not _text(c['who'], 200): err(f'{r}.who', 'needs the name of the maker, 1 to 200 characters')
+        if 'license' in c and not _text(c['license'], 80): err(f'{r}.license', 'needs the license, 1 to 80 characters')
+        if 'url' in c and not (isinstance(c['url'], str) and _URL.fullmatch(c['url'])): err(f'{r}.url', 'needs an http or https link to the source; it is shown, never loaded')
+
+def _check_voice(q, v, media, err):
+    "Check the technique voice `v` at path `q`: a strike, or a `sample` of an audio record in `media`."
+    if not (isinstance(v, dict) and v.get('kind') == 'sample'): return _check_strike(q, v, err)
+    if not _fields(q, v, ('kind', 'media'), ('kind', 'media'), err): return
+    m = v.get('media'); rec = media.get(m) if isinstance(m, str) else None
+    if not (isinstance(rec, dict) and rec.get('kind') == 'audio'): err(f'{q}.media', f'"{m}" is not an audio record in media')
+
 def profile_errors(data) -> L:
     "The errors of profile `data`, each as `path: sentence`. An empty list means good structure and attribution, not true facts."
     errs, lim = L(), PROFILE_LIMITS
     err = lambda p, m: errs.append(f'{p}: {m}')
-    if not _fields('', data, ('label', 'sources', 'schools', 'parts', 'techniques'), ('label', 'sources', 'parts', 'techniques'), err): return errs
+    if not _fields('', data, ('label', 'sources', 'schools', 'parts', 'techniques', 'media'), ('label', 'sources', 'parts', 'techniques'), err): return errs
     try: n = len(_canon(data))
     except (ValueError, TypeError): n = 0; err('profile', 'must be plain JSON with finite numbers')
     if n > lim['bytes']: err('profile', f'has {n} bytes of canonical JSON, more than {lim["bytes"]} (32 KB)')
@@ -849,12 +888,29 @@ def profile_errors(data) -> L:
             seen.add((k, sc))
         for k in sorted({k for k, sc in seen if sc} & {k for k, sc in seen if not sc}):
             err(q, f'the key "{k}" is both general and per school; use one or the other')
+    media = table('media', lim['media'])
+    for i, m in media.items():
+        _check_media(f'media.{i}', m, err)
+        if isinstance(m, dict) and 'sources' in m: cites(f'media.{i}.sources', m['sources'], srcs, 'sources')
+    def shows(q, xs):
+        if not isinstance(xs, list) or len(xs) > lim['refs']: return err(q, f'needs a list of at most {lim["refs"]} media entries')
+        seen = set()
+        for j, x in enumerate(xs):
+            r = f'{q}[{j}]'
+            if not _fields(r, x, ('media', 'school'), ('media',), err): continue
+            m, sc = x.get('media'), x.get('school')
+            if not (isinstance(m, str) and m in media): err(f'{r}.media', f'"{m}" is not one of the media')
+            if 'school' in x and not (isinstance(sc, str) and sc in schools): err(f'{r}.school', f'"{sc}" is not one of the schools'); continue
+            if not isinstance(m, str): continue
+            if (m, sc) in seen: err(r, f'names the media "{m}" twice')
+            seen.add((m, sc))
     techs, voices = table('techniques', lim['techniques']), 0
     for i, t in techs.items():
         q = f'techniques.{i}'
-        if not named(q, t, ('parts', 'voice', 'facts'), ('parts',)): continue
+        if not named(q, t, ('parts', 'voice', 'facts', 'media'), ('parts',)): continue
         if 'parts' in t: cites(f'{q}.parts', t['parts'], parts, 'parts')
-        if 'voice' in t: voices += 1; _check_strike(f'{q}.voice', t['voice'], err)
+        if 'voice' in t: voices += 1; _check_voice(f'{q}.voice', t['voice'], media, err)
+        if 'media' in t: shows(f'{q}.media', t['media'])
         facts(f'{q}.facts', t.get('facts', []))
     if voices > lim['voices']: err('techniques', f'has {voices} voices, more than {lim["voices"]}')
     return errs

@@ -1,8 +1,8 @@
 {
   "name": "sound",
   "since": "0.0.36",
-  "purpose": "Play one sample-free strike on request: an inline voice, or a technique of an embedded profile with its facts and sources. This is an approximation, not a real instrument.",
-  "keys": "W plays when the Play button has focus; Enter or Space clicks Play",
+  "purpose": "Play one sound on request: a sample-free strike, which is an approximation, or a technique of an embedded profile with its facts, sources, recorded sample and media.",
+  "keys": "W plays when the Play button has focus; E loads a YouTube clip when Load video has focus; Q turns Loop on or off when Loop has focus; Enter or Space clicks the button",
   "props": {
     "label": {
       "type": "str",
@@ -14,7 +14,7 @@
     },
     "play": {
       "type": "dict",
-      "doc": "{profile: an alias in profiles, technique: a technique id of that profile}. The block shows the technique facts and source links. A technique with no voice has no sound, so Play stays disabled."
+      "doc": "{profile: an alias in profiles, technique: a technique id of that profile}. The block shows the technique facts and source links. A technique voice is a strike or {kind: \"sample\", media: an audio record id}; a sample plays only on Play. While the block shows, it also shows the technique media with a credit line for each: images, local video with a Loop button, and a YouTube clip that loads only when the learner clicks Load video. Before its after gate opens, no media is in the page. A technique with no voice has no sound, so Play stays disabled."
     },
     "ref": {
       "type": "dict",

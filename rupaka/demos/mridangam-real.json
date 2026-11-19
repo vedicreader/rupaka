@@ -1,0 +1,144 @@
+{
+  "rupaka": 1,
+  "id": "mridangam-real",
+  "title": "A real tha and a real nam",
+  "ask": "Hear a real tha first. Predict how nam sounds. Then hear a real nam.",
+  "state": {},
+  "profiles": {
+    "mridangam": {
+      "id": "mridangam-stroke-dataset",
+      "revision": "sha256:02277ed19a54824b66b4db4b72ee9bb24eb701f532be527cd5b30e4f6cbc8e50",
+      "data": {
+        "label": "Mridangam",
+        "sources": {
+          "tha": {
+            "url": "https://www.mrithang.com/mridangam-tour/",
+            "title": "Complete Photo Tour of the Mridangam",
+            "passage": "A non-vibrating tone played on the left hand side of the mridangam."
+          },
+          "nam": {
+            "url": "https://www.mrithang.com/mridangam-tour/",
+            "title": "Complete Photo Tour of the Mridangam",
+            "passage": "Nam is a vibrating tone played on the outer layer of the right hand side. Can be played in Palani or Tanjore style."
+          }
+        },
+        "parts": {
+          "left": {
+            "kind": "region",
+            "label": "Left hand side",
+            "sources": [
+              "tha"
+            ]
+          },
+          "right-outer": {
+            "kind": "region",
+            "label": "Outer layer of the right side",
+            "sources": [
+              "nam"
+            ]
+          }
+        },
+        "media": {
+          "tha-1": {
+            "kind": "audio",
+            "src": "asset:44cfb23bf269684f428b99bc61ed459e2f901d85554794c0bc1b876d5b383e7e.wav",
+            "credit": {
+              "who": "Akshay Anantapadmanabhan, Ashwin Bellur, Hema A. Murthy (IIT Madras), Mridangam Stroke Dataset 1.5",
+              "license": "CC BY-NC 4.0",
+              "url": "https://doi.org/10.5281/zenodo.4068196"
+            }
+          },
+          "nam-1": {
+            "kind": "audio",
+            "src": "asset:793cb84a8f2f2488134700f86bc0bc31bb72104fe9d46476a57ac499e74f7e59.wav",
+            "credit": {
+              "who": "Akshay Anantapadmanabhan, Ashwin Bellur, Hema A. Murthy (IIT Madras), Mridangam Stroke Dataset 1.5",
+              "license": "CC BY-NC 4.0",
+              "url": "https://doi.org/10.5281/zenodo.4068196"
+            }
+          }
+        },
+        "techniques": {
+          "tha": {
+            "label": "Tha",
+            "sources": [
+              "tha"
+            ],
+            "parts": [
+              "left"
+            ],
+            "voice": {
+              "kind": "sample",
+              "media": "tha-1"
+            },
+            "facts": [
+              {
+                "key": "tone",
+                "value": "non-vibrating",
+                "sources": [
+                  "tha"
+                ]
+              }
+            ]
+          },
+          "nam": {
+            "label": "Nam",
+            "sources": [
+              "nam"
+            ],
+            "parts": [
+              "right-outer"
+            ],
+            "voice": {
+              "kind": "sample",
+              "media": "nam-1"
+            },
+            "facts": [
+              {
+                "key": "tone",
+                "value": "vibrating",
+                "sources": [
+                  "nam"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "blocks": [
+    {
+      "type": "sound",
+      "play": {
+        "profile": "mridangam",
+        "technique": "tha"
+      }
+    },
+    {
+      "type": "gate",
+      "id": "nam",
+      "prompt": "Tha is damped: it stops at once. Is nam a **ringing** stroke or a **damped** stroke?",
+      "options": [
+        "ringing",
+        "damped"
+      ],
+      "answer": {
+        "is": "ringing"
+      },
+      "hides": [
+        "profiles.mridangam.techniques.nam"
+      ],
+      "why": "Say why, in one line.",
+      "again": true
+    },
+    {
+      "type": "sound",
+      "after": "nam",
+      "play": {
+        "profile": "mridangam",
+        "technique": "nam"
+      }
+    }
+  ]
+}

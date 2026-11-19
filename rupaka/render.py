@@ -6,7 +6,8 @@ Docs: https://vedicreader.github.io/rupaka/render.html.md"""
 
 # %% auto #0
 __all__ = ['STATIC', 'VENDOR', 'THREE', 'TEXTURES', 'FONTS', 'MIME', 'assets', 'bundle', 'textures_js', 'three_js', 'needs',
-           'spec_json', 'host', 'font_css', 'page', 'save', 'Show', 'show', 'md', 'Demo', 'Assets', 'version']
+           'media_files', 'spec_json', 'host', 'font_css', 'page', 'save', 'Show', 'show', 'md', 'Demo', 'Assets',
+           'version']
 
 # %% ../nbs/01_render.ipynb #c004
 import base64, hashlib, html, json, re, shutil
@@ -14,7 +15,7 @@ from pathlib import Path
 from fastcore.utils import *
 from fastcore.xml import Div, Script, Link, Safe, to_xml
 from . import __version__
-from .spec import PKG, manifests, _walk
+from .spec import PKG, manifests, _walk, _profiles, _ASSET
 
 # %% ../nbs/01_render.ipynb #c006
 STATIC = PKG/'static'
@@ -77,6 +78,13 @@ def needs(specs) -> set:
     specs = [specs] if isinstance(specs, dict) else listify(specs)
     return {'three'} if any(isinstance(b, dict) and b.get('type') == 'scene' for s in specs if isinstance(s, dict) for _, b, _ in _walk(s.get('blocks'))) else set()
 
+# %% ../nbs/01_render.ipynb #c1e2d032
+def media_files(specs) -> list:
+    "The sorted asset file names, `<sha256>.<ext>`, of the profile media of `specs`."
+    specs = [specs] if isinstance(specs, dict) else listify(specs)
+    ms = [m for s in specs if isinstance(s, dict) for d in _profiles(s).values() if isinstance(d.get('media'), dict) for m in d['media'].values()]
+    return sorted({m['src'][6:] for m in ms if isinstance(m, dict) and isinstance(m.get('src'), str) and _ASSET.fullmatch(m['src'])})
+
 # %% ../nbs/01_render.ipynb #c012
 def spec_json(spec) -> str:
     "The spec as JSON that is safe inside a `<script>` element."
@@ -86,9 +94,9 @@ def _onoff(v) -> str|None:
     "`v` as the value of a data attribute: 'true', 'false', or None to leave it out."
     return None if v is None else str(bool(v)).lower()
 
-def host(spec, theme:str=None, askable:bool=None) -> str:
-    "The host element: a div that carries its spec as inert JSON; `theme='paper'` gives it the paper look, `askable` the host switch."
-    t = ''.join(f' {k}="{html.escape(v)}"' for k, v in (('data-rk-theme', theme), ('data-rk-askable', _onoff(askable))) if v)
+def host(spec, theme:str=None, askable:bool=None, media:str=None) -> str:
+    "The host element: a div that carries its spec as inert JSON; `theme='paper'` gives it the paper look, `askable` the host switch, `media` the base URL of its assets."
+    t = ''.join(f' {k}="{html.escape(v)}"' for k, v in (('data-rk-theme', theme), ('data-rk-askable', _onoff(askable)), ('data-rk-media', media)) if v)
     return f'<div data-rupaka{t}><script type="application/json">{spec_json(spec)}</script></div>'
 
 # %% ../nbs/01_render.ipynb #c015
@@ -111,11 +119,11 @@ def font_css(fonts:str='link', base:str='fonts/') -> str:
                      for n, s, w, f, u in FONTS)
 
 # %% ../nbs/01_render.ipynb #c017
-def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None, askable:bool=None) -> str:
+def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None, askable:bool=None, media:str=None) -> str:
     "One self-contained HTML document that draws `specs`, with no network."
     specs = listify(specs) if not isinstance(specs, dict) else [specs]
     title = title or specs[0].get('title') or specs[0].get('id', 'rupaka')
-    body = '<hr class="rk-sect">'.join(host(s, theme, askable) for s in specs)
+    body = '<hr class="rk-sect">'.join(host(s, theme, askable, media) for s in specs)
     head = f'<h1 class="rk-h1">{html.escape(title)}</h1><p class="rk-lead">{html.escape(lead)}</p>' if len(specs) > 1 else ''
     css = '\n'.join([font_css(fonts), assets().page.read_text(), bundle('css'),
                      '.rk-h1 { font: 400 30px/1.3 var(--head); margin: 0 0 6px; } .rk-lead { color: var(--mute); margin: 0 0 8px; font-size: 16px; }',
@@ -125,11 +133,14 @@ def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None, a
             f'{"".join(f"<script>{bundle(k)}</script>" for k in sorted(needs(specs)))}<script>{bundle()}</script></body></html>')
 
 # %% ../nbs/01_render.ipynb #c021
-def save(specs, path, fonts:str='link', **kw) -> Path:
-    "Write `page(specs)` to `path`; with `fonts='link'`, copy the fonts to `fonts/` beside it."
-    p = Path(path)
+def save(specs, path, fonts:str='link', media=None, **kw) -> Path:
+    "Write `page(specs)` to `path`; with `fonts='link'`, copy the fonts to `fonts/` beside it; with `media`, a folder, copy the assets of `specs` to `media/` beside it."
+    p, names = Path(path), media_files(specs) if media else []
+    if gone := [n for n in names if not (Path(media)/n).is_file()]: raise FileNotFoundError(f'these assets are not in {media}: {", ".join(gone)}')
     p.mk_write(page(specs, fonts=fonts, **kw))
     if fonts == 'link': shutil.copytree(STATIC/'fonts', p.parent/'fonts', dirs_exist_ok=True)
+    if names: (p.parent/'media').mkdir(exist_ok=True)
+    for n in names: shutil.copyfile(Path(media)/n, p.parent/'media'/n)
     return p
 
 # %% ../nbs/01_render.ipynb #c024
@@ -154,9 +165,9 @@ def md(spec, frame:bool=False, height:int=760) -> str:
     return f'```{{=html}}\n<iframe class="rk-frame" sandbox="allow-scripts" style="width:100%;height:{height}px;border:0" srcdoc="{src}"></iframe>\n```'
 
 # %% ../nbs/01_render.ipynb #c030
-def Demo(spec, theme:str=None, askable:bool=None, **kw):
-    "The host element of `spec` for a FastHTML page; `theme='paper'` gives it the paper look, `askable` the host switch."
-    return Div(Script(Safe(spec_json(spec)), type='application/json'), data_rupaka='', data_rk_theme=theme, data_rk_askable=_onoff(askable), **kw)
+def Demo(spec, theme:str=None, askable:bool=None, media:str=None, **kw):
+    "The host element of `spec` for a FastHTML page; `theme='paper'` gives it the paper look, `askable` the host switch, `media` the base URL of its assets."
+    return Div(Script(Safe(spec_json(spec)), type='application/json'), data_rupaka='', data_rk_theme=theme, data_rk_askable=_onoff(askable), data_rk_media=media, **kw)
 
 def Assets(prefix:str='/rupaka', v:str=''):
     "The style and the script of the runtime, served at `prefix`; `v` busts the cache."

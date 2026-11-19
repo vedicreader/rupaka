@@ -126,7 +126,8 @@
     if (!(v === R.schema || v === R.schema - 1)) throw new Error(`schema ${v} is not supported; this runtime draws ${R.schema - 1} and ${R.schema}`);
     const s = store(spec, typeof save === 'function' ? save : null), root = el('div', {class: 'rk', 'data-rk': spec.id || ''});
     const ctx = {s, spec, root, nodes: new WeakMap(), ids: new WeakMap(), live: g => !g || s.get(`gate.${g}`) === 'done', learn: spec.mode === 'learn',
-                 step: () => s.st.step == null ? Infinity : +s.st.step};   // with no step key, each part shows
+                 step: () => s.st.step == null ? Infinity : +s.st.step,   // with no step key, each part shows
+                 media: host.closest?.('[data-rk-media]')?.getAttribute('data-rk-media') ?? 'media/'};   // the base URL of profile assets
     ctx.build = b => build(b, ctx);
     // Each block has a stable id: its path in the spec, such as 'blocks.2' or 'blocks.0.blocks.1'. A part adds its own path: 'blocks.2.cells.0'.
     ctx.tag = (b, p) => { if (b && typeof b === 'object') { ctx.ids.set(b, p); (b.blocks || []).forEach((k, i) => ctx.tag(k, `${p}.blocks.${i}`)); } };

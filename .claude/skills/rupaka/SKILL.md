@@ -110,6 +110,13 @@ A gate names a technique that gives its answer away in `hides`: `profiles.<alias
 This is a declared guard, not a detector: a sound that no gate names can play before any gate. The raw spec is in the page, so a hidden block is not a secret.
 See `gallery()['mridangam-profile']`.
 
+A profile can hold `media: {id: {kind, src, credit, start, end, alt, sources}}`. `kind` is `audio`, `image` or `video`. `credit` is `{who, license, url}`; the page shows the link and never loads it.
+`src` is `asset:<sha256>.<ext>`, a file that the host serves, or `youtube:<11-character id>` for a video with `start` and `end`, at most 120 seconds apart. No other URL is allowed. An image needs `alt`.
+A technique lists `media: [{media, school}]`, with the same school rule as facts. A technique voice can be `{kind: "sample", media: <audio id>}`.
+The media of a technique shows only while its sound block shows, so a gate that hides the technique also hides its media. A YouTube clip loads only when the learner clicks Load video.
+The page loads an asset from `data-rk-media` and the asset name (default `media/`). `save(spec, path, media=folder)` copies the assets to `media/` beside the page.
+`rupaka.media` makes assets: `import_asset`, `clip` and `still` (with ffmpeg), and `find_span` for a phrase in a transcript. See `gallery()['mridangam-real']`.
+
 ## 3D scenes
 
 ```python
