@@ -7,6 +7,15 @@
 - New fn `bubble`: one step of a bubble sort of the list at `from`, at step `at`. It gives the list, the bars with the compared pair marked, the compare and swap counts, the active code line and a `mark` per line. A fractional step rounds down. A step out of range goes to the nearest end.
 - A `choice` takes `resets`, a dict of state keys and values. A new pick sets those keys back in the same change as the pick. `validate` refuses a `resets` key that is not a state key.
 - The demo `bubble-trace` asks for the swaps on a sorted list before it shows the run. The bars, the counts, the code line and the caption read one `bubble` row, so they always show the same run at the same step.
+- New block `sound`. Play starts one stroke after a click. A `strike` voice is a synthesised stroke: frequency, decay, gain and partials. `after` and `lock` name gates; Play stays disabled until those gates are locked in.
+- A spec takes `profiles`: instruments with parts (a region, a string or a key), techniques that use those parts, and facts with sources. Each source needs an http(s) URL, a title and the passage it quotes. A fact can differ by school. A selected school shows only its own variant. A school with no sourced variant shows the fact as unknown.
+- `sound` takes `play: {profile, technique}` and shows that technique's facts and source links. A technique with no voice is valid; Play is disabled and says the technique has no sound.
+- A gate takes `hides` references to profile techniques. The facts, the sources and the audio of a hidden technique stay hidden until that gate is locked in.
+- A profile takes `media`: audio, image or video records. Each record needs a credit: who made it, its licence and a source URL. A `src` is `asset:<sha256>.<ext>`, a file that the host serves, or `youtube:<id>` with `start` and `end` at most 120 seconds apart. No other URL loads. A technique lists its media, optionally per school, with the same no-fallback rule as facts.
+- A voice of kind `sample` plays an audio media record.
+- The host element takes `data-rk-media`, the base URL of the assets. `Demo(spec, media=...)` sets it. `save(specs, path, media=folder)` copies the assets of `specs` to `media/` beside the page.
+- New module `rupaka.media`: `import_asset` stores a file by its SHA-256, `clip` and `still` cut a segment or a frame with ffmpeg, and `find_span` finds the time range of a phrase in a transcript (WebVTT, YouTube json3 or Whisper words).
+- New demos `mridangam-strokes`, `mridangam-profile` and `violin-profile`. The demo `mridangam-real` and its two CC BY-NC 4.0 recordings stay in the git repository. The wheel and the source archive leave them out.
 
 ## 0.0.20
 

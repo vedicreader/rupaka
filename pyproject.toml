@@ -39,9 +39,11 @@ tst_flags = "slow"
 
 [tool.hatch.build.targets.wheel]
 packages = ["rupaka"]
+exclude = ["/rupaka/demos/media", "/rupaka/demos/mridangam-real.json"]
 
 [tool.hatch.build.targets.sdist]
 include = ["/rupaka", "/README.md", "/pyproject.toml"]
+exclude = ["/rupaka/demos/media", "/rupaka/demos/mridangam-real.json"]
 
 [tool.hatch.version]
 path = "rupaka/__init__.py"

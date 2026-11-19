@@ -1,6 +1,6 @@
 {
   "name": "sound",
-  "since": "0.0.36",
+  "since": "0.0.21",
   "purpose": "Play one sound on request: a sample-free strike, which is an approximation, or a technique of an embedded profile with its facts, sources, recorded sample and media.",
   "keys": "W plays when the Play button has focus; E loads a YouTube clip when Load video has focus; Q turns Loop on or off when Loop has focus; Enter or Space clicks the button",
   "props": {
