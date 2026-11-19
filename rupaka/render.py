@@ -13,9 +13,10 @@ __all__ = ['STATIC', 'VENDOR', 'THREE', 'TEXTURES', 'FONTS', 'MIME', 'assets', '
 import base64, hashlib, html, json, re, shutil
 from pathlib import Path
 from fastcore.utils import *
+from fastcore.meta import delegates
 from fastcore.xml import Div, Script, Link, Safe, to_xml
 from . import __version__
-from .spec import PKG, manifests, _walk, _profiles, _ASSET
+from .spec import PKG, MEDIA_EXTS, manifests, _walk, _profiles, _ASSET
 
 # %% ../nbs/01_render.ipynb #c006
 STATIC = PKG/'static'
@@ -94,9 +95,10 @@ def _onoff(v) -> str|None:
     "`v` as the value of a data attribute: 'true', 'false', or None to leave it out."
     return None if v is None else str(bool(v)).lower()
 
-def host(spec, theme:str=None, askable:bool=None, media:str=None) -> str:
-    "The host element: a div that carries its spec as inert JSON; `theme='paper'` gives it the paper look, `askable` the host switch, `media` the base URL of its assets."
-    t = ''.join(f' {k}="{html.escape(v)}"' for k, v in (('data-rk-theme', theme), ('data-rk-askable', _onoff(askable)), ('data-rk-media', media)) if v)
+def host(spec, theme:str=None, askable:bool=None, media:str=None, inline:dict=None) -> str:
+    "The host element: a div that carries its spec as inert JSON; `theme='paper'` gives it the paper look, `askable` the host switch, `media` the base URL of its assets, `inline` a map from asset name to data URI."
+    t = ''.join(f' {k}="{html.escape(v)}"' for k, v in (('data-rk-theme', theme), ('data-rk-askable', _onoff(askable)), ('data-rk-media', media),
+                                                        ('data-rk-assets', json.dumps(inline) if inline else None)) if v)
     return f'<div data-rupaka{t}><script type="application/json">{spec_json(spec)}</script></div>'
 
 # %% ../nbs/01_render.ipynb #c015
@@ -119,11 +121,11 @@ def font_css(fonts:str='link', base:str='fonts/') -> str:
                      for n, s, w, f, u in FONTS)
 
 # %% ../nbs/01_render.ipynb #c017
-def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None, askable:bool=None, media:str=None) -> str:
+def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None, askable:bool=None, media:str=None, inline:dict=None) -> str:
     "One self-contained HTML document that draws `specs`, with no network."
     specs = listify(specs) if not isinstance(specs, dict) else [specs]
     title = title or specs[0].get('title') or specs[0].get('id', 'rupaka')
-    body = '<hr class="rk-sect">'.join(host(s, theme, askable, media) for s in specs)
+    body = '<hr class="rk-sect">'.join(host(s, theme, askable, media, inline) for s in specs)
     head = f'<h1 class="rk-h1">{html.escape(title)}</h1><p class="rk-lead">{html.escape(lead)}</p>' if len(specs) > 1 else ''
     css = '\n'.join([font_css(fonts), assets().page.read_text(), bundle('css'),
                      '.rk-h1 { font: 400 30px/1.3 var(--head); margin: 0 0 6px; } .rk-lead { color: var(--mute); margin: 0 0 8px; font-size: 16px; }',
@@ -133,10 +135,14 @@ def page(specs, title:str=None, fonts:str='link', lead:str='', theme:str=None, a
             f'{"".join(f"<script>{bundle(k)}</script>" for k in sorted(needs(specs)))}<script>{bundle()}</script></body></html>')
 
 # %% ../nbs/01_render.ipynb #c021
+def _have(names, folder):
+    "Raise FileNotFoundError when an asset in `names` is not a file in `folder`."
+    if gone := [n for n in names if not (Path(folder)/n).is_file()]: raise FileNotFoundError(f'these assets are not in {folder}: {", ".join(gone)}')
+
 def save(specs, path, fonts:str='link', media=None, **kw) -> Path:
     "Write `page(specs)` to `path`; with `fonts='link'`, copy the fonts to `fonts/` beside it; with `media`, a folder, copy the assets of `specs` to `media/` beside it."
     p, names = Path(path), media_files(specs) if media else []
-    if gone := [n for n in names if not (Path(media)/n).is_file()]: raise FileNotFoundError(f'these assets are not in {media}: {", ".join(gone)}')
+    _have(names, media)
     p.mk_write(page(specs, fonts=fonts, **kw))
     if fonts == 'link': shutil.copytree(STATIC/'fonts', p.parent/'fonts', dirs_exist_ok=True)
     if names: (p.parent/'media').mkdir(exist_ok=True)
@@ -145,17 +151,32 @@ def save(specs, path, fonts:str='link', media=None, **kw) -> Path:
 
 # %% ../nbs/01_render.ipynb #c024
 MIME = 'application/vnd.rupaka+json'
+_TYPES = {x: f'{k}/{x}' for k, xs in MEDIA_EXTS.items() for x in xs} | dict(mp3='audio/mpeg', m4a='audio/mp4', jpg='image/jpeg')
+
+def _inline(spec, folder, cap):
+    "The assets of `spec` in `folder` as `{name: data URI}`."
+    names = media_files(spec); _have(names, folder)
+    if (n := sum((Path(folder)/f).stat().st_size for f in names)) > cap:
+        raise ValueError(f'the assets of {spec.get("id")!r} are {n} bytes, over the cap of {cap} bytes; serve them with media= instead')
+    return {f: f'data:{_TYPES[f.rpartition(".")[2]]};base64,' + base64.b64encode((Path(folder)/f).read_bytes()).decode() for f in names}
 
 class Show:
     "A demo for a notebook output: the rupaka mime and a full HTML page."
-    def __init__(self, spec): self.spec = spec
-    def _repr_html_(self): return page(self.spec, fonts='none')
+    def __init__(self,
+        spec,
+        media:str=None, # the base URL of the assets
+        assets=None, # a folder whose assets of `spec` the page carries as data URIs
+        cap:int=4_000_000, # the most bytes of assets to carry
+    ):
+        self.spec, self.media, self.inline = spec, media, _inline(spec, assets, cap) if assets else None
+    def _repr_html_(self): return page(self.spec, fonts='none', media=self.media, inline=self.inline)
     def _repr_mimebundle_(self, include=None, exclude=None): return {MIME: self.spec, 'text/html': self._repr_html_()}
     def __repr__(self): return f"Show({self.spec.get('id')!r})"
 
-def show(spec) -> Show:
+@delegates(Show)
+def show(spec, **kwargs) -> Show:
     "Draw `spec` in a notebook output."
-    return Show(spec)
+    return Show(spec, **kwargs)
 
 # %% ../nbs/01_render.ipynb #c027
 def md(spec, frame:bool=False, height:int=760) -> str:

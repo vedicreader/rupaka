@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.22
+
+- `show(spec, assets=folder)` puts the assets of `spec` on the host element as data URIs, in `data-rk-assets`. Recorded media then plays in a notebook with no server. The runtime takes an asset from that map before it uses `data-rk-media`. A missing asset raises `FileNotFoundError`, and assets over `cap` bytes (default 4,000,000) raise `ValueError`.
+
 ## 0.0.21
 
 - New fn `bubble`: one step of a bubble sort of the list at `from`, at step `at`. It gives the list, the bars with the compared pair marked, the compare and swap counts, the active code line and a `mark` per line. A fractional step rounds down. A step out of range goes to the nearest end.

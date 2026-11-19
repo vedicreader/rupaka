@@ -128,6 +128,8 @@
     const ctx = {s, spec, root, nodes: new WeakMap(), ids: new WeakMap(), live: g => !g || s.get(`gate.${g}`) === 'done', learn: spec.mode === 'learn',
                  step: () => s.st.step == null ? Infinity : +s.st.step,   // with no step key, each part shows
                  media: host.closest?.('[data-rk-media]')?.getAttribute('data-rk-media') ?? 'media/'};   // the base URL of profile assets
+    const inline = JSON.parse(host.closest?.('[data-rk-assets]')?.getAttribute('data-rk-assets') ?? 'null');
+    ctx.asset = name => inline?.[name] ?? ctx.media + name;
     ctx.build = b => build(b, ctx);
     // Each block has a stable id: its path in the spec, such as 'blocks.2' or 'blocks.0.blocks.1'. A part adds its own path: 'blocks.2.cells.0'.
     ctx.tag = (b, p) => { if (b && typeof b === 'object') { ctx.ids.set(b, p); (b.blocks || []).forEach((k, i) => ctx.tag(k, `${p}.blocks.${i}`)); } };

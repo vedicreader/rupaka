@@ -1,12 +1,12 @@
 "Profile media: the record checks, the school rule, the gated runtime, the media base, `save` with assets, and `rupaka.media`."
-import json, re, shutil
+import base64, html, json, re, shutil
 from copy import deepcopy
 from pathlib import Path
 import pytest
 from fastcore.xml import to_xml
 from fastcore.xtras import run
 import rupaka.spec as S
-from rupaka.render import host, page, Demo, save, media_files
+from rupaka.render import host, page, Demo, save, media_files, show
 from rupaka.media import import_asset, clip, still, find_span
 
 FFMPEG = bool(shutil.which('ffmpeg') and shutil.which('ffprobe'))
@@ -279,3 +279,48 @@ def test_real_demo_plays_in_chromium(br, tmp_path):
         pg.screenshot(path=str(shots/'mridangam-real-after.png'), full_page=True)
         assert log['errors'] == [] and log['web'] == []
     finally: pg.close()
+
+def _inline(h):
+    "The asset map of the host in `h`."
+    return json.loads(html.unescape(re.search(r'data-rk-assets="([^"]*)"', h)[1]))
+
+def test_show_inlines_the_assets():
+    s = S.gallery()['mridangam-real']; names = media_files(s)
+    inl = _inline(show(s, assets=REAL)._repr_html_())
+    assert sorted(inl) == names
+    assert all(inl[n] == 'data:audio/wav;base64,' + base64.b64encode((REAL/n).read_bytes()).decode() for n in names)
+
+def test_show_refuses_a_missing_asset(tmp_path):
+    s, d = S.gallery()['mridangam-real'], tmp_path/'m'; shutil.copytree(REAL, d)
+    gone = media_files(s)[0]; (d/gone).unlink()
+    with pytest.raises(FileNotFoundError, match=re.escape(f'these assets are not in {d}: {gone}')): show(s, assets=d)
+
+def test_show_refuses_assets_over_the_cap():
+    s = S.gallery()['mridangam-real']; size = sum((REAL/n).stat().st_size for n in media_files(s))
+    with pytest.raises(ValueError, match=rf'{size}.*1000.*media='): show(s, assets=REAL, cap=1000)
+
+def test_show_without_assets_is_the_page():
+    s = S.gallery()['mridangam-real']
+    assert show(s, media=None, assets=None)._repr_html_() == show(s)._repr_html_() == page(s, fonts='none')
+    assert '<div data-rupaka><script' in show(s)._repr_html_()
+
+WEB = 'http://rk.test/m/'
+
+def _tha(br, h, name):
+    "Draw `h`, play the first sound, and return the audio src and the requests to `WEB`."
+    pg, asked = br.new_page(viewport=dict(width=720, height=1400)), []
+    pg.route(f'{WEB}**', lambda r: (asked.append(r.request.url), r.fulfill(body=(REAL/r.request.url.removeprefix(WEB)).read_bytes(), content_type='audio/wav')))
+    try:
+        pg.set_content(h); pg.wait_for_selector('[data-rk-ready]', state='attached')
+        tha = pg.locator('.rk-sound').nth(0); tha.locator('button', has_text='Play').click()
+        a = tha.locator('audio'); pg.wait_for_function('a => a && a.currentTime > 0', arg=a.element_handle())
+        shots = Path(__file__).parent/'screens'; shots.mkdir(exist_ok=True); pg.screenshot(path=str(shots/name), full_page=True)
+        return a.get_attribute('src'), asked
+    finally: pg.close()
+
+def test_inline_assets_play_in_chromium(br):
+    s = S.gallery()['mridangam-real']; n = media_files(s)
+    src, asked = _tha(br, show(s, media=WEB, assets=REAL)._repr_html_(), 'mridangam-real-inline.png')
+    assert src.startswith('data:audio/wav;base64,') and asked == []
+    src, asked = _tha(br, show(s, media=WEB)._repr_html_(), 'mridangam-real-media.png')
+    assert src.startswith(WEB) and src.removeprefix(WEB) in n and set(asked) == {src}

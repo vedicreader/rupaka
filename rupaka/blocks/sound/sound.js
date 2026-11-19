@@ -3,8 +3,8 @@ Rupaka.block('sound', (b, ctx) => {
   const {el} = Rupaka, web = u => typeof u === 'string' && /^https?:\/\//i.test(u);
   const prof = b.play ? ctx.spec.profiles?.[b.play.profile] : null, data = prof?.data || {}, tech = data.techniques?.[b.play?.technique];
   const v = b.voice || tech?.voice, recs = data.media || {};
-  // Only a hash-named asset on the host origin, or a YouTube id; never another URL.
-  const asset = src => { const m = /^asset:([0-9a-f]{64}\.[a-z0-9]+)$/.exec(src || ''); return m ? ctx.media + m[1] : null; };
+  // Only a hash-named asset on the host origin or inline in the page, or a YouTube id; never another URL.
+  const asset = src => { const m = /^asset:([0-9a-f]{64}\.[a-z0-9]+)$/.exec(src || ''); return m ? ctx.asset(m[1]) : null; };
   const sample = v?.kind === 'sample' && recs[v.media]?.kind === 'audio' ? recs[v.media] : null, tapeUrl = asset(sample?.src);
   const sounds = v?.kind === 'strike' || !!tapeUrl;
   const play = el('button', {type: 'button'}, 'Play', el('kbd', {text: 'W'}));
