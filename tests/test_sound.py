@@ -131,7 +131,7 @@ def test_demo_screenshots(sound_page):
     mount, errors=sound_page
     assert 'sound' in examples()
     pg=mount(examples()['sound'])
-    dest=Path('/Users/71293/code/personal/orgs/tmp_try/sketchd/music/slice1'); dest.mkdir(parents=True, exist_ok=True)
+    dest=Path(__file__).parent/'screens'; dest.mkdir(exist_ok=True)
     pg.screenshot(path=str(dest/'mridangam-before.png'), full_page=True)
     silent(pg); pick(pg); lock(pg); silent(pg)
     assert pg.locator('.rk-sound:visible').count() == 2
