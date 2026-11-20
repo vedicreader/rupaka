@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.0.24
+
+- `listen` shows a level meter and a count of the strokes it hears (Heard 7 strokes) as soon as the microphone is on, before any round.
+- `listen` has a box, Keep my playing (Q), which is off at first. When it is on, the block keeps the audio of the last round only, from its first beat minus the window to its last beat plus the window (at most 60 s), in page memory. After the round is judged, Play what I played (A) plays it on the page audio clock, with a soft click on each beat if Click on each beat (1) is on. A timeline shows the beats and the strokes heard. Save my playing (D) writes the round as a 16-bit PCM WAV file on the device, through a Blob. Stop listening, a tick off, the next round and leaving the page drop the audio. With the box off, the worklet sends no samples. Nothing is sent.
+- `listen` takes `keep: false`, which leaves the box out.
+
 ## 0.0.23
 
 - New block `rhythm`: a practice round. Start plays a count-in, then the `pattern` of profile techniques, one per beat, `cycles` times. With `turns`, a silent Your turn cycle follows each played cycle. The tempo slider changes the tempo from the next cycle. Stop ends the round at once.

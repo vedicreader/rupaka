@@ -132,7 +132,9 @@ A gate that hides a technique of the pattern makes the rhythm wait for it, as fo
 A `listen` block times the learner's drum strokes with the microphone, on the device. It opens the microphone only on a click of Listen on this device (W), and Stop listening (S) stops it.
 `beats: [key]` names the `beats` key of a rhythm block in the same spec. That round writes the beat times there, in seconds on the page audio clock. `validate` refuses a listen block without a matching rhythm block. When that key changes and its last beat has passed, the block writes `[{beat, verdict, ms}]` to `out: [key]` and shows a line for each beat: on, early N ms, late N ms or missed.
 `tolerance` (10–80 ms, default 30) is on time; `window` (50–300 ms, default 150) is how far either side the block looks for a stroke. `calibrate: false` hides the Calibrate step (E), which plays 8 clicks and keeps the median delay of the taps.
-The block keeps no audio and sends nothing. It needs a served page with `listen-worklet.js` beside `rupaka.js`: in `page()`, `show()`, `md()` and `save()` it says that the microphone is not available. See `examples()['listen']`.
+While the microphone is on, a level meter and a count (Heard 7 strokes) show that the block hears the drum, before any round.
+Keep my playing (Q) is a box, off at first. When it is on, the block keeps the audio of the last round only, from its first beat minus `window` to its last beat plus `window` (at most 60 s), in page memory. After the round, Play what I played (A) plays it on `ctx.audio()`, with a soft click on each beat if Click on each beat (1) is on, and a timeline shows the beats and the strokes heard. Save my playing (D) writes the round as a 16-bit WAV file on the device. Stop listening, a tick off, the next round and leaving the page drop the audio. `keep: false` leaves the box out.
+With the box off, the block keeps no audio. It sends nothing. It needs a served page with `listen-worklet.js` beside `rupaka.js`: in `page()`, `show()`, `md()` and `save()` it says that the microphone is not available. See `examples()['listen']`.
 
 ## 3D scenes
 

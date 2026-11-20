@@ -1,6 +1,8 @@
 /* listen-worklet: finds drum onsets in the microphone signal, on this device, and posts {t}: the time of each onset on the context clock.
-   It keeps no audio. Each hop of about 5 ms gives the log energy of the high-passed, rectified signal. The flux is its rise over the
-   running median of the hops before it. An onset is a flux over median + 4 MAD of the recent flux (and over a floor), then 60 ms of rest.
+   It also posts {level}: the peak of the input in each 40 ms, for a level meter. It sends sample buffers {pcm, at} only after the block
+   posts {keep: true} (the Keep my playing box), and stops at once on {keep: false}. With keep off, no sample leaves this file.
+   Each hop of about 5 ms gives the log energy of the high-passed, rectified signal. The flux is its rise over the running median
+   of the hops before it. An onset is a flux over median + 4 MAD of the recent flux (and over a floor), then 60 ms of rest.
    The listen block loads this file with audioWorklet.addModule from the folder of rupaka.js. */
 const median = a => {
   const s = Float64Array.from(a).sort(), n = s.length;
@@ -20,11 +22,22 @@ class RupakaListen extends AudioWorkletProcessor {
     this.FLUX = 100;    // 0.5 s of flux for the threshold
     this.FLOOR = 0.3;   // a rise of at least 3 dB (log10 units), so a still room gives no onset
     this.REST = Math.round(0.06 * sampleRate / this.hop);
+    this.LEVEL = Math.round(sampleRate * 0.04); this.ln = 0; this.lp = 0;   // 25 level messages each second
+    this.CHUNK = 2048; this.keep = false; this.pcm = null; this.pn = 0; this.pat = 0;
+    this.port.onmessage = e => { if (e.data && 'keep' in e.data) { this.keep = !!e.data.keep; this.pcm = null; this.pn = 0; } };
   }
   process(inputs) {
     const x = inputs[0] && inputs[0][0];
     if (!x) return true;
     for (let i = 0; i < x.length; i++) {
+      const ax = Math.abs(x[i]);
+      if (ax > this.lp) this.lp = ax;
+      if (++this.ln >= this.LEVEL) { this.port.postMessage({level: this.lp}); this.ln = 0; this.lp = 0; }
+      if (this.keep) {
+        if (!this.pcm) { this.pcm = new Float32Array(this.CHUNK); this.pn = 0; this.pat = currentFrame + i; }
+        this.pcm[this.pn++] = x[i];
+        if (this.pn === this.CHUNK) { this.port.postMessage({pcm: this.pcm, at: this.pat}, [this.pcm.buffer]); this.pcm = null; }
+      }
       const y = this.a * (this.py + x[i] - this.px);
       this.px = x[i]; this.py = y;
       if (this.n === 0) this.at = currentFrame + i;

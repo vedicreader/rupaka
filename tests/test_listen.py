@@ -1,5 +1,5 @@
 "The listen block: its manifest, the matcher, the onset worklet, and the microphone path in Chromium with a fake input device."
-import json, math, random, subprocess, sys, threading, wave
+import json, math, random, re, subprocess, sys, threading, wave
 from array import array
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -33,6 +33,10 @@ def test_a_listen_spec_passes_validate():
 def test_listen_needs_beats():
     errs = validate(spec(beats=None))
     assert any('needs "beats"' in e for e in errs), errs
+
+def test_listen_keep_is_a_bool():
+    assert validate(spec(keep=False)) == [] and validate(spec(keep=True)) == []
+    assert any('keep' in e for e in validate(spec(keep='no'))), validate(spec(keep='no'))
 
 def test_listen_tolerance_has_a_range():
     errs = validate(spec(tolerance=5))
@@ -81,7 +85,8 @@ LEARN = {'rupaka': 1, 'id': 'mic', 'mode': 'learn', 'title': 'Listen', 'state': 
 @pytest.fixture(scope='module')
 def served():
     "A server on 127.0.0.1, a secure context, so the page has `audioWorklet` and `getUserMedia`."
-    _Host.pages.update({'/': html(LEARN), '/gate': html(spec())})
+    nokeep = {**LEARN, 'blocks': [{**LEARN['blocks'][0], 'keep': False}, ROUND]}
+    _Host.pages.update({'/': html(LEARN), '/gate': html(spec()), '/nokeep': html(nokeep)})
     srv = ThreadingHTTPServer(('127.0.0.1', 0), _Host)
     th = threading.Thread(target=srv.serve_forever, daemon=True); th.start()
     try: yield f'http://127.0.0.1:{srv.server_address[1]}'
@@ -159,7 +164,7 @@ OFFLINE = r"""async ([noise, times]) => {
     for (let i = 0; i < 0.08 * sr && s + i < n; i++) x[s + i] += Math.exp(-i / (0.015 * sr)) * (0.5 * Math.sin(2 * Math.PI * 180 * i / sr) + 0.3 * rnd()); }
   await ac.audioWorklet.addModule(Rupaka.base + 'listen-worklet.js');
   const node = new AudioWorkletNode(ac, 'rupaka-listen'), got = [];
-  node.port.onmessage = e => got.push(e.data.t);
+  node.port.onmessage = e => { if ('t' in e.data) got.push(e.data.t); };   // the level messages are not onsets
   const src = ac.createBufferSource(); src.buffer = buf; src.connect(node); node.connect(ac.destination); src.start(0);
   await ac.startRendering(); await new Promise(r => setTimeout(r, 300));
   return got;
@@ -240,7 +245,7 @@ SPY = '''(() => { window.__gum = []; window.__streams = [];
 # the same stream can have another buffer delay (25 ms apart in some runs), so the fixture listens on the block's own path.
 PROBE = '''async () => {
   const ac = window.__rkAudio, s = window.__streams[0], tr = s.getAudioTracks()[0], node = window.__nodes[0], got = [];
-  const hear = e => got.push(e.data.t);
+  const hear = e => { if ('t' in e.data) got.push(e.data.t); };
   node.port.addEventListener('message', hear);
   await new Promise(r => setTimeout(r, 3000));
   node.port.removeEventListener('message', hear);
@@ -294,3 +299,189 @@ def test_a_fake_mic_reads_late_by_40_ms(served):
     assert all(t.startswith('late ') for t in (s.split(': ', 1)[1] for s in out['shown'])) and len(out['shown']) == 6, out
     assert out['tracks'] and set(out['tracks']) == {'ended'}, out
     assert out['offsite'] == [] and out['errs'] == [], out
+
+# --- live feedback, and the kept round: replay, timeline and save ---------------------------------------------------------------
+
+# One Chromium with the fake device, one page for each case. The spy counts the worklet's messages by kind (a message that holds an
+# ArrayBuffer or a typed array is a sample buffer), the buffer sources and oscillators that start, and the object URLs.
+REPLAY = r"""
+import sys, json
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+base, wav, outdir = sys.argv[1], sys.argv[2], Path(sys.argv[3])
+SPY = '''(() => { window.__msgs = {pcm: 0, level: 0, onset: 0, other: 0}; window.__starts = []; window.__osc = 0; window.__urls = {made: [], revoked: []};
+  const bin = d => !!d && typeof d === 'object' && Object.values(d).some(v => v instanceof ArrayBuffer || ArrayBuffer.isView(v));
+  const W = window.AudioWorkletNode;
+  window.AudioWorkletNode = class extends W { constructor(...a) { super(...a); this.port.addEventListener('message', e => { const d = e.data, m = window.__msgs;
+    if (bin(d)) m.pcm++; else if (d && 'level' in d) m.level++; else if (d && 't' in d) m.onset++; else m.other++; }); } };
+  const st = AudioBufferSourceNode.prototype.start;
+  AudioBufferSourceNode.prototype.start = function (...a) { window.__starts.push({main: this.context === window.__rkAudio, dur: this.buffer ? this.buffer.duration : null}); return st.apply(this, a); };
+  const os = OscillatorNode.prototype.start;
+  OscillatorNode.prototype.start = function (...a) { window.__osc++; return os.apply(this, a); };
+  const mk = URL.createObjectURL, rv = URL.revokeObjectURL;
+  URL.createObjectURL = o => { const u = mk.call(URL, o); window.__urls.made.push(u); return u; };
+  URL.revokeObjectURL = u => { window.__urls.revoked.push(u); return rv.call(URL, u); }; })()'''
+HOST = "document.querySelector('[data-rupaka]')"
+LINE = '.rk-listen-line'
+def ev(pg, js): return pg.evaluate(js)
+def listen(pg):
+    pg.locator('button', has_text='Listen on this device').click()
+    pg.wait_for_function("document.querySelector('.rk-listen-status')?.textContent.startsWith('Listening')", timeout=10000)
+def round_(pg):
+    ev(pg, f"Rupaka.set({HOST}, {{verdicts: []}})")
+    b = ev(pg, f"(() => {{ const t = window.__rkAudio.currentTime + .8, b = Array.from({{length: 6}}, (_, k) => t + k * .5); Rupaka.set({HOST}, {{beats: b}}); return b; }})()")
+    pg.wait_for_function(f'{HOST}.rupaka.st.verdicts.length === 6', timeout=15000)
+    return b
+def shown(pg, text): return pg.locator('button', has_text=text).is_visible()
+def play_shown(pg, timeout=4000):
+    try: pg.locator('button', has_text='Play what I played').wait_for(state='visible', timeout=timeout); return True
+    except Exception: return False
+def privacy(pg): return ev(pg, "document.querySelector('.rk-listen-privacy')?.textContent ?? null")
+def box(pg, label): return pg.get_by_label(label)
+
+def a(pg, r):
+    listen(pg)
+    r['meter_visible'] = pg.locator('.rk-listen-level').is_visible(); r['count_visible'] = pg.locator('.rk-listen-count').is_visible()
+    t0, l0 = ev(pg, 'performance.now()'), ev(pg, 'window.__msgs.level')
+    r['levels'], r['counts'] = [], []
+    for _ in range(12):
+        pg.wait_for_timeout(150)
+        r['levels'].append(ev(pg, "document.querySelector('.rk-listen-level')?.value ?? null"))
+        r['counts'].append(ev(pg, "document.querySelector('.rk-listen-count')?.textContent ?? null"))
+    t1, l1 = ev(pg, 'performance.now()'), ev(pg, 'window.__msgs.level')
+    r['level_rate'] = (l1 - l0) / ((t1 - t0) / 1000)
+    r['verdicts'] = ev(pg, f'{HOST}.rupaka.st.verdicts.length'); r['msgs'] = ev(pg, 'window.__msgs')
+
+def b(pg, r):
+    r['keep_box'] = box(pg, 'Keep my playing').count()
+    r['keep_checked'] = box(pg, 'Keep my playing').is_checked() if r['keep_box'] == 1 else None
+    listen(pg); round_(pg); pg.wait_for_timeout(600)
+    r['verdicts'] = len(ev(pg, f'{HOST}.rupaka.st.verdicts'))
+    r['play'], r['save'], r['line'] = shown(pg, 'Play what I played'), shown(pg, 'Save my playing'), pg.locator(LINE).count()
+    r['msgs'], r['privacy'] = ev(pg, 'window.__msgs'), privacy(pg)
+
+def c(pg, r):
+    box(pg, 'Keep my playing').check(timeout=3000)
+    r['privacy'] = privacy(pg)
+    listen(pg); r['beats'] = round_(pg)
+    r['play'] = play_shown(pg); r['save'] = shown(pg, 'Save my playing')
+    line = pg.locator(LINE)
+    r['seconds'], r['frames'] = float(line.get_attribute('data-seconds')), int(line.get_attribute('data-frames'))
+    r['beat_ticks'], r['stroke_ticks'] = line.locator('.rk-listen-beat').count(), line.locator('.rk-listen-stroke').count()
+    r['rate'] = ev(pg, 'window.__rkAudio.sampleRate')
+    pg.locator('button', has_text='Play what I played').click(); pg.wait_for_timeout(300)
+    r['starts'] = ev(pg, 'window.__starts')
+    o0 = ev(pg, 'window.__osc'); box(pg, 'Click on each beat').check(timeout=3000)
+    pg.locator('button', has_text='Play what I played').click(); pg.wait_for_timeout(300)
+    r['clicks'] = ev(pg, 'window.__osc') - o0
+    with pg.expect_download(timeout=5000) as dl: pg.locator('button', has_text='Save my playing').click()
+    d = dl.value; r['name'] = d.suggested_filename; p = outdir/d.suggested_filename; d.save_as(p); r['file'] = str(p)
+    pg.wait_for_timeout(1500)
+    r['urls'], r['msgs'] = ev(pg, 'window.__urls'), ev(pg, 'window.__msgs')
+
+def e(pg, r):
+    keep = box(pg, 'Keep my playing'); keep.check(timeout=3000)
+    listen(pg); round_(pg); r['play_first'] = play_shown(pg)
+    keep.uncheck(); pg.wait_for_timeout(200)
+    r['play_after_untick'], r['line_after_untick'] = shown(pg, 'Play what I played'), pg.locator(LINE).count()
+    keep.check(); pg.wait_for_timeout(200); r['play_after_recheck'] = shown(pg, 'Play what I played')
+    round_(pg); r['play_again'] = play_shown(pg)
+    pg.locator('button', has_text='Stop listening').click(); pg.wait_for_timeout(200)
+    r['play_after_stop'], r['save_after_stop'] = shown(pg, 'Play what I played'), shown(pg, 'Save my playing')
+    r['line_after_stop'] = pg.locator(LINE).count()
+
+def f(pg, r):
+    pg.goto(base + '/nokeep'); pg.wait_for_selector('[data-rk-ready]', state='attached')
+    r['keep_box'] = box(pg, 'Keep my playing').count()
+    listen(pg); r['privacy'] = privacy(pg); r['msgs'] = ev(pg, 'window.__msgs')
+
+out = {}
+with sync_playwright() as p:
+    br = p.chromium.launch(headless=True, args=['--mute-audio', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream',
+                                                f'--use-file-for-fake-audio-capture={wav}'])
+    try:
+        for name, case in dict(a=a, b=b, c=c, e=e, f=f).items():
+            r, errs = {}, []
+            pg = br.new_page(accept_downloads=True)
+            pg.on('pageerror', lambda x: errs.append(str(x))); pg.on('console', lambda m: m.type == 'error' and errs.append(m.text))
+            try:
+                pg.add_init_script(SPY); pg.goto(base + '/'); pg.wait_for_selector('[data-rk-ready]', state='attached')
+                case(pg, r)
+            except Exception as x: r['error'] = str(x)[:400]
+            finally: pg.close()
+            out[name] = {**r, 'errs': errs}
+    finally: br.close()
+print(json.dumps(out))
+"""
+
+@pytest.fixture(scope='module')
+def replay(served, tmp_path_factory):
+    d = tmp_path_factory.mktemp('replay')
+    r = subprocess.run([sys.executable, '-c', REPLAY, served, str(WAV), str(d)], capture_output=True, text=True, timeout=240)
+    if 'Executable doesn' in r.stderr: pytest.skip("Playwright's Chromium is not installed")
+    assert r.returncode == 0, r.stderr[-3000:]
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    print('replay:', json.dumps(out))
+    return out
+
+OFF_TEXT = 'The sound stays on this device. Nothing is recorded or sent.'
+KEEP_TEXT = ('While this box is ticked, this page holds the last second of sound and your last round. '
+             'Both go when you untick it, press Stop listening or leave the page. '
+             'Save my playing writes a WAV file on this device. Nothing is sent.')
+SPAN = 5 * PERIOD + 2 * .150   # six beats half a second apart, and the default window of 150 ms on each side
+
+def heard(s):
+    m = re.fullmatch(r'Heard (\d+) strokes?', s or '')
+    return int(m[1]) if m else None
+
+def test_the_meter_and_the_stroke_count_move_before_any_round(replay):
+    a = replay['a']
+    assert a.get('meter_visible') is True and a.get('count_visible') is True, a
+    lv = a['levels']
+    assert None not in lv and max(lv) > .05 and len(set(lv)) >= 3, a
+    assert 15 <= a['level_rate'] <= 40, a
+    ns = [heard(s) for s in a['counts']]
+    assert None not in ns and ns[-1] > ns[0] and ns[-1] >= 2, a
+    assert a['verdicts'] == 0 and a['msgs']['pcm'] == 0 and a['errs'] == [], a
+
+def test_keep_off_keeps_nothing_and_posts_no_samples(replay):
+    b = replay['b']
+    assert b.get('keep_box') == 1 and b.get('keep_checked') is False, b
+    assert b['verdicts'] == 6 and b['play'] is False and b['save'] is False and b['line'] == 0, b
+    assert b['msgs']['level'] > 0 and b['msgs']['onset'] > 0 and b['msgs']['pcm'] == 0, b
+    assert b['privacy'] == OFF_TEXT and b['errs'] == [], b
+
+def test_keep_on_replays_the_last_round_with_a_timeline(replay):
+    c = replay['c']
+    assert c.get('play') is True and c.get('save') is True and c.get('privacy') == KEEP_TEXT, c
+    assert abs(c['seconds'] - SPAN) <= .050 and abs(c['frames'] / c['rate'] - SPAN) <= .050, c
+    assert c['beat_ticks'] == 6 and c['stroke_ticks'] >= 1 and c['msgs']['pcm'] > 0, c
+    assert any(s['main'] and abs(s['dur'] - c['frames'] / c['rate']) < .001 for s in c['starts']), c
+    assert c['clicks'] == 6 and c['errs'] == [], c
+
+def test_save_writes_the_round_as_a_16_bit_wav(replay):
+    c = replay['c']
+    assert re.fullmatch(r'rupaka-mic-\d{8}-\d{6}\.wav', c.get('name') or ''), c
+    raw = Path(c['file']).read_bytes()
+    assert raw[:4] == b'RIFF' and raw[8:12] == b'WAVE' and raw[12:16] == b'fmt ' and int.from_bytes(raw[4:8], 'little') == len(raw) - 8
+    assert int.from_bytes(raw[20:22], 'little') == 1   # PCM
+    with wave.open(c['file']) as w:
+        assert (w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()) == (1, 2, c['rate'], c['frames'])
+        x = array('h', w.readframes(w.getnframes()))
+    assert abs(len(x) / c['rate'] - SPAN) <= .050 and max(map(abs, x)) > 3000   # the strikes are in it
+    assert c['urls']['made'] and set(c['urls']['made']) <= set(c['urls']['revoked']), c
+
+def test_untick_and_stop_drop_the_kept_round(replay):
+    e = replay['e']
+    assert e.get('play_first') is True and e.get('play_after_untick') is False and e.get('line_after_untick') == 0, e
+    assert e.get('play_after_recheck') is False and e.get('play_again') is True, e
+    assert e.get('play_after_stop') is False and e.get('save_after_stop') is False and e.get('line_after_stop') == 0 and e['errs'] == [], e
+
+def test_keep_false_hides_the_box(replay):
+    f = replay['f']
+    assert f.get('keep_box') == 0 and f.get('privacy') == OFF_TEXT and f['msgs']['pcm'] == 0 and f['errs'] == [], f
+
+def test_the_listen_files_make_no_request():
+    for f in (Path(__file__).parents[1]/'rupaka'/'blocks'/'listen'/'listen.js', Path(__file__).parents[1]/'rupaka'/'static'/'listen-worklet.js'):
+        js = f.read_text()
+        assert not any(x in js for x in ('fetch(', 'XMLHttpRequest', 'innerHTML', 'eval(', 'sendBeacon', 'WebSocket')), f

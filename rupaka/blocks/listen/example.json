@@ -219,7 +219,7 @@
     {
       "type": "caption",
       "after": "self",
-      "text": "Press Start, then play your strokes in Your turn. The microphone stays off until you click Listen on this device. The sound stays on this device and is not kept."
+      "text": "Press Start, then play your strokes in Your turn. The microphone stays off until you click Listen on this device. The sound stays on this device. It is kept only when you tick Keep my playing."
     }
   ]
 }

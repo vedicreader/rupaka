@@ -24,6 +24,10 @@
       "type": "bool",
       "doc": "offer the tap-to-calibrate step; default true"
     },
+    "keep": {
+      "type": "bool",
+      "doc": "offer the Keep my playing box, which keeps the last round in page memory for replay and a WAV file; default true (the box starts unticked)"
+    },
     "out": {
       "type": "keys",
       "doc": "state key receiving [{beat, verdict: early|on|late|missed, ms}]"
