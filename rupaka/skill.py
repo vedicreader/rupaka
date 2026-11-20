@@ -127,6 +127,13 @@ A sample plays its recording only when the page holds the assets, as `show(spec,
 `beats` names a list in `state`. When a silent cycle is scheduled, the round writes there the times of its beats, in seconds on the shared audio clock `ctx.audio()`.
 A gate that hides a technique of the pattern makes the rhythm wait for it, as for a sound. See `gallery()['mridangam-rhythm']`.
 
+## Listen
+
+A `listen` block times the learner's drum strokes with the microphone, on the device. It opens the microphone only on a click of Listen on this device (W), and Stop listening (S) stops it.
+`beats: [key]` names a state key that holds the beat times in seconds on the page audio clock. When that key changes and its last beat has passed, the block writes `[{beat, verdict, ms}]` to `out: [key]` and shows a line for each beat: on, early N ms, late N ms or missed.
+`tolerance` (10–80 ms, default 30) is on time; `window` (50–300 ms, default 150) is how far either side the block looks for a stroke. `calibrate: false` hides the Calibrate step (E), which plays 8 clicks and keeps the median delay of the taps.
+The block keeps no audio and sends nothing. It needs a served page with `listen-worklet.js` beside `rupaka.js`: in `page()`, `show()`, `md()` and `save()` it says that the microphone is not available. See `examples()['listen']`.
+
 ## 3D scenes
 
 ```python
@@ -152,7 +159,7 @@ assert validate(s) == []
 |---|---|
 | a notebook (Leela, Jupyter) | `show(spec)` gives an output with the HTML page and the `application/vnd.rupaka+json` mime |
 | a Markdown cell or page | `md(spec)` gives a `rupaka` fence of readable JSON; `md(spec, frame=True)` gives a frame |
-| a FastHTML page | `Demo(spec)` in the page, `Assets('/rupaka')` in the headers, and `bundle('js')`, `bundle('css')` and `bundle('three')` served as `rupaka.js`, `rupaka.css` and `three.js` at that prefix |
+| a FastHTML page | `Demo(spec)` in the page, `Assets('/rupaka')` in the headers, and `bundle('js')`, `bundle('css')`, `bundle('three')` and `bundle('listen-worklet')` served as `rupaka.js`, `rupaka.css`, `three.js` and `listen-worklet.js` at that prefix; only a served page can use `listen` |
 | a file | `save(spec, 'demo.html')` writes one page that works from `file://` with no network |
 
 These names are in `rupaka.render`. In Leela, a Markdown cell whose source is the `md(spec)` fence draws the demo. `page(spec)` gives the HTML as a string. `theme='paper'` gives the paper look.

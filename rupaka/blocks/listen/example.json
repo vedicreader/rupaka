@@ -1,0 +1,41 @@
+{
+  "rupaka": 1,
+  "id": "drum-timing",
+  "title": "On the beat",
+  "ask": "Predict first. Then let the microphone compare your strokes with the beats.",
+  "state": {
+    "beats": [],
+    "verdicts": []
+  },
+  "blocks": [
+    {
+      "type": "gate",
+      "id": "self",
+      "prompt": "A beat is at 1.000 s. Your stroke is at 1.040 s. On time means within 30 ms. What is the stroke?",
+      "options": [
+        "early",
+        "on time",
+        "late"
+      ],
+      "answer": {
+        "is": "late"
+      },
+      "again": true
+    },
+    {
+      "type": "listen",
+      "after": "self",
+      "beats": [
+        "beats"
+      ],
+      "out": [
+        "verdicts"
+      ]
+    },
+    {
+      "type": "caption",
+      "after": "self",
+      "text": "The microphone stays off until you click Listen on this device. The sound stays on this device and is not kept."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "listen",
+  "since": "0.0.23",
+  "purpose": "Opt-in, on-device microphone timing: compares drum onsets with the beats of a silent round.",
+  "props": {
+    "beats": {
+      "type": "keys",
+      "req": true,
+      "doc": "state key holding the round's beat times in seconds on the page audio clock"
+    },
+    "tolerance": {
+      "type": "num",
+      "min": 10,
+      "max": 80,
+      "doc": "ms counted as on time; default 30"
+    },
+    "window": {
+      "type": "num",
+      "min": 50,
+      "max": 300,
+      "doc": "ms either side searched for an onset; default 150"
+    },
+    "calibrate": {
+      "type": "bool",
+      "doc": "offer the tap-to-calibrate step; default true"
+    },
+    "out": {
+      "type": "keys",
+      "doc": "state key receiving [{beat, verdict: early|on|late|missed, ms}]"
+    }
+  }
+}

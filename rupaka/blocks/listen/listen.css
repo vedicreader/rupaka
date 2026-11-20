@@ -1,0 +1,4 @@
+.rk-listen { padding: 12px 0; border-top: 1px solid var(--rk-line); }
+.rk-listen-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0; }
+.rk-listen .rk-note { display: block; margin: 4px 0; color: var(--rk-mute); }
+.rk-listen-out { margin: 4px 0; padding-left: 18px; font-variant-numeric: tabular-nums; }

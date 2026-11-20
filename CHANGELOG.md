@@ -8,6 +8,8 @@
 - `rhythm` writes the times of the beats of the next silent cycle to the state key `beats`, in seconds on the shared audio clock. `validate` refuses an unknown profile, a pattern item that is not `rest` or a technique with a voice, and a `beats` key that is not in state.
 - The runtime gives each block one shared audio clock, `ctx.audio()`.
 - New demo `mridangam-rhythm`, with synthesised strokes only.
+- New block `listen`: opt-in microphone timing on the device. Only a click of Listen on this device opens the microphone, with echo cancellation, noise suppression and gain control off. Stop listening stops each track. `beats: [key]` holds beat times in seconds on the page audio clock. When the key changes and its last beat has passed, the block writes `[{beat, verdict, ms}]` to `out` and shows on, early N ms, late N ms or missed for each beat. `tolerance` (default 30 ms) and `window` (default 150 ms) set the limits. Calibrate plays 8 clicks and keeps the median delay of the taps. The block keeps no audio and sends nothing.
+- `listen` needs a served page: a host serves `bundle('listen-worklet')` as `listen-worklet.js` beside `rupaka.js`. In `page()`, `show()`, `md()` and `save()` the block says that the microphone is not available.
 
 ## 0.0.22
 

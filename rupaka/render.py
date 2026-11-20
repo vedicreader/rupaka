@@ -28,8 +28,9 @@ def assets() -> AttrDict:
                     css=[STATIC/'paper.css', STATIC/'rupaka.css', *[d/f'{d.name}.css' for d in blocks]], page=STATIC/'page.css', fonts=STATIC/'fonts')
 
 def bundle(kind:str='js') -> str:
-    "The runtime as one script (`js`) or one style sheet (`css`), with this package's version in the script. `three` gives three.js."
+    "The runtime as one script (`js`) or one style sheet (`css`), with this package's version in the script. `three` gives three.js, `listen-worklet` the onset worklet of `listen`."
     if kind == 'three': return three_js()
+    if kind == 'listen-worklet': return (STATIC/'listen-worklet.js').read_text()
     return '\n'.join(f'/* {p.relative_to(PKG)} */\n{p.read_text()}' for p in assets()[kind]).replace("version: '{{version}}'", f"version: '{__version__}'")
 
 # %% ../nbs/01_render.ipynb #s3d003
