@@ -1,5 +1,6 @@
 "The rhythm block: its spec checks, its schedule on the shared audio clock, Stop, and a real recording through ctx.asset."
-import io, json, wave
+import io, json, threading, wave
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from copy import deepcopy
 from pathlib import Path
 import pytest
@@ -200,8 +201,68 @@ def test_a_real_recording_plays_through_ctx_asset(br):
     assert rec[0]['n'] / rec[0]['rate'] == pytest.approx(n / rate, abs=.01)
     assert 'CC BY-NC 4.0' in text and 'Mridangam Stroke Dataset 1.5' in text
 
-def test_a_recording_from_the_media_base_stays_silent_with_no_request(br):
-    "The demo makes no network request, so a recording that the page does not hold cannot go on the audio clock."
+def test_a_media_base_on_another_origin_stays_silent_with_no_request(br):
+    "A page from set_content has an opaque origin, so the media base at rk.test is another origin: ctx.buffer asks nothing."
     s = real(pattern=['tha'], count_in=0, cycles=1, turns=False); del s['blocks'][-1]['after']
     rec, asked, text = _play_tha(br, show(s, media=WEB)._repr_html_(), "document.querySelector('.rk-rhythm').innerText.includes('silent')")
-    assert rec == [] and asked == [] and 'does not hold a recording' in text
+    assert rec == [] and asked == [] and 'did not load' in text
+
+# a served page: the media base on the same origin, and on another origin (a second local port)
+
+def _server(pages):
+    "A server on 127.0.0.1 that gives `pages` by path and the real WAV files under /m/. `seen` holds each path it was asked for."
+    seen = []
+    class H(BaseHTTPRequestHandler):
+        def do_GET(self):
+            path = self.path.split('?')[0]; seen.append(path)
+            f = REAL/path.removeprefix('/m/') if path.startswith('/m/') else None
+            if f is not None and f.is_file(): body, mime = f.read_bytes(), 'audio/wav'
+            elif path in pages: body, mime = pages[path].encode(), 'text/html; charset=utf-8'
+            else: return self.send_error(404)
+            self.send_response(200); self.send_header('Content-Type', mime); self.send_header('Content-Length', str(len(body)))
+            self.end_headers(); self.wfile.write(body)
+        def log_message(self, *a): pass
+    srv = ThreadingHTTPServer(('127.0.0.1', 0), H); threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv, f'http://127.0.0.1:{srv.server_address[1]}', seen, pages
+
+@pytest.fixture
+def two():
+    "Two servers: `a` serves the page, `b` is another origin that also holds the media."
+    a, b = _server({}), _server({})
+    try: yield a, b
+    finally:
+        for srv, *_ in (a, b): srv.shutdown(); srv.server_close()
+
+def _doc(s, media): return '<!doctype html><html><body>' + show(s, media=media)._repr_html_() + '</body></html>'   # no assets in the page
+
+def _served_round(br, url, wait):
+    pg = br.new_page(viewport=dict(width=720, height=1400)); web, errors = [], []
+    pg.on('request', lambda r: web.append(r.url)); pg.on('pageerror', lambda e: errors.append(str(e)))
+    pg.add_init_script(REC)
+    try:
+        pg.goto(url); pg.wait_for_selector('[data-rk-ready]', state='attached')
+        r = pg.locator('.rk-rhythm'); r.locator('button', has_text='Start').click()
+        pg.wait_for_function(wait, timeout=8000)
+        return pg.evaluate('rec'), web, r.inner_text(), errors
+    finally: pg.close()
+
+def test_a_recording_from_the_same_origin_media_base_plays_once_fetched(br, two):
+    (_, base, seen, pages), _ = two
+    s = real(pattern=['tha', 'tha', 'rest', 'tha'], tempo=240, count_in=0, cycles=1, turns=False); del s['blocks'][-1]['after']
+    assert errs(s) == []
+    tha = s['profiles']['mridangam']['data']['media']['tha-1']['src'].removeprefix('asset:')
+    n, rate = _frames(tha)
+    pages['/'] = _doc(s, '/m/')
+    rec, web, text, errors = _served_round(br, base + '/', 'rec.length >= 3')
+    assert errors == [] and len(rec) == 3 and all(x['when'] > 0 for x in rec)
+    assert all(x['n'] / x['rate'] == pytest.approx(n / rate, abs=.01) for x in rec)
+    assert seen.count(f'/m/{tha}') == 1 and [u for u in web if u.endswith(tha)] == [f'{base}/m/{tha}']
+    assert 'did not load' not in text
+
+def test_a_media_base_on_another_port_is_another_origin_and_gets_no_request(br, two):
+    (_, base, _, pages), (_, other, seen_b, _) = two
+    s = real(pattern=['tha'], count_in=0, cycles=1, turns=False); del s['blocks'][-1]['after']
+    pages['/'] = _doc(s, other + '/m/')
+    rec, web, text, errors = _served_round(br, base + '/', "document.querySelector('.rk-rhythm').innerText.includes('silent')")
+    assert errors == [] and rec == [] and seen_b == [] and not any(u.startswith(other) for u in web)
+    assert 'did not load' in text

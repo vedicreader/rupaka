@@ -9,11 +9,11 @@ Rupaka.block('rhythm', (b, ctx) => {
   const pattern = Array.isArray(b.pattern) ? b.pattern : [], n = pattern.length;
   const countIn = Math.round(clamp(b.count_in, 0, 8, 4)), cycles = Math.round(clamp(b.cycles, 1, 16, 2)), turns = b.turns !== false;
   let tempo = clamp(b.tempo, LO, HI, 60);
-  // The same asset rule as sound: only a hash-named asset through ctx.asset, never another URL.
-  const asset = src => { const m = /^asset:([0-9a-f]{64}\.[a-z0-9]+)$/.exec(src || ''); return m ? ctx.asset(m[1]) : null; };
+  // The same asset rule as sound: only a hash-named asset, which ctx.buffer loads through ctx.asset, never another URL.
+  const asset = src => /^asset:([0-9a-f]{64}\.[a-z0-9]+)$/.exec(src || '')?.[1] ?? null;
   const voice = id => {
-    const v = techs[id]?.voice, r = v?.kind === 'sample' ? recs[v.media] : null, url = r?.kind === 'audio' ? asset(r.src) : null;
-    return v?.kind === 'strike' ? v : url ? {kind: 'sample', url, start: +r.start || 0, end: r.end == null ? null : +r.end} : null;
+    const v = techs[id]?.voice, r = v?.kind === 'sample' ? recs[v.media] : null, name = r?.kind === 'audio' ? asset(r.src) : null;
+    return v?.kind === 'strike' ? v : name ? {kind: 'sample', name, start: +r.start || 0, end: r.end == null ? null : +r.end} : null;
   };
   const voices = pattern.map(x => x === 'rest' ? null : voice(x)), playable = voices.some(Boolean);
   const used = [...new Set(pattern.map(x => techs[x]?.voice).filter(v => v?.kind === 'sample' && recs[v.media]?.kind === 'audio').map(v => v.media))];
@@ -32,7 +32,7 @@ Rupaka.block('rhythm', (b, ctx) => {
     note, credits, status);
 
   let audio = null, timer = 0, epoch = 0, on = false, run = null, active = [], clickOn = false, shown = false;
-  const hiss = new Map(), buffers = new Map();   // noise buffers by length; url -> a promise of a decoded recording or null
+  const hiss = new Map();   // noise buffers by length
   const allowed = () => ctx.live(b.after) && ctx.live(b.lock);
   const setTempo = v => { tempo = clamp(v, LO, HI, tempo); inp.value = tempo; bpm.textContent = `${+tempo.toFixed(1)} beats per minute`; };
   setTempo(tempo);
@@ -90,22 +90,9 @@ Rupaka.block('rhythm', (b, ctx) => {
     const src = audio.createBufferSource(); src.buffer = buf;
     out(src, 1, at, len, false); src.start(at, off, len);
   };
-  // The demo makes no network request, so it decodes only a recording that the page holds as a data URI (show(spec, assets=...)).
-  // A recording from the media base plays in the sound block, but here its strokes are silent.
-  const bytes = url => {
-    const m = /^data:[^,]*;base64,([A-Za-z0-9+/=]+)$/.exec(url);
-    if (!m) return null;
-    const s = atob(m[1]), a = new Uint8Array(s.length);
-    for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i);
-    return a.buffer;
-  };
-  const load = url => {
-    if (!buffers.has(url)) {
-      const x = bytes(url);
-      buffers.set(url, x ? audio.decodeAudioData(x).catch(() => { buffers.delete(url); return null; }) : Promise.resolve(null));
-    }
-    return buffers.get(url);
-  };
+  // A recording comes from the page (a data URI) or from the media base on the page's own origin, through ctx.buffer.
+  // A recording that does not load gives null, and its strokes are silent.
+  const load = name => ctx.buffer(name).catch(() => null);
 
   // The round: a count-in, then each played cycle, and with turns a silent cycle after each one.
   const plan = () => [...(countIn ? [{kind: 'count', len: countIn}] : []),
@@ -145,9 +132,9 @@ Rupaka.block('rhythm', (b, ctx) => {
     try {
       audio = ctx.audio();
       if (audio.state === 'suspended') await audio.resume();
-      const bufs = await Promise.all(voices.map(v => v?.kind === 'sample' ? load(v.url) : null));
+      const bufs = await Promise.all(voices.map(v => v?.kind === 'sample' ? load(v.name) : null));
       if (ticket !== epoch || !allowed() || !root.isConnected) return;
-      if (voices.some((v, i) => v?.kind === 'sample' && !bufs[i])) status.textContent = 'This page does not hold a recording, so its strokes are silent.';
+      if (voices.some((v, i) => v?.kind === 'sample' && !bufs[i])) status.textContent = 'A recording did not load, so its strokes are silent.';
       run = {segs: plan(), seg: 0, beat: 0, next: audio.currentTime + LEAD, start: 0, spb: 60 / tempo, cues: [], bufs};
       wake(ticket);
     } catch (_) { stop(); status.textContent = 'Sound could not start. Try Start again.'; }

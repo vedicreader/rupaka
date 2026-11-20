@@ -119,6 +119,7 @@
 
   R.build = build;
   const CTX = new WeakMap();   // store -> ctx, for Rupaka.settle, Rupaka.open and Rupaka.options
+  const BUFS = new Map();      // resolved URL -> a promise of a decoded AudioBuffer, for the page
   R.mount = (host, spec, opts) => {
     const save = opts?.save;
     if (!spec || typeof spec !== 'object' || Array.isArray(spec)) throw new Error('the spec is not an object');
@@ -132,6 +133,24 @@
     ctx.asset = name => inline?.[name] ?? ctx.media + name;
     ctx.build = b => build(b, ctx);
     ctx.audio = () => (window.__rkAudio ||= new (window.AudioContext || window.webkitAudioContext)());
+    // A recording as a decoded AudioBuffer on ctx.audio(). A data URI decodes in place. Another URL loads only from this page's own
+    // http(s) origin; any other origin, or a file: or opaque origin, rejects and asks nothing. A redirect is an error, so the request
+    // cannot go on to another origin. This is the bundle's only request.
+    ctx.buffer = name => {
+      const u = String(ctx.asset(name)), m = /^data:[^,]*;base64,([A-Za-z0-9+/=]+)$/.exec(u);
+      let at = null; if (!m) try { at = new URL(u, location.href); } catch (_) { /* not a URL: it rejects below */ }
+      const key = at ? at.href : u;
+      if (!BUFS.has(key)) {
+        const sameOrigin = !!at && /^https?:$/.test(at.protocol) && location.origin !== 'null' && at.origin === location.origin;
+        const got = m ? Promise.resolve().then(() => { const s = atob(m[1]), a = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a.buffer; })
+          : sameOrigin ? fetch(at.href, {credentials: 'same-origin', redirect: 'error'}).then(r => { if (!r.ok) throw new Error(`${name}: HTTP ${r.status}`); return r.arrayBuffer(); })
+          : Promise.reject(new Error(`${name} is not on this page's origin, so it does not load`));
+        const p = got.then(x => ctx.audio().decodeAudioData(x));
+        p.catch(() => BUFS.delete(key));   // a failed load can try again later
+        BUFS.set(key, p);
+      }
+      return BUFS.get(key);
+    };
     // Each block has a stable id: its path in the spec, such as 'blocks.2' or 'blocks.0.blocks.1'. A part adds its own path: 'blocks.2.cells.0'.
     ctx.tag = (b, p) => { if (b && typeof b === 'object') { ctx.ids.set(b, p); (b.blocks || []).forEach((k, i) => ctx.tag(k, `${p}.blocks.${i}`)); } };
     ctx.id = (b, part) => { const p = ctx.ids.get(b); return p == null ? null : part == null ? p : `${p}.${part}`; };

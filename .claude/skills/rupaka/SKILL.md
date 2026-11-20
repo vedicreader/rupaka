@@ -126,7 +126,7 @@ The round is a count-in of `count_in` short clicks (0–8, default 4), then the 
 With `turns` (default true), a silent Your turn cycle of the same length follows each played cycle. The learner plays in that cycle. A quiet click on its beats is off until the learner turns it on.
 `tempo` is 30–240 beats per minute (default 60). The learner changes it with the slider, or A and D; a change starts at the next cycle.
 Each stroke plays the voice of its technique. A strike is synthesised. A technique in `pattern` must have a voice.
-A sample plays its recording only when the page holds the assets, as `show(spec, assets=folder)` does. The demo makes no network request, so a recording from `data-rk-media` is silent in a rhythm.
+A sample plays its recording from the page or from a `data-rk-media` base on the page's own origin. `show(spec, assets=folder)` puts the recording in the page. The rhythm never loads a recording from another origin. When a recording does not load, its strokes are silent and the block says so.
 `beats` names a list in `state`. When a silent cycle is scheduled, the round writes there the times of its beats, in seconds on the shared audio clock `ctx.audio()`.
 A gate that hides a technique of the pattern makes the rhythm wait for it, as for a sound. See `gallery()['mridangam-rhythm']`.
 

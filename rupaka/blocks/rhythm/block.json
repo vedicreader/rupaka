@@ -16,7 +16,7 @@
     "pattern": {
       "type": "list",
       "req": true,
-      "doc": "one cycle, one item per beat: a technique id of that profile with a voice, or \"rest\" for a beat with no stroke. 1 to 32 items, at least one stroke. A strike voice is synthesised. A sample voice plays its recording only when the page holds the assets, as show(spec, assets=folder) does; else its strokes are silent."
+      "doc": "one cycle, one item per beat: a technique id of that profile with a voice, or \"rest\" for a beat with no stroke. 1 to 32 items, at least one stroke. A strike voice is synthesised. A sample voice plays its recording from the page or from a data-rk-media base on the page's own origin, never from another origin. When a recording does not load, its strokes are silent."
     },
     "tempo": {
       "type": "num",
