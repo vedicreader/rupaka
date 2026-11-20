@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.23
+
+- New block `rhythm`: a practice round. Start plays a count-in, then the `pattern` of profile techniques, one per beat, `cycles` times. With `turns`, a silent Your turn cycle follows each played cycle. The tempo slider changes the tempo from the next cycle. Stop ends the round at once.
+- `rhythm` writes the times of the beats of the next silent cycle to the state key `beats`, in seconds on the shared audio clock. `validate` refuses an unknown profile, a pattern item that is not `rest` or a technique with a voice, and a `beats` key that is not in state.
+- The runtime gives each block one shared audio clock, `ctx.audio()`.
+- New demo `mridangam-rhythm`, with synthesised strokes only.
+
 ## 0.0.22
 
 - `show(spec, assets=folder)` puts the assets of `spec` on the host element as data URIs, in `data-rk-assets`. Recorded media then plays in a notebook with no server. The runtime takes an asset from that map before it uses `data-rk-media`. A missing asset raises `FileNotFoundError`, and assets over `cap` bytes (default 4,000,000) raise `ValueError`.

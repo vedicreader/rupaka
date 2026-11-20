@@ -1,0 +1,215 @@
+{
+  "rupaka": 1,
+  "id": "mridangam-rhythm",
+  "title": "Hear a round, then play it",
+  "ask": "Predict the gap between beats first. Then hear a short round of nam and tha, and play it back.",
+  "state": {
+    "beats": []
+  },
+  "profiles": {
+    "mridangam": {
+      "id": "mridangam-mrithang-tour",
+      "revision": "sha256:9eef06978052cd64284d36726c37bfde2dde98e51548dcba9494dc40655e57ed",
+      "school": "tanjore",
+      "data": {
+        "label": "Mridangam",
+        "sources": {
+          "tha": {
+            "url": "https://www.mrithang.com/mridangam-tour/",
+            "title": "Complete Photo Tour of the Mridangam",
+            "passage": "A non-vibrating tone played on the left hand side of the mridangam."
+          },
+          "nam": {
+            "url": "https://www.mrithang.com/mridangam-tour/",
+            "title": "Complete Photo Tour of the Mridangam",
+            "passage": "Nam is a vibrating tone played on the outer layer of the right hand side. Can be played in Palani or Tanjore style."
+          },
+          "nam-palani": {
+            "url": "https://www.mrithang.com/mridangam-tour/",
+            "title": "Complete Photo Tour of the Mridangam",
+            "passage": "A vibrating tone on the outer layer of the right side. Middle finger provides support, allowing for distinctive tonal control."
+          },
+          "nam-tanjore": {
+            "url": "https://www.mrithang.com/mridangam-tour/",
+            "title": "Complete Photo Tour of the Mridangam",
+            "passage": "The same vibrating tone, but with ring finger support in the traditional Tanjore manner."
+          },
+          "palani": {
+            "url": "https://www.mrithang.com/mridangam-tour/",
+            "title": "Complete Photo Tour of the Mridangam",
+            "passage": "Distinguished by using the middle finger as support for playing Nam and Dhin strokes."
+          },
+          "tanjore": {
+            "url": "https://www.mrithang.com/mridangam-tour/",
+            "title": "Complete Photo Tour of the Mridangam",
+            "passage": "Characterized by using the ring finger as support for Nam and Dhin."
+          }
+        },
+        "schools": {
+          "palani": {
+            "label": "Palani style",
+            "sources": [
+              "palani"
+            ]
+          },
+          "tanjore": {
+            "label": "Tanjore style",
+            "sources": [
+              "tanjore"
+            ]
+          }
+        },
+        "parts": {
+          "left": {
+            "kind": "region",
+            "label": "Left hand side",
+            "sources": [
+              "tha"
+            ]
+          },
+          "right-outer": {
+            "kind": "region",
+            "label": "Outer layer of the right side",
+            "sources": [
+              "nam"
+            ]
+          }
+        },
+        "techniques": {
+          "nam": {
+            "label": "Nam",
+            "sources": [
+              "nam"
+            ],
+            "parts": [
+              "right-outer"
+            ],
+            "voice": {
+              "kind": "strike",
+              "frequency": 138.59,
+              "decay": 1.2,
+              "gain": 0.6,
+              "partials": [
+                {
+                  "ratio": 1,
+                  "gain": 1
+                },
+                {
+                  "ratio": 2,
+                  "gain": 0.4
+                },
+                {
+                  "ratio": 3,
+                  "gain": 0.2
+                }
+              ],
+              "noise": 0.08,
+              "bend": 20
+            },
+            "facts": [
+              {
+                "key": "tone",
+                "value": "vibrating",
+                "sources": [
+                  "nam"
+                ]
+              },
+              {
+                "key": "support",
+                "value": "middle finger",
+                "school": "palani",
+                "sources": [
+                  "nam-palani",
+                  "palani"
+                ]
+              },
+              {
+                "key": "support",
+                "value": "ring finger",
+                "school": "tanjore",
+                "sources": [
+                  "nam-tanjore",
+                  "tanjore"
+                ]
+              }
+            ]
+          },
+          "tha": {
+            "label": "Tha",
+            "sources": [
+              "tha"
+            ],
+            "parts": [
+              "left"
+            ],
+            "voice": {
+              "kind": "strike",
+              "frequency": 180,
+              "decay": 0.035,
+              "gain": 0.5,
+              "partials": [
+                {
+                  "ratio": 1,
+                  "gain": 0.3
+                },
+                {
+                  "ratio": 2.7,
+                  "gain": 0.15
+                }
+              ],
+              "noise": 0.8
+            },
+            "facts": [
+              {
+                "key": "tone",
+                "value": "non-vibrating",
+                "sources": [
+                  "tha"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "blocks": [
+    {
+      "type": "gate",
+      "id": "gap",
+      "prompt": "At 60 beats per minute, how long is the gap from one beat to the next?",
+      "options": [
+        "half a second",
+        "one second",
+        "two seconds"
+      ],
+      "answer": {
+        "is": "one second"
+      },
+      "why": "Say why, in one line.",
+      "again": true
+    },
+    {
+      "type": "rhythm",
+      "after": "gap",
+      "label": "Nam and tha",
+      "profile": "mridangam",
+      "pattern": [
+        "nam",
+        "tha",
+        "tha",
+        "nam"
+      ],
+      "tempo": 60,
+      "count_in": 4,
+      "cycles": 2,
+      "turns": true,
+      "beats": "beats"
+    },
+    {
+      "type": "caption",
+      "after": "gap",
+      "text": "One minute has 60 seconds, so 60 beats per minute give **one beat each second**. Listen to the round, then play it in Your turn. At 120 beats per minute, how long is the gap?"
+    }
+  ]
+}

@@ -6,14 +6,14 @@ Docs: https://vedicreader.github.io/rupaka/spec.html.md"""
 
 # %% auto #0
 __all__ = ['PKG', 'SCHEMA', 'COMMON', 'EXPR_FNS', 'EXPR_CONSTS', 'FNS', 'EASE', 'MAX_WORDS', 'MAX_GRADE', 'VAGUE', 'NICKNAMES',
-           'TOP', 'MODES', 'PROFILE_LIMITS', 'PART_KINDS', 'MEDIA_EXTS', 'MEDIA_CLIP', 'SHOTS', 'FLOW', 'NODE_ID',
-           'UPGRADES', 'manifests', 'fn_manifests', 'from_', 'is_', 'demo', 'gate', 'readout', 'caption', 'row',
-           'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point', 'plot',
-           'arrow', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d', 'shot', 'path', 'links', 'points', 'drift',
-           'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft', 'field', 'fmt', 'parse_expr', 'get', 'js_str',
-           'show_value', 'fmt_text', 'noise', 'ease', 'keyframes', 'bubble', 'run', 'long_sentences', 'syllables',
-           'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate', 'profile_hash', 'profile_errors', 'shot_error',
-           'shots', 'append', 'upgrade', 'examples', 'gallery']
+           'TOP', 'MODES', 'RHYTHM_STEPS', 'PROFILE_LIMITS', 'PART_KINDS', 'MEDIA_EXTS', 'MEDIA_CLIP', 'SHOTS', 'FLOW',
+           'NODE_ID', 'UPGRADES', 'manifests', 'fn_manifests', 'from_', 'is_', 'demo', 'gate', 'readout', 'caption',
+           'row', 'stack', 'flow', 'pair', 'slider', 'toggle', 'choice', 'wheel', 'ranklist', 'bars', 'axis', 'point',
+           'plot', 'arrow', 'grid', 'pixels', 'scene', 'body', 'force', 'label3d', 'shot', 'path', 'links', 'points',
+           'drift', 'rules', 'rrf', 'softmax', 'lookup', 'expr', 'sample', 'dft', 'field', 'fmt', 'parse_expr', 'get',
+           'js_str', 'show_value', 'fmt_text', 'noise', 'ease', 'keyframes', 'bubble', 'run', 'long_sentences',
+           'syllables', 'grade', 'plain_why', 'plain_errors', 'has_bold', 'validate', 'profile_hash', 'profile_errors',
+           'shot_error', 'shots', 'append', 'upgrade', 'examples', 'gallery']
 
 # %% ../nbs/00_spec.ipynb #c004
 import hashlib, json, math, re
@@ -674,6 +674,28 @@ def _check_sound(p, b, err, profs):
             if not isinstance(ref.get('url'), str) or not _URL.fullmatch(ref['url']): err(f'{r}.url', 'needs an http or https URL')
             if not isinstance(ref.get('title'), str) or not ref['title'].strip(): err(f'{r}.title', 'needs a title')
 
+RHYTHM_STEPS = 32   #: the most beats in one cycle of a rhythm pattern
+
+def _check_rhythm(p, b, err, profs, st):
+    "Check a rhythm: `profile` is an embedded profile, each `pattern` item is `rest` or a technique of it with a voice, and `beats` is an input key."
+    a, pat = b.get('profile'), b.get('pattern')
+    if isinstance(a, str) and a not in profs: err(f'{p}.profile', f'"{a}" is not a profile in profiles')
+    if isinstance(pat, list):
+        if not 1 <= len(pat) <= RHYTHM_STEPS: err(f'{p}.pattern', f'needs 1 to {RHYTHM_STEPS} beats')
+        elif all(x == 'rest' for x in pat): err(f'{p}.pattern', 'needs at least one stroke that is not "rest"')
+        for j, x in enumerate(pat):
+            if x == 'rest' or not isinstance(a, str) or a not in profs: continue
+            t = _technique(profs, a, x)
+            if t is None: err(f'{p}.pattern[{j}]', f'"{x}" is not "rest" or a technique of the profile "{a}"')
+            elif 'voice' not in t: err(f'{p}.pattern[{j}]', f'the technique "{x}" has no voice, so it cannot play; use "rest"')
+    if isinstance(b.get('beats'), str) and b['beats'] not in st: err(f'{p}.beats', f'"{b["beats"]}" must be a key in state, which the round writes')
+
+def _rhythm_refs(b) -> set:
+    "The references `profiles.<alias>.techniques.<id>` that a rhythm `pattern` plays."
+    a, pat = b.get('profile'), b.get('pattern')
+    if not (isinstance(a, str) and isinstance(pat, list)): return set()
+    return {f'profiles.{a}.techniques.{x}' for x in pat if isinstance(x, str) and x != 'rest'}
+
 
 # %% ../nbs/00_spec.ipynb #c058
 def _check_blocks(spec, st, st0, known, deps, tables) -> L:
@@ -692,11 +714,13 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
         skip = ('type', 'after', 'blocks') + (('lock',) if m.get('lockable') else ()) + (('step',) if 'step' not in m.props else ())
         reads[p] = _props(m, b, p, known, tables, err, skip=skip)
         if b['type'] == 'sound' and (r := _play_ref(b.get('play'))): reads[p].add(r)
+        if b['type'] == 'rhythm': reads[p] |= _rhythm_refs(b)
         if b['type'] == 'gate': [err(f'{p}.hides', e) for e in _hides_errs(b.get('hides'), profs)]
         if (e := _step_err(b, m, learn, st)): err(f'{p}.step', e)
         if 'lock' in b and not m.get('lockable'): err(f'{p}.lock', f'a {m.name} has no controls to lock')
         if b['type'] == 'scene': _check_scene(p, b, st, st0, err)
         if b['type'] == 'sound': _check_sound(p, b, err, profs)
+        if b['type'] == 'rhythm': _check_rhythm(p, b, err, profs, st)
         if b['type'] == 'flow': _check_flow(p, b, err)
         if b['type'] in ('layer', 'timeline'): _check_stage(p, b, st, err)
         if b['type'] == 'choice' and isinstance(b.get('resets'), dict): [err(f'{p}.resets', f'"{k}" is not a state key; a choice resets only input keys') for k in b['resets'] if k not in st]

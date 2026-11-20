@@ -1,0 +1,48 @@
+{
+  "name": "rhythm",
+  "since": "0.0.23",
+  "purpose": "A practice round on the shared audio clock: a count-in, the pattern played from profile voices, and a silent cycle for the learner to play.",
+  "keys": "W starts or stops the round when Start has focus; A and D change the tempo when the tempo slider has focus; Q turns the click on your turn on or off when that button has focus; Enter or Space clicks a button",
+  "props": {
+    "label": {
+      "type": "str",
+      "doc": "the name above the round; Rhythm when it is not given"
+    },
+    "profile": {
+      "type": "str",
+      "req": true,
+      "doc": "an alias in profiles"
+    },
+    "pattern": {
+      "type": "list",
+      "req": true,
+      "doc": "one cycle, one item per beat: a technique id of that profile with a voice, or \"rest\" for a beat with no stroke. 1 to 32 items, at least one stroke. A strike voice is synthesised. A sample voice plays its recording only when the page holds the assets, as show(spec, assets=folder) does; else its strokes are silent."
+    },
+    "tempo": {
+      "type": "num",
+      "min": 30,
+      "max": 240,
+      "doc": "beats per minute at the start, 60 when it is not given. The learner can change it with the tempo slider; a change starts at the next cycle."
+    },
+    "count_in": {
+      "type": "num",
+      "min": 0,
+      "max": 8,
+      "doc": "beats of a short click before the first cycle, 4 when it is not given"
+    },
+    "turns": {
+      "type": "bool",
+      "doc": "true when it is not given: after each played cycle comes a silent Your turn cycle of the same length, for the learner to play"
+    },
+    "cycles": {
+      "type": "num",
+      "min": 1,
+      "max": 16,
+      "doc": "how many times the pattern plays, 2 when it is not given"
+    },
+    "beats": {
+      "type": "key",
+      "doc": "a key in state, for a list. When the next silent cycle is scheduled, the round writes there the times of its beats, in seconds on the shared audio clock."
+    }
+  }
+}
