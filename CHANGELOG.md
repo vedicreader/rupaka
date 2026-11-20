@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.0.23
+
+- New block `listen`: opt-in microphone timing on the device. Only a click of Listen on this device opens the microphone, with echo cancellation, noise suppression and gain control off. Stop listening stops each track. `beats: [key]` holds beat times in seconds on the page audio clock. When the key changes and its last beat has passed, the block writes `[{beat, verdict, ms}]` to `out` and shows on, early N ms, late N ms or missed for each beat. `tolerance` (default 30 ms) and `window` (default 150 ms) set the limits. Calibrate plays 8 clicks and keeps the median delay of the taps. The block keeps no audio and sends nothing.
+- `listen` needs a served page: a host serves `bundle('listen-worklet')` as `listen-worklet.js` beside `rupaka.js`. In `page()`, `show()`, `md()` and `save()` the block says that the microphone is not available.
+- Each mounted demo has `ctx.audio()`: one shared AudioContext for the page, made on first use.
+
 ## 0.0.22
 
 - `show(spec, assets=folder)` puts the assets of `spec` on the host element as data URIs, in `data-rk-assets`. Recorded media then plays in a notebook with no server. The runtime takes an asset from that map before it uses `data-rk-media`. A missing asset raises `FileNotFoundError`, and assets over `cap` bytes (default 4,000,000) raise `ValueError`.

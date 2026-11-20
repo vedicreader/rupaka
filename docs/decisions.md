@@ -21,6 +21,7 @@ The first design and plan (26 October 2026) are in the git history under `docs/s
 - **No network. Vendor what a demo needs.** Third-party code is in the package with its licence: three.js 0.185.0 (it loads only for a spec with a scene), Rough.js 4.6.6, perfect-freehand 1.2.2 and the Patrick Hand font. Tests check the hash of each vendored file.
   Why: a demo works offline and from `file://`. (0.0.8 to 0.0.10) `rupaka/static/vendor/`, `rupaka/static/fonts/LICENSES.txt`, `tests/test_board.py`.
 - **The bundle gets its version from the package.** `bundle()` writes `Rupaka.version`, so a version bump cannot leave it behind. (0.0.3) `nbs/01_render.ipynb`.
+- **The microphone stays on the device.** `listen` opens it only on a click, sends the sound to an onset worklet and keeps only onset times. It uses no MediaRecorder and no network. The worklet loads from `listen-worklet.js` beside `rupaka.js`, never from a `blob:` URL, so a page with an inline script (`page()`, `show()`, `md()`) cannot listen and says so. Beat times use one shared AudioContext for each page, `ctx.audio()`. (0.0.23) `rupaka/blocks/listen/`, `rupaka/static/listen-worklet.js`.
 
 ## Hosts
 
