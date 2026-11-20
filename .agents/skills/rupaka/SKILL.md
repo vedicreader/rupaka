@@ -133,7 +133,7 @@ A gate that hides a technique of the pattern makes the rhythm wait for it, as fo
 ## Listen
 
 A `listen` block times the learner's drum strokes with the microphone, on the device. It opens the microphone only on a click of Listen on this device (W), and Stop listening (S) stops it.
-`beats: [key]` names a state key that holds the beat times in seconds on the page audio clock. When that key changes and its last beat has passed, the block writes `[{beat, verdict, ms}]` to `out: [key]` and shows a line for each beat: on, early N ms, late N ms or missed.
+`beats: [key]` names the `beats` key of a rhythm block in the same spec. That round writes the beat times there, in seconds on the page audio clock. `validate` refuses a listen block without a matching rhythm block. When that key changes and its last beat has passed, the block writes `[{beat, verdict, ms}]` to `out: [key]` and shows a line for each beat: on, early N ms, late N ms or missed.
 `tolerance` (10–80 ms, default 30) is on time; `window` (50–300 ms, default 150) is how far either side the block looks for a stroke. `calibrate: false` hides the Calibrate step (E), which plays 8 clicks and keeps the median delay of the taps.
 The block keeps no audio and sends nothing. It needs a served page with `listen-worklet.js` beside `rupaka.js`: in `page()`, `show()`, `md()` and `save()` it says that the microphone is not available. See `examples()['listen']`.
 

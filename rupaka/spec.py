@@ -735,6 +735,7 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
             gates[b['id']] = (p, b)
         if m.get('lockable'): controls.append((p, b, {b[k] for k in ('bind', 'angle', 'x', 'y', 'to') if isinstance(b.get(k), str)} & set(st)))
     allp = {p: b for p, b, _ in _walk(spec['blocks']) if isinstance(b, dict)}
+    _check_listen(allp, err)
     for p, b in allp.items():
         for k in ('after', 'lock'):
             if k in b and b[k] not in gates: err(f'{p}.{k}', f'"{b[k]}" is not a gate' + (f'; an explainer has no gate, so remove "{k}"' if learn else ''))
@@ -746,6 +747,14 @@ def _check_blocks(spec, st, st0, known, deps, tables) -> L:
     _scene_reads(spec, reads)
     for gid, (p, g) in gates.items(): errs += _check_gate(gid, p, g, st, st0, deps, allp, waits, controls, reads)
     return errs
+
+def _check_listen(allp, err):
+    "Each key in the `beats` of a listen must be the `beats` key of a rhythm block, because only a round writes the beat times."
+    rounds = {b['beats'] for b in allp.values() if b.get('type') == 'rhythm' and isinstance(b.get('beats'), str)}
+    for p, b in allp.items():
+        if b.get('type') != 'listen' or not isinstance(b.get('beats'), list): continue
+        for k in b['beats']:
+            if isinstance(k, str) and k not in rounds: err(f'{p}.beats', f'no rhythm block writes "{k}"; add a rhythm block with "beats": "{k}"')
 
 def _scene_reads(spec, reads):
     "A part that rides a path or joins bodies shows what they read: add their reads to its own, for the think rule. The reads pass along a chain (links to a body on a path), so this repeats until no set grows."

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from fastcore.xml import to_xml
 from rupaka.render import Assets, Demo, bundle
-from rupaka.spec import validate
+from rupaka.spec import examples, validate
 
 HERE = Path(__file__).parent
 WAV = HERE/'listen_strikes.wav'
@@ -17,10 +17,15 @@ SR, PERIOD, LOOP, FIRST = 48000, 0.5, 2.0, 0.25   # a strike each half second; t
 GATE = {'type': 'gate', 'id': 'g', 'prompt': 'Do you play early, on the beat or late?', 'options': ['early', 'on the beat', 'late'],
         'answer': {'is': 'on the beat'}}
 
+# The checker wants a rhythm block that writes the beats key of each listen. Nothing plays and nothing is written before Start,
+# so the round does not change the tests that set the beats in state themselves.
+PROFILES = examples()['rhythm']['profiles']
+ROUND = {'type': 'rhythm', 'profile': 'mridangam', 'pattern': ['nam', 'tha', 'tha', 'nam'], 'beats': 'beats'}
+
 def spec(**kw):
     b = {'type': 'listen', 'after': 'g', 'beats': ['beats'], 'out': ['verdicts'], **kw}
-    return {'rupaka': 1, 'id': 'l', 'title': 'Listen', 'state': {'beats': [], 'verdicts': []},
-            'blocks': [GATE, {k: v for k, v in b.items() if v is not None}]}
+    return {'rupaka': 1, 'id': 'l', 'title': 'Listen', 'state': {'beats': [], 'verdicts': []}, 'profiles': PROFILES,
+            'blocks': [GATE, {k: v for k, v in b.items() if v is not None}, {**ROUND, 'after': 'g'}]}
 
 def test_a_listen_spec_passes_validate():
     assert validate(spec(tolerance=30, window=150, calibrate=True)) == []
@@ -32,6 +37,20 @@ def test_listen_needs_beats():
 def test_listen_tolerance_has_a_range():
     errs = validate(spec(tolerance=5))
     assert any('tolerance' in e and 'must be from 10 to 80' in e for e in errs), errs
+
+NO_ROUND = 'blocks[1].beats: no rhythm block writes "beats"; add a rhythm block with "beats": "beats"'
+
+def test_a_listen_with_no_rhythm_is_refused():
+    s = spec(); s['blocks'] = [b for b in s['blocks'] if b['type'] != 'rhythm']; del s['profiles']
+    assert validate(s) == [NO_ROUND]
+
+def test_a_listen_with_a_rhythm_that_writes_its_key_passes():
+    assert validate(spec()) == []
+
+def test_a_listen_that_reads_another_key_than_the_rhythm_writes_is_refused():
+    s = spec(); s['state']['other'] = []
+    s['blocks'] = [{**b, 'beats': 'other'} if b['type'] == 'rhythm' else b for b in s['blocks']]
+    assert validate(s) == [NO_ROUND]
 
 # --- a local host: the bundle, three.js and listen-worklet.js at /rupaka/, as a FastHTML server serves them ---------------------
 
@@ -56,8 +75,8 @@ def html(s):
     css, js = Assets('/rupaka', v='1')
     return f'<!doctype html><html lang="en"><head><meta charset="utf-8">{to_xml(css)}</head><body>{to_xml(Demo(s))}{to_xml(js)}</body></html>'
 
-LEARN = {'rupaka': 1, 'id': 'mic', 'mode': 'learn', 'title': 'Listen', 'state': {'beats': [], 'verdicts': []},
-         'blocks': [{'type': 'listen', 'beats': ['beats'], 'out': ['verdicts']}]}
+LEARN = {'rupaka': 1, 'id': 'mic', 'mode': 'learn', 'title': 'Listen', 'state': {'beats': [], 'verdicts': []}, 'profiles': PROFILES,
+         'blocks': [{'type': 'listen', 'beats': ['beats'], 'out': ['verdicts']}, ROUND]}
 
 @pytest.fixture(scope='module')
 def served():
