@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Make interactive teaching demos with rupaka. A demo is a JSON spec of small blocks: sliders, plots, 3D scenes, flows, and a gate that asks the learner to predict before the result shows. validate checks a spec, and md, show, page and save put it on a page. Use this skill when you write, check or fix a demo, a rupaka fence in a notebook or a Markdown page, or a screen-guide board.">
+
+<title>skill – rupaka</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./favicon.svg" rel="icon" type="image/svg+xml">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f803fa4e565d46961d2a1845e6c2e3f5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="skill – rupaka">
+<meta property="og:description" content="Make interactive teaching demos with rupaka. A demo is a JSON spec of small blocks: sliders, plots, 3D scenes, flows, and a gate that asks the learner to predict before the result shows. validate checks a spec, and md, show, page and save put it on a page. Use this skill when you write, check or fix a demo, a rupaka fence in a notebook or a Markdown page, or a screen-guide board.">
+<meta property="og:site_name" content="rupaka">
+<meta name="twitter:title" content="skill – rupaka">
+<meta name="twitter:description" content="Make interactive teaching demos with rupaka. A demo is a JSON spec of small blocks: sliders, plots, 3D scenes, flows, and a gate that asks the learner to predict before the result shows. validate checks a spec, and md, show, page and save put it on a page. Use this skill when you write, check or fix a demo, a rupaka fence in a notebook or a Markdown page, or a screen-guide board.">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark" aria-label="Site">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">rupaka</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav" aria-label="Toolbar">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./skill.html">skill</a></li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Section">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rupaka</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./spec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./render.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">render</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./check.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">check</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./agent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">agent</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gallery.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">gallery</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./poll.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">poll</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./board.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">board</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./skill.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">skill</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./media.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">media</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#make-a-demo" id="toc-make-a-demo" class="nav-link active" data-scroll-target="#make-a-demo">Make a demo</a></li>
+  <li><a href="#the-spec" id="toc-the-spec" class="nav-link" data-scroll-target="#the-spec">The spec</a></li>
+  <li><a href="#the-think-rule" id="toc-the-think-rule" class="nav-link" data-scroll-target="#the-think-rule">The think rule</a></li>
+  <li><a href="#derived-values" id="toc-derived-values" class="nav-link" data-scroll-target="#derived-values">Derived values</a></li>
+  <li><a href="#blocks" id="toc-blocks" class="nav-link" data-scroll-target="#blocks">Blocks</a></li>
+  <li><a href="#sound" id="toc-sound" class="nav-link" data-scroll-target="#sound">Sound</a></li>
+  <li><a href="#rhythm" id="toc-rhythm" class="nav-link" data-scroll-target="#rhythm">Rhythm</a></li>
+  <li><a href="#listen" id="toc-listen" class="nav-link" data-scroll-target="#listen">Listen</a></li>
+  <li><a href="#d-scenes" id="toc-d-scenes" class="nav-link" data-scroll-target="#d-scenes">3D scenes</a></li>
+  <li><a href="#put-a-demo-on-a-page" id="toc-put-a-demo-on-a-page" class="nav-link" data-scroll-target="#put-a-demo-on-a-page">Put a demo on a page</a></li>
+  <li><a href="#check-in-a-browser" id="toc-check-in-a-browser" class="nav-link" data-scroll-target="#check-in-a-browser">Check in a browser</a></li>
+  <li><a href="#ask-a-model-for-a-demo" id="toc-ask-a-model-for-a-demo" class="nav-link" data-scroll-target="#ask-a-model-for-a-demo">Ask a model for a demo</a></li>
+  <li><a href="#boards-and-room-questions" id="toc-boards-and-room-questions" class="nav-link" data-scroll-target="#boards-and-room-questions">Boards and room questions</a></li>
+  <li><a href="#this-sheet-in-a-harness" id="toc-this-sheet-in-a-harness" class="nav-link" data-scroll-target="#this-sheet-in-a-harness">This sheet in a harness</a></li>
+  <li><a href="#the-hook" id="toc-the-hook" class="nav-link" data-scroll-target="#the-hook">The hook</a></li>
+  <li><a href="#the-skill.md" id="toc-the-skill.md" class="nav-link" data-scroll-target="#the-skill.md">The SKILL.md</a></li>
+  <li><a href="#tests" id="toc-tests" class="nav-link" data-scroll-target="#tests">Tests</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/vedicreader/rupaka/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="skill.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">skill</h1>
+</div>
+
+<div>
+  <div class="description">
+    Make interactive teaching demos with rupaka. A demo is a JSON spec of small blocks: sliders, plots, 3D scenes, flows, and a gate that asks the learner to predict before the result shows. <code>validate</code> checks a spec, and <code>md</code>, <code>show</code>, <code>page</code> and <code>save</code> put it on a page. Use this skill when you write, check or fix a demo, a <code>rupaka</code> fence in a notebook or a Markdown page, or a screen-guide board.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<section id="make-a-demo" class="level2">
+<h2 class="anchored" data-anchor-id="make-a-demo">Make a demo</h2>
+<p>Build a spec with the Python builders, or write the same JSON by hand.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rupaka.spec <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rupaka.render <span class="im">import</span> md</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> demo(<span class="st">'sum'</span>, <span class="st">'Add two numbers'</span>, ask<span class="op">=</span><span class="st">'Predict the sum before you see it.'</span>, state<span class="op">=</span><span class="bu">dict</span>(a<span class="op">=</span><span class="dv">2</span>, b<span class="op">=</span><span class="dv">3</span>), derive<span class="op">=</span>[expr(<span class="st">'a + b'</span>, <span class="st">'sum'</span>)],</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>         blocks<span class="op">=</span>[gate(<span class="st">'s'</span>, <span class="st">'What is </span><span class="sc">{a}</span><span class="st"> + </span><span class="sc">{b}</span><span class="st">?'</span>, [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>], <span class="st">'sum'</span>, why<span class="op">=</span><span class="st">'Say why, in one line.'</span>, context<span class="op">=</span><span class="st">'For a = </span><span class="sc">{a}</span><span class="st"> and b = </span><span class="sc">{b}</span><span class="st">:'</span>),</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                 readout(<span class="st">'</span><span class="sc">{a}</span><span class="st"> + </span><span class="sc">{b}</span><span class="st"> = </span><span class="sc">{sum}</span><span class="st">'</span>, after<span class="op">=</span><span class="st">'s'</span>),</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                 row(slider(<span class="st">'a'</span>, <span class="st">'a'</span>, <span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">1</span>, lock<span class="op">=</span><span class="st">'s'</span>), slider(<span class="st">'b'</span>, <span class="st">'b'</span>, <span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">1</span>, lock<span class="op">=</span><span class="st">'s'</span>))])</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> validate(d) <span class="op">==</span> []</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>fence <span class="op">=</span> md(d)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>validate(spec)</code> gives a list of errors. Each error is <code>path: sentence</code>, and the sentence names the fix. An empty list means that the spec is good. Fix each error and run <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> again. <code>plain_errors(spec)</code> gives each text that is not plain English (ASD-STE100 at US grade 9).</p>
+<p><code>from rupaka.agent import catalog</code> and <code>print(catalog())</code> give every block and fn with its purpose and props. The catalog is the full list. This sheet is a summary.</p>
+</section>
+<section id="the-spec" class="level2">
+<h2 class="anchored" data-anchor-id="the-spec">The spec</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>key</th>
+<th>what it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>id</code></td>
+<td>the demo id</td>
+</tr>
+<tr class="even">
+<td><code>title</code></td>
+<td>the title above the demo</td>
+</tr>
+<tr class="odd">
+<td><code>ask</code></td>
+<td>one lead line under the title</td>
+</tr>
+<tr class="even">
+<td><code>state</code></td>
+<td>the input keys and their opening values</td>
+</tr>
+<tr class="odd">
+<td><code>derive</code></td>
+<td>a list of fns; each fn computes one derived key, in order</td>
+</tr>
+<tr class="even">
+<td><code>blocks</code></td>
+<td>the blocks, from top to bottom</td>
+</tr>
+<tr class="odd">
+<td><code>tables</code></td>
+<td>named lists of rows, for <a href="https://vedicreader.github.io/rupaka/spec.html#lookup"><code>lookup</code></a> and <a href="https://vedicreader.github.io/rupaka/spec.html#rules"><code>rules</code></a></td>
+</tr>
+<tr class="even">
+<td><code>concept</code></td>
+<td>the slug of the concept that the demo teaches</td>
+</tr>
+<tr class="odd">
+<td><code>mode</code></td>
+<td><code>predict</code> (the default) or <code>learn</code></td>
+</tr>
+<tr class="even">
+<td><code>askable</code></td>
+<td><code>false</code> removes the Ask about this control</td>
+</tr>
+</tbody>
+</table>
+<p>A text takes <code>{key}</code> for a state value, <code>{key:2}</code> for a value rounded to two decimal places, and <code>{row.name}</code> for a field of a row. A gate <code>prompt</code> and a <a href="https://vedicreader.github.io/rupaka/spec.html#caption"><code>caption</code></a> also take <code>**bold**</code>.</p>
+</section>
+<section id="the-think-rule" class="level2">
+<h2 class="anchored" data-anchor-id="the-think-rule">The think rule</h2>
+<p>A demo in <code>predict</code> mode asks before it shows. <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> refuses a spec that breaks one of these rules:</p>
+<ul>
+<li>A <code>predict</code> demo has at least one <a href="https://vedicreader.github.io/rupaka/spec.html#gate"><code>gate</code></a>.</li>
+<li>A block that shows a value which a gate’s answer depends on waits for that gate. Give the block <code>after='&lt;gate id&gt;'</code>, or name the derived keys in the gate’s <code>hides</code>.</li>
+<li>A gate whose answer a control changes has a <code>context</code> that names the inputs, for example <code>'For {a}:'</code>.</li>
+<li>A <code>learn</code> demo (an explainer) has no gate, and no block in it has <code>after</code> or <code>lock</code>.</li>
+</ul>
+<p>The learner predicts, locks in with Cmd+Return, sees the result, then moves the controls. Give each control that feeds the answer <code>lock='&lt;gate id&gt;'</code>. A locked control does not move before the lock in. End the <a href="https://vedicreader.github.io/rupaka/spec.html#caption"><code>caption</code></a> with a new question that the learner answers with the controls.</p>
+</section>
+<section id="derived-values" class="level2">
+<h2 class="anchored" data-anchor-id="derived-values">Derived values</h2>
+<p><code>expr(formula, out)</code> computes one number. A formula has <code>+ - * / ^</code>, parentheses, number state keys, <code>sin cos tan exp log sqrt abs min max floor ceil round</code>, <code>pi</code> and <code>e</code>. <code>sin</code>, <code>cos</code> and <code>tan</code> take radians. A formula has no <code>%</code>, no comparison and no condition. <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> refuses each of them.</p>
+<ul>
+<li>Wrap an angle to one circle with <code>x - 360*floor(x/360)</code>.</li>
+<li>Pick a case with <a href="https://vedicreader.github.io/rupaka/spec.html#rules"><code>rules</code></a> (the first row of a table that matches) or <a href="https://vedicreader.github.io/rupaka/spec.html#lookup"><code>lookup</code></a> (a row of a table by key or position).</li>
+<li><code>expr('x^2 + b*x', 'curve', over=dict(x=[-5, 5, 101]))</code> gives a series of points for <a href="https://vedicreader.github.io/rupaka/spec.html#plot"><code>plot</code></a>.</li>
+</ul>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>fn</th>
+<th>gives</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#lookup"><code>lookup</code></a></td>
+<td>the row of a table for a key</td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#rules"><code>rules</code></a></td>
+<td>the row of a rule table that matches, its <code>out</code>, and <code>alts</code> as wrong options for a gate</td>
+</tr>
+<tr class="odd">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#rrf"><code>rrf</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#softmax"><code>softmax</code></a></td>
+<td>reciprocal rank fusion scores; shares from scores at a temperature</td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#fmt"><code>fmt</code></a></td>
+<td>a string from a template, to compare with a gate option</td>
+</tr>
+<tr class="odd">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#field"><code>field</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#sample"><code>sample</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#dft"><code>dft</code></a></td>
+<td>a grid of values for <a href="https://vedicreader.github.io/rupaka/spec.html#pixels"><code>pixels</code></a>; the points of a formula in time; a spectrum</td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#ease"><code>ease</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#keyframes"><code>keyframes</code></a></td>
+<td>a number along a curve; the value at a time</td>
+</tr>
+<tr class="odd">
+<td><code>ids</code>, <code>pick</code>, <code>sort</code></td>
+<td>the ids of rows; one field of each row; a sorted copy</td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#bubble"><code>bubble</code></a></td>
+<td>one step of a bubble sort: the list, <a href="https://vedicreader.github.io/rupaka/spec.html#bars"><code>bars</code></a> with the compared pair marked, <code>comps</code>, <code>swaps</code>, the code <code>line</code> and a <code>mark</code> per line</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="blocks" class="level2">
+<h2 class="anchored" data-anchor-id="blocks">Blocks</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>block</th>
+<th>what it does</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#gate"><code>gate</code></a></td>
+<td>asks one question and hides the result until the learner locks in a prediction</td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#readout"><code>readout</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#caption"><code>caption</code></a></td>
+<td>one large line from a template; the explanation after the reveal</td>
+</tr>
+<tr class="odd">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#slider"><code>slider</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#toggle"><code>toggle</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#choice"><code>choice</code></a></td>
+<td>change a number; turn a thing on or off; pick one case</td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#wheel"><code>wheel</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#ranklist"><code>ranklist</code></a></td>
+<td>pick an item on a ring, or point at an angle over equal sectors; drag rows to change an order</td>
+</tr>
+<tr class="odd">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#axis"><code>axis</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#plot"><code>plot</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#point"><code>point</code></a></td>
+<td>axes with a curve or dots, and a dot that the learner can drag</td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#bars"><code>bars</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#grid"><code>grid</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#pixels"><code>pixels</code></a></td>
+<td>bars of a list; a heatmap; a grey image of rows of numbers</td>
+</tr>
+<tr class="odd">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#row"><code>row</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#stack"><code>stack</code></a></td>
+<td>blocks side by side; blocks in one group, one above the other</td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#pair"><code>pair</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#flow"><code>flow</code></a></td>
+<td>one row of a worked example; two to five boxes with arrows</td>
+</tr>
+<tr class="odd">
+<td><code>layers</code>, <code>layer</code>, <code>timeline</code></td>
+<td>a flat picture of layers with parallax; one layer; a bar for the time <code>t</code></td>
+</tr>
+<tr class="even">
+<td><a href="https://vedicreader.github.io/rupaka/spec.html#scene"><code>scene</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#body"><code>body</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#force"><code>force</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#label3d"><code>label3d</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#shot"><code>shot</code></a></td>
+<td>a 3D view, its parts, its arrows, its labels and its cameras</td>
+</tr>
+</tbody>
+</table>
+<p>A block with <code>step: n</code> shows from step <code>n</code> of an explainer that has the state key <code>step</code>.</p>
+<p>A <a href="https://vedicreader.github.io/rupaka/spec.html#choice"><code>choice</code></a> with <code>resets</code>, for example <code>{"tick": 0}</code>, sets those state keys back when the pick changes. Use it when a control such as a step bar belongs to the picked case.</p>
+</section>
+<section id="sound" class="level2">
+<h2 class="anchored" data-anchor-id="sound">Sound</h2>
+<p>A <code>sound</code> block plays a sample-free <code>strike</code> only on a click of Play, or W on that button. It never plays on mount, state change, gate restore or reveal. Use <code>after</code> to wait for a gate. Opening that gate again stops audio and disables Play. The visible text labels synthesis as an approximation. Optional <code>ref: {url, title}</code> links to a real lesson or recording; it never plays the link. Use <code>voice: {kind: "strike", frequency: 138.59, decay: 1.2, gain: 0.6, partials: [{ratio: 1, gain: 1}], noise: 0.08}</code>. Frequency is 20–8000 Hz, decay is 0.01–5 seconds, and gains and noise are 0–1. Use one to eight partials with ratio 0.0025–400 and gain 0–1. Each partial stays at 20–8000 Hz. Optional <code>bend</code> is -1200–1200 cents; the bent frequency must also stay in range. Voice fields cannot contain URLs, samples or code. <code>tone</code> is reserved for later, not supported. See <code>examples()['sound']</code> for the sourced Nam and Tha comparison.</p>
+<p>A spec can embed profiles: <code>profiles: {alias: {id, revision, school, data}}</code>, with <code>revision</code> equal to <code>profile_hash(data)</code>. Check <code>data</code> with <a href="https://vedicreader.github.io/rupaka/spec.html#profile_errors"><code>profile_errors</code></a>. A clean result means good structure and attribution, not true facts. A sound has <code>voice</code> or <code>play: {profile, technique}</code>, never both. A <code>play</code> technique with no voice shows its facts and sources, and Play stays disabled. A sound with <code>play</code> shows the parts, facts and source links of its technique when the block shows. A fact with no <code>school</code> shows for all schools. A per-school fact shows only for the embed <code>school</code>. With no fact for that school, the value shows as unknown. A gate names a technique that gives its answer away in <code>hides</code>: <code>profiles.&lt;alias&gt;.techniques.&lt;id&gt;</code>. Then each sound that plays it must wait for that gate. This is a declared guard, not a detector: a sound that no gate names can play before any gate. The raw spec is in the page, so a hidden block is not a secret. See <code>gallery()['mridangam-profile']</code>.</p>
+<p>A profile can hold <code>media: {id: {kind, src, credit, start, end, alt, sources}}</code>. <code>kind</code> is <code>audio</code>, <code>image</code> or <code>video</code>. <code>credit</code> is <code>{who, license, url}</code>; the page shows the link and never loads it. <code>src</code> is <code>asset:&lt;sha256&gt;.&lt;ext&gt;</code>, a file that the host serves, or <code>youtube:&lt;11-character id&gt;</code> for a video with <code>start</code> and <code>end</code>, at most 120 seconds apart. No other URL is allowed. An image needs <code>alt</code>. A technique lists <code>media: [{media, school}]</code>, with the same school rule as facts. A technique voice can be <code>{kind: "sample", media: &lt;audio id&gt;}</code>. The media of a technique shows only while its sound block shows, so a gate that hides the technique also hides its media. A YouTube clip loads only when the learner clicks Load video. The page loads an asset from <code>data-rk-media</code> and the asset name (default <code>media/</code>). <code>save(spec, path, media=folder)</code> copies the assets to <code>media/</code> beside the page. In a notebook, <code>show(spec, assets=folder)</code> puts the assets in the page as data URIs, up to <code>cap</code> bytes (default 4,000,000). <code>rupaka.media</code> makes assets: <a href="https://vedicreader.github.io/rupaka/media.html#import_asset"><code>import_asset</code></a>, <a href="https://vedicreader.github.io/rupaka/media.html#clip"><code>clip</code></a> and <a href="https://vedicreader.github.io/rupaka/media.html#still"><code>still</code></a> (with ffmpeg), and <a href="https://vedicreader.github.io/rupaka/media.html#find_span"><code>find_span</code></a> for a phrase in a transcript. See <code>gallery()['mridangam-real']</code>.</p>
+</section>
+<section id="rhythm" class="level2">
+<h2 class="anchored" data-anchor-id="rhythm">Rhythm</h2>
+<p>A <code>rhythm</code> block is a practice round: <code>{type: "rhythm", profile: alias, pattern: [technique ids or "rest"], beats: "beats"}</code>. It plays only when the learner clicks Start, or W on that button. Stop, or W again, ends the round at once. The round is a count-in of <code>count_in</code> short clicks (0–8, default 4), then the pattern <code>cycles</code> times (1–16, default 2). One item of <code>pattern</code> is one beat. With <code>turns</code> (default true), a silent Your turn cycle of the same length follows each played cycle. The learner plays in that cycle. A quiet click on its beats is off until the learner turns it on. <code>tempo</code> is 30–240 beats per minute (default 60). The learner changes it with the slider, or A and D; a change starts at the next cycle. Each stroke plays the voice of its technique. A strike is synthesised. A technique in <code>pattern</code> must have a voice. A sample plays its recording from the page or from a <code>data-rk-media</code> base on the page’s own origin. <code>show(spec, assets=folder)</code> puts the recording in the page. The rhythm never loads a recording from another origin. When a recording does not load, its strokes are silent and the block says so. <code>beats</code> names a list in <code>state</code>. When a silent cycle is scheduled, the round writes there the times of its beats, in seconds on the shared audio clock <code>ctx.audio()</code>. A gate that hides a technique of the pattern makes the rhythm wait for it, as for a sound. See <code>gallery()['mridangam-rhythm']</code>.</p>
+</section>
+<section id="listen" class="level2">
+<h2 class="anchored" data-anchor-id="listen">Listen</h2>
+<p>A <code>listen</code> block times the learner’s drum strokes with the microphone, on the device. It opens the microphone only on a click of Listen on this device (W), and Stop listening (S) stops it. <code>beats: [key]</code> names the <code>beats</code> key of a rhythm block in the same spec. That round writes the beat times there, in seconds on the page audio clock. <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> refuses a listen block without a matching rhythm block. When that key changes and its last beat has passed, the block writes <code>[{beat, verdict, ms}]</code> to <code>out: [key]</code> and shows a line for each beat: on, early N ms, late N ms or missed. <code>tolerance</code> (10–80 ms, default 30) is on time; <code>window</code> (50–300 ms, default 150) is how far either side the block looks for a stroke. <code>calibrate: false</code> hides the Calibrate step (E), which plays 8 clicks and keeps the median delay of the taps. While the microphone is on, a level meter and a count (Heard 7 strokes) show that the block hears the drum, before any round. Keep my playing (Q) is a box, off at first. When it is on, the block keeps the audio of the last round only, from its first beat minus <code>window</code> to its last beat plus <code>window</code> (at most 60 s), in page memory. After the round, Play what I played (A) plays it on <code>ctx.audio()</code>, with a soft click on each beat if Click on each beat (1) is on, and a timeline shows the beats and the strokes heard. Save my playing (D) writes the round as a 16-bit WAV file on the device. Stop listening, a tick off, the next round and leaving the page drop the audio. <code>keep: false</code> leaves the box out. With the box off, the block keeps no audio. It sends nothing. It needs a served page with <code>listen-worklet.js</code> beside <code>rupaka.js</code>: in <a href="https://vedicreader.github.io/rupaka/render.html#page"><code>page()</code></a>, <a href="https://vedicreader.github.io/rupaka/render.html#show"><code>show()</code></a>, <a href="https://vedicreader.github.io/rupaka/render.html#md"><code>md()</code></a> and <a href="https://vedicreader.github.io/rupaka/render.html#save"><code>save()</code></a> it says that the microphone is not available. See <code>examples()['listen']</code>.</p>
+</section>
+<section id="d-scenes" class="level2">
+<h2 class="anchored" data-anchor-id="d-scenes">3D scenes</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> demo(<span class="st">'lift'</span>, <span class="st">'Twice the weight'</span>, state<span class="op">=</span><span class="bu">dict</span>(step<span class="op">=</span><span class="dv">1</span>, cam<span class="op">=</span><span class="st">'wide'</span>, w<span class="op">=</span><span class="dv">4</span>), derive<span class="op">=</span>[expr(<span class="st">'w * 2'</span>, <span class="st">'up'</span>)],</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>         blocks<span class="op">=</span>[gate(<span class="st">'g'</span>, <span class="st">'What is twice </span><span class="sc">{w}</span><span class="st">?'</span>, [<span class="dv">6</span>, <span class="dv">8</span>], <span class="st">'up'</span>),</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                 scene(body(<span class="st">'base'</span>, <span class="st">'box'</span>, [<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>]), force([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>], <span class="st">'up'</span>, on<span class="op">=</span><span class="st">'base'</span>, at<span class="op">=</span>[<span class="dv">0</span>, <span class="fl">1.5</span>, <span class="dv">0</span>], label<span class="op">=</span><span class="st">'lift, </span><span class="sc">{up}</span><span class="st">'</span>, after<span class="op">=</span><span class="st">'g'</span>),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                       shot(bind<span class="op">=</span><span class="st">'cam'</span>), shot(<span class="st">'close:base'</span>, step<span class="op">=</span><span class="dv">2</span>), bind<span class="op">=</span><span class="st">'step'</span>, steps<span class="op">=</span>[<span class="st">'A box.'</span>, <span class="st">'Look closer.'</span>])])</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> validate(s) <span class="op">==</span> []</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>A <a href="https://vedicreader.github.io/rupaka/spec.html#scene"><code>scene</code></a> holds only <a href="https://vedicreader.github.io/rupaka/spec.html#body"><code>body</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#force"><code>force</code></a>, <a href="https://vedicreader.github.io/rupaka/spec.html#label3d"><code>label3d</code></a> and <a href="https://vedicreader.github.io/rupaka/spec.html#shot"><code>shot</code></a> blocks. With <code>bind='step'</code> and <code>steps</code>, it builds one step at a time. A part with <code>step: n</code> shows from step <code>n</code>.</li>
+<li>The frame has <code>y</code> up. <code>at</code> is a place in the frame of the parent body. <code>rot</code> is a turn in degrees about <code>x</code>, <code>y</code> and <code>z</code>, and each item can be a state key. A positive turn about <code>y</code> moves <code>+x</code> toward <code>-z</code>: counterclockwise, seen from above. <code>pivot</code> is the point that <code>rot</code> turns about.</li>
+<li>The JSON key <code>in</code> (the <code>inside=</code> argument of the <a href="https://vedicreader.github.io/rupaka/spec.html#body"><code>body</code></a> builder) puts a body in another body. The inner body moves and turns with it. A <code>group</code> body has no shape and only holds other bodies.</li>
+<li><a href="https://vedicreader.github.io/rupaka/spec.html#body"><code>body</code></a> kinds and their <code>size</code>: <code>box</code> <code>[x, y, z]</code>, <code>cylinder</code> <code>[radius, height]</code> or <code>[top radius, bottom radius, height]</code>, <code>cone</code> and <code>capsule</code> <code>[radius, height]</code>, <code>sphere</code> <code>[radius]</code>, <code>torus</code> <code>[radius, tube]</code>. <code>color</code> is one of <code>body light dark glass acc ok no</code>.</li>
+<li><code>force(dir, mag)</code> is an arrow. <code>dir</code> is a direction in the world, and each item can be a state key. <code>mag</code> is a number or a key, and a negative <code>mag</code> turns the arrow round. <code>on</code> and <code>at</code> fix its start. <code>tone</code> is one of <code>up down side acc ok no ink</code>.</li>
+<li><a href="https://vedicreader.github.io/rupaka/spec.html#label3d"><code>label3d</code></a> is a chip of at most 60 characters on a body (<code>on</code>) or a point (<code>at</code>). The scene places the chips so that they do not overlap.</li>
+<li><a href="https://vedicreader.github.io/rupaka/spec.html#shot"><code>shot</code></a> names a camera: <code>wide</code>, <code>side</code>, <code>front</code>, <code>top</code> or <code>close:&lt;body id&gt;</code>. A <a href="https://vedicreader.github.io/rupaka/spec.html#choice"><code>choice</code></a> and a <a href="https://vedicreader.github.io/rupaka/spec.html#shot"><code>shot</code></a> with the same <code>bind</code> key give the learner a camera picker.</li>
+<li>Compute a direction with trigonometry in <code>derive</code>, then put the derived keys in <code>dir</code>. Say in the scene <code>label</code> when sizes and distances are not to scale.</li>
+</ul>
+</section>
+<section id="put-a-demo-on-a-page" class="level2">
+<h2 class="anchored" data-anchor-id="put-a-demo-on-a-page">Put a demo on a page</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>where</th>
+<th>how</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>a notebook (Leela, Jupyter)</td>
+<td><code>show(spec)</code> gives an output with the HTML page and the <code>application/vnd.rupaka+json</code> mime</td>
+</tr>
+<tr class="even">
+<td>a Markdown cell or page</td>
+<td><code>md(spec)</code> gives a <code>rupaka</code> fence of readable JSON; <code>md(spec, frame=True)</code> gives a frame</td>
+</tr>
+<tr class="odd">
+<td>a FastHTML page</td>
+<td><code>Demo(spec)</code> in the page, <code>Assets('/rupaka')</code> in the headers, and <code>bundle('js')</code>, <code>bundle('css')</code>, <code>bundle('three')</code> and <code>bundle('listen-worklet')</code> served as <code>rupaka.js</code>, <code>rupaka.css</code>, <code>three.js</code> and <code>listen-worklet.js</code> at that prefix; only a served page can use <code>listen</code></td>
+</tr>
+<tr class="even">
+<td>a file</td>
+<td><code>save(spec, 'demo.html')</code> writes one page that works from <code>file://</code> with no network</td>
+</tr>
+</tbody>
+</table>
+<p>These names are in <code>rupaka.render</code>. In Leela, a Markdown cell whose source is the <code>md(spec)</code> fence draws the demo. <code>page(spec)</code> gives the HTML as a string. <code>theme='paper'</code> gives the paper look.</p>
+</section>
+<section id="check-in-a-browser" class="level2">
+<h2 class="anchored" data-anchor-id="check-in-a-browser">Check in a browser</h2>
+<p><code>from rupaka.check import check, can_check</code>. <code>check(spec)</code> draws the demo in headless Chromium and plays it. It gives <code>AttrDict(ok, errors, info, shots)</code>. It finds errors that <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> cannot see: a script error, a network request, a gate that shows its answer, a control that keys do not move, and text with low contrast.</p>
+<p><a href="https://vedicreader.github.io/rupaka/check.html#check"><code>check</code></a> needs the <a href="https://vedicreader.github.io/rupaka/check.html#check"><code>check</code></a> extra (<code>rupaka[check]</code>) and playwright’s Chromium (<code>python -m playwright install chromium</code>), or a browser in <code>$FASTCDP_CHROME</code>. <a href="https://vedicreader.github.io/rupaka/check.html#can_check"><code>can_check()</code></a> is True when both are there. <a href="https://vedicreader.github.io/rupaka/check.html#check"><code>check</code></a> never starts the everyday Chrome.</p>
+</section>
+<section id="ask-a-model-for-a-demo" class="level2">
+<h2 class="anchored" data-anchor-id="ask-a-model-for-a-demo">Ask a model for a demo</h2>
+<p><code>author(concept, ask)</code> in <code>rupaka.agent</code> asks a model for a demo, then validates it, plays it in a headless browser and repairs it. <code>ask(prompt, sp)</code> is any function that sends a prompt and a system prompt to a model and gives back text. <a href="https://vedicreader.github.io/rupaka/agent.html#author"><code>author</code></a> gives the best spec that passed <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> and <a href="https://vedicreader.github.io/rupaka/check.html#check"><code>check</code></a>, or None. Its texts can still fail <a href="https://vedicreader.github.io/rupaka/spec.html#plain_errors"><code>plain_errors</code></a>, so run <a href="https://vedicreader.github.io/rupaka/spec.html#plain_errors"><code>plain_errors</code></a> on the result.</p>
+<p>When you are the model, read <a href="https://vedicreader.github.io/rupaka/agent.html#catalog"><code>catalog()</code></a>, write the spec, and run <a href="https://vedicreader.github.io/rupaka/spec.html#validate"><code>validate</code></a> and <a href="https://vedicreader.github.io/rupaka/spec.html#plain_errors"><code>plain_errors</code></a> until both give <code>[]</code>. <code>near(dict(name=..., statement=..., subject=...))</code> gives the two gallery demos that share the most words with a concept. In <code>rupaka.spec</code>, <a href="https://vedicreader.github.io/rupaka/spec.html#gallery"><code>gallery()</code></a> gives every gallery demo by id, and <a href="https://vedicreader.github.io/rupaka/spec.html#examples"><code>examples()</code></a> gives the example spec of each block.</p>
+</section>
+<section id="boards-and-room-questions" class="level2">
+<h2 class="anchored" data-anchor-id="boards-and-room-questions">Boards and room questions</h2>
+<p>A board is the screen guide’s answer: one spoken line for each step, marks on the page, and a side panel. A model writes it as JSON lines in a closed language (<code>rupaka.board.OPS</code>). <code>clean_context(raw)</code> keeps the known keys of the page context. <code>parse_board(text, ctx)</code> checks each line against that context and drops a bad line. <code>stream_board(chunks, ctx, on_step)</code> reads a reply as it comes and gives the whole checked board at the end. When the header’s <code>sure</code> is <code>SURE</code> (0.7) or more, <code>on_step(step, k)</code> gets each step when its first mark is in, and again each time its strokes change.</p>
+<p><code>rupaka.poll.of_gate(spec, gate)</code> makes a question for a room from a gate, with the index of the answer. <code>public(question)</code> removes the answer and the source.</p>
+</section>
+<section id="this-sheet-in-a-harness" class="level2">
+<h2 class="anchored" data-anchor-id="this-sheet-in-a-harness">This sheet in a harness</h2>
+<p>The <code>pyskills</code> entry point <code>rupaka</code> names this module. Leela and ramabana list it with the other skills, and <code>read_skill('rupaka')</code> reads it. When <code>pyskills</code> is installed, this module allows the names in <code>ALLOW</code> in a sandbox. <a href="https://vedicreader.github.io/rupaka/render.html#save"><code>save</code></a> and <a href="https://vedicreader.github.io/rupaka/check.html#check"><code>check</code></a> are not in <code>ALLOW</code>, because they write a file and start a browser. Call them yourself.</p>
+<p><code>mv_skill_md(dry_run=False)</code> writes this sheet as <code>.agents/skills/rupaka/SKILL.md</code> and <code>.claude/skills/rupaka/SKILL.md</code> in the current git repository, for Claude Code, Codex and other harnesses that read Agent Skills.</p>
+</section>
+<section id="the-hook" class="level2">
+<h2 class="anchored" data-anchor-id="the-hook">The hook</h2>
+<p>The Markdown cells above are the docstring of <code>rupaka.skill</code>. <code>pyskills</code> reads the docstring without an import, and takes its first paragraph as the summary.</p>
+<p><code>ALLOW</code> lists the functions that a sandboxed agent may call: the builders, the checks that only read, and the functions that give text. <code>pyskills</code> is not a dependency of rupaka, so the hook runs only when it is installed.</p>
+</section>
+<section id="the-skill.md" class="level2">
+<h2 class="anchored" data-anchor-id="the-skill.md">The SKILL.md</h2>
+<p><a href="https://vedicreader.github.io/rupaka/skill.html#skill_md"><code>skill_md</code></a> gives the same text as an Agent Skills <code>SKILL.md</code>: a front matter with <code>name</code> and <code>description</code>, then the body. The description is a JSON string, which YAML reads as a quoted text, so a colon in it is safe.</p>
+<div id="f5d1f14a" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-21T03:46:46.065320+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-21T03:46:46.129622+00:00&quot;,&quot;total&quot;:0.06430498900000003}}" data-execution_count="4">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/skill.py#L221" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="mv_skill_md" class="level3">
+<h3 class="anchored" data-anchor-id="mv_skill_md">mv_skill_md</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mv_skill_md(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    dry_run:<span class="bu">bool</span><span class="op">=</span><span class="va">True</span>, <span class="bu">dir</span>:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Write <a href="https://vedicreader.github.io/rupaka/skill.html#skill_md"><code>skill_md()</code></a> to the <code>.agents</code> and <code>.claude</code> skill folders of <code>dir</code> or of the current git repository; with <code>dry_run</code>, print the paths only.</em></p>
+</section>
+</div>
+<div id="3435672a" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-21T03:46:46.129740+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-21T03:46:46.132593+00:00&quot;,&quot;total&quot;:0.002854814999999178}}" data-execution_count="5">
+<hr>
+<p><a href="https://github.com/vedicreader/rupaka/blob/main/rupaka/skill.py#L216" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="skill_md" class="level3">
+<h3 class="anchored" data-anchor-id="skill_md">skill_md</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> skill_md()<span class="op">-&gt;</span><span class="bu">str</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>This sheet as an Agent Skills <code>SKILL.md</code>: a front matter with <code>name</code> and <code>description</code>, then the body.</em></p>
+</section>
+</div>
+</section>
+<section id="tests" class="level2">
+<h2 class="anchored" data-anchor-id="tests">Tests</h2>
+<p>Each name in <code>ALLOW</code> is a real function. <code>allow</code> skips a missing name and says nothing, so this test catches a rename.</p>
+<div id="bc17f5f4" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-21T03:46:46.132785+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-21T03:46:46.134498+00:00&quot;,&quot;total&quot;:0.0017161669999978812}}" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rupaka.skill <span class="im">import</span> ALLOW</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> m, ns <span class="kw">in</span> ALLOW.items():</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> n <span class="kw">in</span> ns: <span class="cf">assert</span> <span class="bu">callable</span>(<span class="bu">getattr</span>(m, n, <span class="va">None</span>)), <span class="ss">f'</span><span class="sc">{</span>m<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">.</span><span class="sc">{</span>n<span class="sc">}</span><span class="ss">'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The first example of the sheet runs, and its spec is good.</p>
+<div id="b687aab6" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-21T03:46:46.134914+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-21T03:46:46.140852+00:00&quot;,&quot;total&quot;:0.005938904000004186}}" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> rupaka.skill <span class="im">as</span> sk</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ex <span class="op">=</span> sk.__doc__.split(<span class="st">'```python</span><span class="ch">\n</span><span class="st">'</span>, <span class="dv">1</span>)[<span class="dv">1</span>].split(<span class="st">'```'</span>, <span class="dv">1</span>)[<span class="dv">0</span>]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">exec</span>(ex, ns <span class="op">:=</span> {})</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> validate(ns[<span class="st">'d'</span>]) <span class="op">==</span> [] <span class="kw">and</span> ns[<span class="st">'fence'</span>].startswith(<span class="st">'```rupaka'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The front matter has the name and a one-line description. The <code>SKILL.md</code> copies in this repository match the sheet. After an edit to the sheet, run <code>mv_skill_md(dry_run=False)</code> and commit the copies.</p>
+<div id="139096b4" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-21T03:46:46.141103+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-21T03:46:46.142613+00:00&quot;,&quot;total&quot;:0.0015127109999966137}}" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fastcore.test <span class="im">import</span> test_eq</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fastcore.xtras <span class="im">import</span> find_file_parents</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>md_text <span class="op">=</span> sk.skill_md()</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>head, body <span class="op">=</span> md_text.split(<span class="st">'</span><span class="ch">\n</span><span class="st">---</span><span class="ch">\n</span><span class="st">'</span>, <span class="dv">1</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> head.startswith(<span class="st">'---</span><span class="ch">\n</span><span class="st">name: rupaka</span><span class="ch">\n</span><span class="st">description: "Make interactive teaching demos'</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> body.lstrip().startswith(<span class="st">'## Make a demo'</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> find_file_parents(<span class="st">'.git'</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> d <span class="kw">in</span> (<span class="st">'.agents'</span>, <span class="st">'.claude'</span>): test_eq((root<span class="op">/</span>d<span class="op">/</span><span class="st">'skills/rupaka/SKILL.md'</span>).read_text(), md_text)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/vedicreader\.github\.io\/rupaka");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/vedicreader/rupaka/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
